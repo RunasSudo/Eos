@@ -1,0 +1,55 @@
+{% comment %}
+    Copyright © 2017  RunasSudo (Yingtong Li)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+{% endcomment %}
+
+<p>Hello World!</p>
+
+{% if messages|length > 0 %}
+	<p>Received messages:</p>
+	<ul>
+		{% for message in messages %}
+			<li>{{ message.m }}</li>
+		{% endfor %}
+	</ul>
+{% else %}
+	<p>No messages yet</p>
+{% endif %}
+
+{% load static %}
+<script src="{% static "js/jsbn.js" %}"></script>
+<script src="{% static "js/jsbn2.js" %}"></script>
+<script src="{% static "js/build/elgamal.js" %}"></script>
+
+<script>
+	var keyNum = '{{ key.g_a }}';
+	var key = elgamal.ElGamalPublicKey(elgamal.BigInt(keyNum));
+	function submitMessage() {
+		var m = elgamal.BigInt(document.getElementById('num').value);
+		var c = key.encrypt(m);
+		console.log('Ciphertext is (' + c.gamma.__str__() + ', ' + c.delta.__str__() + ')');
+		document.getElementById('gamma').value = c.gamma.__str__();
+		document.getElementById('delta').value = c.delta.__str__();
+		document.getElementById('submitForm').submit();
+	}
+</script>
+
+<input id="num"><input type="button" value="Submit" onclick="submitMessage();">
+
+<form method="post" action="" id="submitForm">
+	<input type="hidden" name="gamma" id="gamma" value="">
+	<input type="hidden" name="delta" id="delta" value="">
+	{% csrf_token %}
+</form>
