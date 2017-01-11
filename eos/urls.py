@@ -34,4 +34,5 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^test/', include('eos_test.urls')),
     url(r'^admin/', admin.site.urls),
+    url(r'^', include('eos_core.urls')),
 ]
