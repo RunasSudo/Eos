@@ -19,7 +19,28 @@ import eos_basic.workflow
 import django.core.exceptions
 import django.db.models
 
+import uuid
+
+class Election(django.db.models.Model):
+	id = django.db.models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+	name = django.db.models.CharField(max_length=100)
+	workflow = django.db.models.ForeignKey('eos_core.Workflow', on_delete=django.db.models.PROTECT)
+	
+	voting_starts_at = django.db.models.DateTimeField(null=True)
+	voting_ends_at = django.db.models.DateTimeField(null=True)
+	
+	frozen_at = django.db.models.DateTimeField(null=True)
+	
+	voting_extended_until = django.db.models.DateTimeField(null=True)
+	voting_started_at = django.db.models.DateTimeField(null=True, editable=False)
+	voting_ended_at = django.db.models.DateTimeField(null=True, editable=False)
+	result_released_at = django.db.models.DateTimeField(null=True, editable=False)
+	
+	def __str__(self):
+		return self.name
+
 class Workflow(django.db.models.Model):
+	id = django.db.models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 	name = django.db.models.CharField(max_length=100)
 	tasks = eos_core.fields.EosListField()
 	

@@ -17,25 +17,24 @@ import eos_core.models
 import eos_core.objects
 
 import django.contrib.admin
+import django.core.exceptions
 import django.forms
 import django.utils.html
 
+import datetime
 import json
 
-class WorkflowTasksWidget(django.forms.Textarea):
+class WorkflowTasksWidget(django.contrib.admin.widgets.AdminTextareaWidget):
 	def render(self, name, value, attrs=None):
 		if not isinstance(value, str):
 			value = json.dumps(eos_core.objects.EosObject.serialise_list(value, None))
 		tasks_field = super().render(name, value, attrs)
 		# Oh my...
 		# TODO: Use a template or something
-		return '<div style="float: left;"><div>' + tasks_field + '</div><div>' + django.forms.Select(choices=[(workflow_task, workflow_task) for workflow_task in eos_core.workflow.WorkflowTask.get_all()]).render(name + '_add_type', value) + ' <a href="#" class="addlink" onclick="var tasks_field = document.getElementsByName(\'' + name + '\')[0]; var tasks_field_list = JSON.parse(tasks_field.value); tasks_field_list.push({\'type\': document.getElementsByName(\'' + name + '_add_type\')[0].value, \'value\': {}}); tasks_field.value = JSON.stringify(tasks_field_list); return false;">Add</a></div></div>'
+		return '<div style="float: left;"><div>' + tasks_field + '</div><div>' + django.forms.Select(choices=[(workflow_task, workflow_task) for workflow_task in eos_core.workflow.WorkflowTask.get_all()]).render(name + '_add_type', value) + ' <a href="#" class="addlink" onclick="var tasks_field = document.getElementsByName(\'' + name + '\')[0]; var tasks_field_list = JSON.parse(tasks_field.value); tasks_field_list.push({\'type\': document.getElementsByName(\'' + name + '_add_type\')[0].value, \'value\': null}); tasks_field.value = JSON.stringify(tasks_field_list); return false;">Add</a></div></div>'
 
 class WorkflowAdminForm(django.forms.ModelForm):
 	tasks = django.forms.CharField(widget=WorkflowTasksWidget)
-	
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
 	
 	def clean_tasks(self):
 		data = self.cleaned_data['tasks']
@@ -46,4 +45,48 @@ class WorkflowAdminForm(django.forms.ModelForm):
 class WorkflowAdmin(django.contrib.admin.ModelAdmin):
 	form = WorkflowAdminForm
 
+class LinkButtonWidget(django.forms.HiddenInput):
+	is_hidden = False
+	
+	def render(self, name, value, attrs=None):
+		return super().render(name, value, attrs) + '<input value="Save and freeze" type="button" onclick="document.getElementsByName(\'' + name + '\')[0].value = \'freeze\'; document.getElementsByName(\'_continue\')[0].click();">'
+
+class ElectionAdminForm(django.forms.ModelForm):
+	voting_starts_at = django.forms.SplitDateTimeField(required=False, widget=django.contrib.admin.widgets.AdminSplitDateTime)
+	voting_ends_at = django.forms.SplitDateTimeField(required=False, widget=django.contrib.admin.widgets.AdminSplitDateTime)
+	freeze = django.forms.BooleanField(required=False, label='', widget=LinkButtonWidget)
+	
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+	
+	def clean_freeze(self):
+		if self.cleaned_data['freeze']:
+			if self.instance.frozen_at:
+				raise django.core.exceptions.ValidationError('Attempted to freeze an already-frozen election')
+			self.instance.frozen_at = datetime.datetime.now()
+
+class ElectionAdmin(django.contrib.admin.ModelAdmin):
+	form = ElectionAdminForm
+	
+	class Media:
+		css = {
+			'all': ['eos_core_admin/css/icons.css']
+		}
+	
+	def get_fieldsets(self, request, obj=None):
+		#print(request)
+		#print(obj)
+		#return super().get_fieldsets(request, obj)
+		
+		fields_general = ['name', 'workflow'] if not obj.frozen_at else []
+		fields_schedule = ['voting_starts_at', 'voting_ends_at'] if not obj.frozen_at else ['voting_extended_until'] if not obj.voting_ended_at else []
+		fields_freeze = ['freeze'] if not obj.frozen_at else []
+		
+		return (
+			([(None, {'fields': fields_general})] if fields_general else []) +
+			([('Schedule', {'fields': fields_schedule})] if fields_schedule else []) +
+			([('Freeze Election', {'fields': fields_freeze})] if fields_freeze else [])
+		)
+
 django.contrib.admin.site.register(eos_core.models.Workflow, WorkflowAdmin)
+django.contrib.admin.site.register(eos_core.models.Election, ElectionAdmin)

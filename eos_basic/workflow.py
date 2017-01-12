@@ -13,14 +13,22 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from eos_core.workflow import WorkflowTask
+import eos_core.workflow
 
-class TaskSetElectionDetails(WorkflowTask):
-	def __init__(self):
-		pass
+class TaskSetElectionDetails(eos_core.workflow.WorkflowTask):
+	def serialise(self):
+		return None
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls()
 
-class TaskCastVotes(WorkflowTask):
+class TaskCastVotes(eos_core.workflow.WorkflowTask):
 	workflow_depends = ['eos_basic.workflow.TaskSetElectionDetails']
 	
-	def __init__(self):
-		pass
+	def serialise(self):
+		return None
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls()

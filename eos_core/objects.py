@@ -22,13 +22,27 @@ def get_full_name(obj):
 eos_objects = {}
 
 class EosObjectType(type):
-	def __new__(cls, name, bases, attrs):
-		instance = super().__new__(cls, name, bases, attrs)
-		eos_objects[get_full_name(instance)] = instance
-		return instance
+	def __new__(meta, name, bases, attrs):
+		cls = super().__new__(meta, name, bases, attrs)
+		
+		# Meta will be automatically subclassed, but _meta will still point to the parent Meta class
+		base_meta = getattr(cls, '_meta', None)
+		attr_meta = attrs['Meta'] if 'Meta' in attrs else None
+		if base_meta and getattr(base_meta, 'abstract', False) and not hasattr(attr_meta, 'abstract'):
+			# Don't inherit the abstract field by default
+			cls.Meta.abstract = False
+		cls._meta = cls.Meta
+		
+		if not getattr(cls._meta, 'abstract', False):
+			eos_objects[get_full_name(cls)] = cls
+		
+		return cls
 
 # An object that can be serialised
 class EosObject(metaclass=EosObjectType):
+	class Meta:
+		abstract = True
+	
 	@staticmethod
 	def get_all():
 		import eos.settings
@@ -97,6 +111,9 @@ class EosDictObjectType(EosObjectType):
 
 # Must declare eos_fields field
 class EosDictObject(EosObject, metaclass=EosDictObjectType):
+	class Meta:
+		abstract = True
+	
 	def serialise(self):
 		result = {}
 		for field in self.eos_fields:

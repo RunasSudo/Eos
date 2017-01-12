@@ -17,19 +17,24 @@ import eos_core.objects
 
 workflow_tasks = {}
 
-class WorkflowTaskType(eos_core.objects.EosDictObjectType):
-	def __new__(cls, name, bases, attrs):
-		instance = super().__new__(cls, name, bases, attrs)
-		workflow_tasks[eos_core.objects.get_full_name(instance)] = instance
-		return instance
+class WorkflowTaskType(eos_core.objects.EosObjectType):
+	def __new__(meta, name, bases, attrs):
+		cls = super().__new__(meta, name, bases, attrs)
+		
+		if not getattr(cls._meta, 'abstract', False):
+			workflow_tasks[eos_core.objects.get_full_name(cls)] = cls
+		
+		return cls
 
-class WorkflowTask(eos_core.objects.EosDictObject, metaclass=WorkflowTaskType):
-	eos_fields = []
+class WorkflowTask(eos_core.objects.EosObject, metaclass=WorkflowTaskType):
 	workflow_provides = []
 	workflow_depends = []
 	#workflow_conflicts = []
 	#workflow_after = []
 	#workflow_before = []
+	
+	class Meta:
+		abstract = True
 	
 	@staticmethod
 	def get_all():
@@ -41,3 +46,18 @@ class WorkflowTask(eos_core.objects.EosDictObject, metaclass=WorkflowTaskType):
 			except ImportError:
 				pass
 		return workflow_tasks
+
+class CoreWorkflowTask(WorkflowTask):
+	def __init__(self, name=None):
+		self.name = name
+	
+	@property
+	def workflow_depends(self):
+		return ['eos_basic.workflow.TaskSetElectionDetails']
+	
+	def serialise(self):
+		return self.name
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls(name=value)
