@@ -34,7 +34,9 @@ class EosObjectField(django.db.models.Field):
 		return self.to_python(value)
 	
 	def to_python(self, value):
-		if isinstance(value, EosObject):
+		if isinstance(value, eos_core.objects.EosObject):
+			return value
+		if value is None:
 			return value
 		return eos_core.objects.EosObject.deserialise_and_unwrap(json.loads(value), self.field_type)
 	
@@ -42,7 +44,7 @@ class EosObjectField(django.db.models.Field):
 		return json.dumps(eos_core.objects.EosObject.serialise_and_wrap(value, self.field_type))
 	
 	def get_internal_type(self):
-		return self.field_type.__field_type__
+		return 'TextField'
 
 class EosListField(django.db.models.Field):
 	def __init__(self, element_type=None, *args, **kwargs):

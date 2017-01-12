@@ -24,7 +24,37 @@ import django.utils.html
 import datetime
 import json
 
-class WorkflowTasksWidget(django.contrib.admin.widgets.AdminTextareaWidget):
+class EosObjectWidget(django.contrib.admin.widgets.AdminTextareaWidget):
+	def render(self, name, value, attrs=None):
+		if not isinstance(value, str):
+			value = json.dumps(eos_core.objects.EosObject.serialise_and_wrap(value, None))
+		return super().render(name, value, attrs)
+
+class EosObjectFormField(django.forms.CharField):
+	def __init__(self, *args, **kwargs):
+		if 'widget' not in kwargs:
+			kwargs['widget'] = EosObjectWidget
+		super().__init__(*args, **kwargs)
+	
+	def to_python(self, value):
+		return eos_core.objects.EosObject.deserialise_and_unwrap(json.loads(value), None)
+
+class EosListWidget(django.contrib.admin.widgets.AdminTextareaWidget):
+	def render(self, name, value, attrs=None):
+		if not isinstance(value, str):
+			value = json.dumps(eos_core.objects.EosObject.serialise_list(value, None))
+		return super().render(name, value, attrs)
+
+class EosListFormField(django.forms.CharField):
+	def __init__(self, *args, **kwargs):
+		if 'widget' not in kwargs:
+			kwargs['widget'] = EosListWidget
+		super().__init__(*args, **kwargs)
+	
+	def to_python(self, value):
+		return eos_core.objects.EosObject.deserialise_list(json.loads(value), None)
+
+class WorkflowTasksWidget(EosListWidget):
 	def render(self, name, value, attrs=None):
 		if not isinstance(value, str):
 			value = json.dumps(eos_core.objects.EosObject.serialise_list(value, None))
@@ -34,7 +64,7 @@ class WorkflowTasksWidget(django.contrib.admin.widgets.AdminTextareaWidget):
 		return '<div style="float: left;"><div>' + tasks_field + '</div><div>' + django.forms.Select(choices=[(workflow_task, workflow_task) for workflow_task in eos_core.workflow.WorkflowTask.get_all()]).render(name + '_add_type', value) + ' <a href="#" class="addlink" onclick="var tasks_field = document.getElementsByName(\'' + name + '\')[0]; var tasks_field_list = JSON.parse(tasks_field.value); tasks_field_list.push({\'type\': document.getElementsByName(\'' + name + '_add_type\')[0].value, \'value\': null}); tasks_field.value = JSON.stringify(tasks_field_list); return false;">Add</a></div></div>'
 
 class WorkflowAdminForm(django.forms.ModelForm):
-	tasks = django.forms.CharField(widget=WorkflowTasksWidget)
+	tasks = EosListFormField(widget=WorkflowTasksWidget)
 	
 	def clean_tasks(self):
 		data = self.cleaned_data['tasks']
@@ -54,6 +84,8 @@ class LinkButtonWidget(django.forms.HiddenInput):
 class ElectionAdminForm(django.forms.ModelForm):
 	voting_starts_at = django.forms.SplitDateTimeField(required=False, widget=django.contrib.admin.widgets.AdminSplitDateTime)
 	voting_ends_at = django.forms.SplitDateTimeField(required=False, widget=django.contrib.admin.widgets.AdminSplitDateTime)
+	questions = EosListFormField()
+	voter_eligibility = EosObjectFormField()
 	freeze = django.forms.BooleanField(required=False, label='', widget=LinkButtonWidget)
 	
 	def __init__(self, *args, **kwargs):
@@ -64,27 +96,32 @@ class ElectionAdminForm(django.forms.ModelForm):
 			if self.instance.frozen_at:
 				raise django.core.exceptions.ValidationError('Attempted to freeze an already-frozen election')
 			self.instance.frozen_at = datetime.datetime.now()
+	
+	@property
+	def changed_data(self):
+		print('HAS CHANGED?')
+		return super().changed_data
 
 class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	form = ElectionAdminForm
 	
-	class Media:
-		css = {
-			'all': ['eos_core_admin/css/icons.css']
-		}
+	#class Media:
+	#	css = {
+	#		'all': ['eos_core_admin/css/icons.css']
+	#	}
 	
 	def get_fieldsets(self, request, obj=None):
-		#print(request)
-		#print(obj)
-		#return super().get_fieldsets(request, obj)
-		
 		fields_general = ['name', 'workflow'] if not obj.frozen_at else []
 		fields_schedule = ['voting_starts_at', 'voting_ends_at'] if not obj.frozen_at else ['voting_extended_until'] if not obj.voting_ended_at else []
+		fields_questions = ['questions'] if not obj.frozen_at else []
+		fields_voters = ['voter_eligibility'] if not obj.frozen_at else []
 		fields_freeze = ['freeze'] if not obj.frozen_at else []
 		
 		return (
 			([(None, {'fields': fields_general})] if fields_general else []) +
 			([('Schedule', {'fields': fields_schedule})] if fields_schedule else []) +
+			([('Questions', {'fields': fields_questions})] if fields_questions else []) +
+			([('Voters', {'fields': fields_voters})] if fields_voters else []) +
 			([('Freeze Election', {'fields': fields_freeze})] if fields_freeze else [])
 		)
 

@@ -42,7 +42,7 @@ class WorkflowTask(eos_core.objects.EosObject, metaclass=WorkflowTaskType):
 		import importlib
 		for app in eos.settings.INSTALLED_APPS:
 			try:
-				importlib.import_module(app)
+				importlib.import_module(app + '.workflow')
 			except ImportError:
 				pass
 		return workflow_tasks
