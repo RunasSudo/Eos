@@ -22,12 +22,11 @@ import django.forms
 import django.utils.html
 
 import datetime
-import json
 
 class EosObjectWidget(django.contrib.admin.widgets.AdminTextareaWidget):
 	def render(self, name, value, attrs=None):
 		if not isinstance(value, str):
-			value = json.dumps(eos_core.objects.EosObject.serialise_and_wrap(value, None))
+			value = eos_core.objects.to_json(eos_core.objects.EosObject.serialise_and_wrap(value, None))
 		return super().render(name, value, attrs)
 
 class EosObjectFormField(django.forms.CharField):
@@ -37,12 +36,12 @@ class EosObjectFormField(django.forms.CharField):
 		super().__init__(*args, **kwargs)
 	
 	def to_python(self, value):
-		return eos_core.objects.EosObject.deserialise_and_unwrap(json.loads(value), None)
+		return eos_core.objects.EosObject.deserialise_and_unwrap(eos_core.objects.from_json(value), None)
 
 class EosListWidget(django.contrib.admin.widgets.AdminTextareaWidget):
 	def render(self, name, value, attrs=None):
 		if not isinstance(value, str):
-			value = json.dumps(eos_core.objects.EosObject.serialise_list(value, None))
+			value = eos_core.objects.to_json(eos_core.objects.EosObject.serialise_list(value, None))
 		return super().render(name, value, attrs)
 
 class EosListFormField(django.forms.CharField):
@@ -52,12 +51,12 @@ class EosListFormField(django.forms.CharField):
 		super().__init__(*args, **kwargs)
 	
 	def to_python(self, value):
-		return eos_core.objects.EosObject.deserialise_list(json.loads(value), None)
+		return eos_core.objects.EosObject.deserialise_list(eos_core.objects.from_json(value), None)
 
 class WorkflowTasksWidget(EosListWidget):
 	def render(self, name, value, attrs=None):
 		if not isinstance(value, str):
-			value = json.dumps(eos_core.objects.EosObject.serialise_list(value, None))
+			value = eos_core.objects.to_json(eos_core.objects.EosObject.serialise_list(value, None))
 		tasks_field = super().render(name, value, attrs)
 		# Oh my...
 		# TODO: Use a template or something
@@ -68,7 +67,7 @@ class WorkflowAdminForm(django.forms.ModelForm):
 	
 	def clean_tasks(self):
 		data = self.cleaned_data['tasks']
-		if not isinstance(eos_core.objects.EosObject.deserialise_list(json.loads(data), None), list):
+		if not isinstance(eos_core.objects.EosObject.deserialise_list(eos_core.objects.from_json(data), None), list):
 			raise django.forms.ValidationError('This field must be a list.')
 		return data
 
@@ -111,11 +110,11 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	#	}
 	
 	def get_fieldsets(self, request, obj=None):
-		fields_general = ['name', 'workflow'] if not obj.frozen_at else []
-		fields_schedule = ['voting_starts_at', 'voting_ends_at'] if not obj.frozen_at else ['voting_extended_until'] if not obj.voting_ended_at else []
-		fields_questions = ['questions'] if not obj.frozen_at else []
-		fields_voters = ['voter_eligibility'] if not obj.frozen_at else []
-		fields_freeze = ['freeze'] if not obj.frozen_at else []
+		fields_general = ['name', 'workflow'] if (obj is None or not obj.frozen_at) else []
+		fields_schedule = ['voting_starts_at', 'voting_ends_at'] if (obj is None or not obj.frozen_at) else ['voting_extended_until'] if not obj.voting_ended_at else []
+		fields_questions = ['questions'] if (obj is None or not obj.frozen_at) else []
+		fields_voters = ['voter_eligibility'] if (obj is None or not obj.frozen_at) else []
+		fields_freeze = ['freeze'] if (obj is None or not obj.frozen_at) else []
 		
 		return (
 			([(None, {'fields': fields_general})] if fields_general else []) +

@@ -17,6 +17,10 @@ import eos_core
 
 import django.db.models
 
+import datetime
+import json
+import uuid
+
 def get_full_name(obj):
 	if isinstance(obj, type):
 		return obj.__module__ + '.' + obj.__qualname__
@@ -28,23 +32,26 @@ eos_objects = {}
 class EosObjectType(type):
 	def __new__(meta, name, bases, attrs):
 		cls = super().__new__(meta, name, bases, attrs)
-		
+		cls = EosObjectType._after_new(cls, meta, name, bases, attrs)
+		return cls
+	
+	def _after_new(cls, meta, name, bases, attrs):
 		# Meta will be automatically subclassed, but _meta will still point to the parent Meta class
-		base_meta = getattr(cls, '_meta', None)
-		attr_meta = attrs['Meta'] if 'Meta' in attrs else None
+		base_meta = getattr(cls, '_eosmeta', None)
+		attr_meta = attrs['EosMeta'] if 'EosMeta' in attrs else None
 		if base_meta and getattr(base_meta, 'abstract', False) and not hasattr(attr_meta, 'abstract'):
 			# Don't inherit the abstract field by default
-			cls.Meta.abstract = False
-		cls._meta = cls.Meta
+			cls.EosMeta.abstract = False
+		cls._eosmeta = cls.EosMeta
 		
-		if not getattr(cls._meta, 'abstract', False):
+		if not getattr(cls._eosmeta, 'abstract', False):
 			eos_objects[get_full_name(cls)] = cls
 		
 		return cls
 
 # An object that can be serialised
 class EosObject(metaclass=EosObjectType):
-	class Meta:
+	class EosMeta:
 		abstract = True
 	
 	def __eq__(self, other):
@@ -67,10 +74,15 @@ class EosObject(metaclass=EosObjectType):
 			return value
 		if value_type is not None:
 			# The value type is guaranteed, so store directly
+			if isinstance(value_type.py_type, str):
+				# ForeignKey
+				return value.serialise()
 			if issubclass(value_type.py_type, EosObject):
 				return value.serialise()
 			elif issubclass(value_type.py_type, list):
 				return EosObject.serialise_list(value, value_type.element_type)
+			elif issubclass(value_type.py_type, uuid.UUID):
+				return str(value)
 			else:
 				return value
 		else:
@@ -79,6 +91,8 @@ class EosObject(metaclass=EosObjectType):
 				return { 'type': get_full_name(value), 'value': value.serialise() }
 			elif isinstance(value, list):
 				return { 'type': get_full_name(value), 'value': EosObject.serialise_list(value, None) }
+			elif isinstance(value, uuid.UUID):
+				return { 'type': get_full_name(value), 'value': str(value) }
 			else:
 				return { 'type': get_full_name(value), 'value': value }
 	
@@ -115,49 +129,73 @@ class EosObject(metaclass=EosObjectType):
 
 # Stores information about a field of an EosObject for easy conversion to/from a Model
 class EosField():
-	def __init__(self, py_type, name=None, *, max_length=None, element_type=None):
+	def __init__(self, py_type, name=None, *, max_length=None, element_type=None, primary_key=False, editable=True, null=False, on_delete=None):
 		self.name = name
 		self.py_type = py_type
 		
 		self.max_length = max_length
 		self.element_type = element_type
+		self.primary_key = primary_key
+		self.editable = editable
+		self.null = null
+		self.on_delete = on_delete
 	
 	def create_django_field(self):
-		if issubclass(self.py_type, EosObject):
-			import eos_core.fields
-			if self.py_type is EosObject:
-				return eos_core.fields.EosObjectField()
-			else:
-				return eos_core.fields.EosObjectField(contained_type=self.py_type)
-		if issubclass(self.py_type, int):
-			return django.db.models.IntegerField()
-		if issubclass(self.py_type, basestring):
-			if self.max_length:
-				return django.db.models.CharField(max_length=self.max_length)
-			else:
-				return django.db.models.TextField()
-		if issubclass(self.py_type, list):
-			return eos_core.fields.EosListField(element_type=self.element_type)
+		general_keys = {x: getattr(self, x) for x in ['primary_key', 'editable', 'null']}
+		
+		if isinstance(self.py_type, type):
+			if issubclass(self.py_type, EosObject):
+				import eos_core.fields
+				if self.py_type is EosObject:
+					return eos_core.fields.EosObjectField(**general_keys)
+				else:
+					return eos_core.fields.EosObjectField(contained_type=self.py_type, **general_keys)
+			if issubclass(self.py_type, int):
+				return django.db.models.IntegerField(**general_keys)
+			if issubclass(self.py_type, str):
+				if self.max_length:
+					return django.db.models.CharField(max_length=self.max_length, **general_keys)
+				else:
+					return django.db.models.TextField(**general_keys)
+			if issubclass(self.py_type, list):
+				import eos_core.fields
+				return eos_core.fields.EosListField(element_type=self.element_type, **general_keys)
+		if isinstance(self.py_type, str):
+			return django.db.models.ForeignKey(self.py_type, on_delete=self.on_delete, **general_keys)
+		if self.py_type is uuid.UUID:
+			return django.db.models.UUIDField(default=uuid.uuid4, **general_keys)
+		if self.py_type is datetime.datetime:
+			return django.db.models.DateTimeField(**general_keys)
 		raise Exception('Attempted to create Django field for unsupported Python type {}'.format(self.py_type))
 
 class EosDictObjectType(EosObjectType):
 	def __new__(meta, name, bases, attrs):
+		meta, name, bases, attrs = EosDictObjectType._before_new(meta, name, bases, attrs)
 		cls = super().__new__(meta, name, bases, attrs)
-		
-		if eos_core.is_python and issubclass(cls, django.db.models.Model):
-			for field in cls._meta.eos_fields:
-				field.create_django_field().contribute_to_class(cls, field.name)
-		
 		return cls
 	
-	def __call__(meta, *args, **kwargs):
-		#instance = super().__call__(*args, **kwargs)
-		instance = super().__call__()
+	def _before_new(meta, name, bases, attrs):
+		if eos_core.is_python and any(issubclass(base, django.db.models.Model) for base in bases):
+			if 'EosMeta' in attrs and hasattr(attrs['EosMeta'], 'eos_fields'):
+				eos_fields = attrs['EosMeta'].eos_fields
+			else:
+				#TODO: Implement inheritance of EosMeta things
+				eos_fields = []
+			for field in eos_fields:
+				attrs[field.name] = field.create_django_field()
 		
+		return meta, name, bases, attrs
+	
+	def __call__(cls, *args, **kwargs):
+		instance = super().__call__()
+		instance = EosDictObjectType._after_call(instance, cls, *args, **kwargs)
+		return instance
+	
+	def _after_call(instance, cls, *args, **kwargs):
 		if eos_core.is_python and isinstance(instance, django.db.models.Model):
 			pass
 		else:
-			fields = [field.name for field in instance._meta.eos_fields]
+			fields = [field.name for field in instance._eosmeta.eos_fields]
 			for arg in kwargs:
 				if arg in fields and not hasattr(instance, arg):
 					setattr(instance, arg, kwargs[arg])
@@ -166,18 +204,24 @@ class EosDictObjectType(EosObjectType):
 
 # Must declare eos_fields field
 class EosDictObject(EosObject, metaclass=EosDictObjectType):
-	class Meta:
+	class EosMeta:
 		abstract = True
 	
 	def serialise(self):
 		result = {}
-		for field in self._meta.eos_fields:
+		for field in self._eosmeta.eos_fields:
 			result[field.name] = EosObject.serialise_and_wrap(getattr(self, field.name), field)
 		return result
 	
 	@classmethod
 	def deserialise(cls, value):
 		result = {}
-		for field in cls._meta.eos_fields:
+		for field in cls._eosmeta.eos_fields:
 			result[field.name] = EosObject.deserialise_and_unwrap(value[field.name], field)
 		return cls(**result)
+
+def to_json(value):
+	return json.dumps(value, sort_keys=True)
+
+def from_json(value):
+	return json.loads(value)

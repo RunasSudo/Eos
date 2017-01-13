@@ -17,8 +17,6 @@ import eos_core.objects
 
 import django.db.models
 
-import json
-
 # Django field which stores a serialised object
 class EosObjectField(django.db.models.Field):
 	def __init__(self, field_type=None, *args, **kwargs):
@@ -38,10 +36,10 @@ class EosObjectField(django.db.models.Field):
 			return value
 		if value is None:
 			return value
-		return eos_core.objects.EosObject.deserialise_and_unwrap(json.loads(value), self.field_type)
+		return eos_core.objects.EosObject.deserialise_and_unwrap(eos_core.objects.from_json(value), self.field_type)
 	
 	def get_prep_value(self, value):
-		return json.dumps(eos_core.objects.EosObject.serialise_and_wrap(value, self.field_type))
+		return eos_core.objects.to_json(eos_core.objects.EosObject.serialise_and_wrap(value, self.field_type))
 	
 	def get_internal_type(self):
 		return 'TextField'
@@ -64,10 +62,10 @@ class EosListField(django.db.models.Field):
 			return value
 		if value is None:
 			return value
-		return eos_core.objects.EosObject.deserialise_list(json.loads(value), self.element_type)
+		return eos_core.objects.EosObject.deserialise_list(eos_core.objects.from_json(value), self.element_type)
 	
 	def get_prep_value(self, value):
-		return json.dumps(eos_core.objects.EosObject.serialise_list(value, self.element_type))
+		return eos_core.objects.to_json(eos_core.objects.EosObject.serialise_list(value, self.element_type))
 	
 	def get_internal_type(self):
 		return 'TextField'

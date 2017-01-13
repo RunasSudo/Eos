@@ -20,41 +20,65 @@ import eos_basic.workflow
 import django.core.exceptions
 import django.db.models
 
+import datetime
 import uuid
 
 class Question(eos_core.objects.EosObject):
-	class Meta:
+	class EosMeta:
 		abstract = True
 
 class VoterEligibility(eos_core.objects.EosObject):
+	class EosMeta:
+		abstract = True
+
+class EosDictObjectModelType(eos_core.objects.EosDictObjectType, django.db.models.base.ModelBase):
+	def __new__(meta, name, bases, attrs):
+		#import pdb; pdb.set_trace()
+		meta, name, bases, attrs = eos_core.objects.EosDictObjectType._before_new(meta, name, bases, attrs)
+		cls = django.db.models.base.ModelBase.__new__(meta, name, bases, attrs)
+		cls = eos_core.objects.EosObjectType._after_new(cls, meta, name, bases, attrs)
+		return cls
+	
+	def __call__(cls, *args, **kwargs):
+		instance = django.db.models.base.ModelBase.__call__(cls, *args, **kwargs)
+		instance = eos_core.objects.EosDictObjectType._after_call(instance, cls, *args, **kwargs)
+		return instance
+
+class EosDictObjectModel(django.db.models.Model, eos_core.objects.EosDictObject, metaclass=EosDictObjectModelType):
 	class Meta:
 		abstract = True
 
-class Election(django.db.models.Model):
-	id = django.db.models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	name = django.db.models.CharField(max_length=100)
-	workflow = django.db.models.ForeignKey('eos_core.Workflow', on_delete=django.db.models.PROTECT)
-	
-	questions = eos_core.fields.EosListField() # [eos_core.models.Question]
-	voter_eligibility = eos_core.fields.EosObjectField() # eos_core.models.VoterEligibility
-	
-	voting_starts_at = django.db.models.DateTimeField(null=True)
-	voting_ends_at = django.db.models.DateTimeField(null=True)
-	
-	frozen_at = django.db.models.DateTimeField(null=True)
-	
-	voting_extended_until = django.db.models.DateTimeField(null=True)
-	voting_started_at = django.db.models.DateTimeField(null=True, editable=False)
-	voting_ended_at = django.db.models.DateTimeField(null=True, editable=False)
-	result_released_at = django.db.models.DateTimeField(null=True, editable=False)
+class Election(EosDictObjectModel):
+	class EosMeta:
+		eos_fields = [
+			eos_core.objects.EosField(uuid.UUID, 'id', primary_key=True, editable=False),
+			eos_core.objects.EosField(str, 'name', max_length=100),
+			eos_core.objects.EosField('eos_core.Workflow', 'workflow', on_delete=django.db.models.PROTECT),
+			
+			eos_core.objects.EosField(list, 'questions'), # [eos_core.models.Question]
+			eos_core.objects.EosField(eos_core.objects.EosObject, 'voter_eligibility'), # eos_core.models.VoterEligibility
+			
+			eos_core.objects.EosField(datetime.datetime, 'voting_starts_at', null=True),
+			eos_core.objects.EosField(datetime.datetime, 'voting_ends_at', null=True),
+			
+			eos_core.objects.EosField(datetime.datetime, 'frozen_at', null=True),
+			
+			eos_core.objects.EosField(datetime.datetime, 'voting_extended_until', null=True),
+			eos_core.objects.EosField(datetime.datetime, 'voting_started_at', null=True),
+			eos_core.objects.EosField(datetime.datetime, 'voting_ended_at', null=True),
+			eos_core.objects.EosField(datetime.datetime, 'result_released_at', null=True),
+		]
 	
 	def __str__(self):
 		return self.name
 
-class Workflow(django.db.models.Model):
-	id = django.db.models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	name = django.db.models.CharField(max_length=100)
-	tasks = eos_core.fields.EosListField() # [eos_core.workflow.WorkflowTask]
+class Workflow(EosDictObjectModel):
+	class EosMeta:
+		eos_fields = [
+			eos_core.objects.EosField(uuid.UUID, 'id', primary_key=True, editable=False),
+			eos_core.objects.EosField(str, 'name', max_length=100),
+			eos_core.objects.EosField(list, 'tasks'), # [eos_core.workflow.WorkflowTask]
+		]
 	
 	def __str__(self):
 		return self.name

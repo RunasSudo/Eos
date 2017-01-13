@@ -1,0 +1,106 @@
+From 90e398c0927a59c13b4100f447433f8eedb92108 Mon Sep 17 00:00:00 2001
+From: RunasSudo <runassudo@yingtongli.me>
+Date: Fri, 13 Jan 2017 17:29:18 +1030
+Subject: [PATCH] Store metaclass in migrations
+
+---
+ django/db/migrations/autodetector.py      | 2 ++
+ django/db/migrations/operations/models.py | 6 +++++-
+ django/db/migrations/state.py             | 6 ++++--
+ 3 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/django/db/migrations/autodetector.py b/django/db/migrations/autodetector.py
+index ae88a90465..abc551d9a1 100644
+--- a/django/db/migrations/autodetector.py
++++ b/django/db/migrations/autodetector.py
+@@ -551,6 +551,7 @@ class MigrationAutodetector(object):
+                     options=model_state.options,
+                     bases=model_state.bases,
+                     managers=model_state.managers,
++                    metaclass=model_state.metaclass,
+                 ),
+                 dependencies=dependencies,
+                 beginning=True,
+@@ -641,6 +642,7 @@ class MigrationAutodetector(object):
+                     options=model_state.options,
+                     bases=model_state.bases,
+                     managers=model_state.managers,
++                    metaclass=model_state.metaclass,
+                 ),
+                 # Depend on the deletion of any possible non-proxy version of us
+                 dependencies=dependencies,
+diff --git a/django/db/migrations/operations/models.py b/django/db/migrations/operations/models.py
+index b7ba6f92f8..f116c6fa91 100644
+--- a/django/db/migrations/operations/models.py
++++ b/django/db/migrations/operations/models.py
+@@ -47,11 +47,12 @@ class CreateModel(ModelOperation):
+ 
+     serialization_expand_args = ['fields', 'options', 'managers']
+ 
+-    def __init__(self, name, fields, options=None, bases=None, managers=None):
++    def __init__(self, name, fields, options=None, bases=None, managers=None, metaclass=None):
+         self.fields = fields
+         self.options = options or {}
+         self.bases = bases or (models.Model,)
+         self.managers = managers or []
++        self.metaclass = metaclass or models.base.ModelBase
+         super(CreateModel, self).__init__(name)
+         # Sanity-check that there are no duplicated field names, bases, or
+         # manager names
+@@ -74,6 +75,8 @@ class CreateModel(ModelOperation):
+             kwargs['bases'] = self.bases
+         if self.managers and self.managers != [('objects', models.Manager())]:
+             kwargs['managers'] = self.managers
++        if self.metaclass and self.metaclass != models.base.ModelBase:
++            kwargs['metaclass'] = self.metaclass
+         return (
+             self.__class__.__name__,
+             [],
+@@ -88,6 +91,7 @@ class CreateModel(ModelOperation):
+             dict(self.options),
+             tuple(self.bases),
+             list(self.managers),
++            self.metaclass,
+         ))
+ 
+     def database_forwards(self, app_label, schema_editor, from_state, to_state):
+diff --git a/django/db/migrations/state.py b/django/db/migrations/state.py
+index 7cfdd6cd99..70ea45f0c6 100644
+--- a/django/db/migrations/state.py
++++ b/django/db/migrations/state.py
+@@ -325,13 +325,14 @@ class ModelState(object):
+     assign new ones, as these are not detached during a clone.
+     """
+ 
+-    def __init__(self, app_label, name, fields, options=None, bases=None, managers=None):
++    def __init__(self, app_label, name, fields, options=None, bases=None, managers=None, metaclass=None):
+         self.app_label = app_label
+         self.name = force_text(name)
+         self.fields = fields
+         self.options = options or {}
+         self.bases = bases or (models.Model, )
+         self.managers = managers or []
++        self.metaclass = metaclass or models.base.ModelBase
+         # Sanity-check that fields is NOT a dict. It must be ordered.
+         if isinstance(self.fields, dict):
+             raise ValueError("ModelState.fields cannot be a dict - it must be a list of 2-tuples.")
+@@ -481,6 +482,7 @@ class ModelState(object):
+             options,
+             bases,
+             managers,
++            type(model),
+         )
+ 
+     @classmethod
+@@ -553,7 +555,7 @@ class ModelState(object):
+                 RemovedInDjango20Warning)
+ 
+             # Then, make a Model object (apps.register_model is called in __new__)
+-            return type(
++            return self.metaclass(
+                 str(self.name),
+                 bases,
+                 body,
+-- 
+2.11.0
+

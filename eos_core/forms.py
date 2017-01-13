@@ -13,16 +13,4 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core.models
-import eos_core.objects
-import eos_core.workflow
-
-import django.http
-import django.shortcuts
-
-def index(request):
-	return django.shortcuts.render(request, 'eos_core/index.html', {'workflow_tasks': eos_core.workflow.WorkflowTask.get_all() })
-
-def election_json(request, election_id):
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
-	return django.http.HttpResponse(eos_core.objects.to_json(eos_core.objects.EosObject.serialise_and_wrap(election, None)), content_type='application/json')
+import django.forms

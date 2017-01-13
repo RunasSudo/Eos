@@ -20,7 +20,7 @@ import django.db
 
 # A type of question which permits voters to place check marks against the names of a specified number of candidates
 class ApprovalQuestion(eos_core.models.Question, eos_core.objects.EosDictObject):
-	class Meta:
+	class EosMeta:
 		eos_fields = [
 			eos_core.objects.EosField(list, 'choices', element_type=eos_core.objects.EosField(str)),
 			eos_core.objects.EosField(int, 'max_choices'),

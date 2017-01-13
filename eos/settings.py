@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'eos_test',
+    #'eos_test',
     'eos_core',
     'eos_basic',
 ]
