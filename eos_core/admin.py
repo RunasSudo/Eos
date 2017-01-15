@@ -106,18 +106,19 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	#	}
 	
 	def get_fieldsets(self, request, obj=None):
-		fields_general = ['name', 'workflow'] if (obj is None or not obj.frozen_at) else []
-		fields_schedule = ['voting_starts_at', 'voting_ends_at'] if (obj is None or not obj.frozen_at) else ['voting_extended_until'] if not obj.voting_ended_at else []
-		fields_questions = ['questions'] if (obj is None or not obj.frozen_at) else []
-		fields_voters = ['voter_eligibility'] if (obj is None or not obj.frozen_at) else []
-		fields_freeze = ['freeze'] if (obj is None or not obj.frozen_at) else []
-		
 		return (
-			([(None, {'fields': fields_general})] if fields_general else []) +
-			([('Schedule', {'fields': fields_schedule})] if fields_schedule else []) +
-			([('Questions', {'fields': fields_questions})] if fields_questions else []) +
-			([('Voters', {'fields': fields_voters})] if fields_voters else []) +
-			([('Freeze Election', {'fields': fields_freeze})] if fields_freeze else [])
+			(None, {'fields': ['id', 'name', 'workflow']}),
+			('Schedule', {'fields': ['voting_starts_at', 'voting_ends_at', 'voting_extended_until']}),
+			('Questions', {'fields': ['questions']}),
+			('Voters', {'fields': ['voter_eligibility']}),
+			('Freeze Election', {'fields': ['frozen_at', 'freeze'] if (obj is None or not obj.frozen_at) else ['frozen_at']}),
+		)
+	
+	def get_readonly_fields(self, request, obj=None):
+		return (
+			('id', 'frozen_at') +
+			(('name', 'workflow', 'voting_starts_at', 'voting_ends_at', 'questions', 'voter_eligibility') if (obj is not None and obj.frozen_at) else ()) +
+			(('voting_extended_until',) if (obj is not None and not obj.voting_ended_at) else ())
 		)
 
 django.contrib.admin.site.register(eos_core.models.Workflow, WorkflowAdmin)
