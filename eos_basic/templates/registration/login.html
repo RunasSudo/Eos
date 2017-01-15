@@ -1,0 +1,53 @@
+{% extends 'eos_basic/semantic_base.html' %}
+
+{% comment %}
+    Copyright © 2017  RunasSudo (Yingtong Li)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+{% endcomment %}
+
+{% block title %}Log in{% endblock %}
+
+{% block basecontent %}
+	<div class="ui middle aligned center aligned grid" style="height: 100%;">
+		<div class="column" style="max-width: 450px;">
+			<h2 class="ui teal header">Log in to Eos Voting</h2>
+			<form class="ui large form" method="post" action="{% url 'login' %}">
+				{% if form.errors %}
+					<div class="ui error visible message">
+						The username and/or password you entered were not valid. Please check your details and try again.
+					</div>
+				{% endif %}
+				
+				{% csrf_token %}
+				<div class="ui stacked segment">
+					<div class="field">
+						<div class="ui left icon input">
+							<i class="user icon"></i>
+							{{ form.username }}
+						</div>
+					</div>
+					<div class="field">
+						<div class="ui left icon input">
+							<i class="lock icon"></i>
+							{{ form.password }}
+						</div>
+					</div>
+					<input type="submit" value="Log in" class="ui fluid large teal submit button">
+					<input type="hidden" name="next" value="{{ next }}" />
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}

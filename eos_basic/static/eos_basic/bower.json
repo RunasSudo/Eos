@@ -1,0 +1,15 @@
+{
+  "name": "eos-basic",
+  "homepage": "https://github.com/RunasSudo/Eos",
+  "authors": [
+    "RunasSudo <runassudo@yingtongli.me>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "AGPL-3.0+",
+  "private": true,
+  "ignore": [],
+  "dependencies": {
+    "semantic": "semantic-ui#^2.2.7"
+  }
+}

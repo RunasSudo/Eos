@@ -2,3 +2,5 @@
 __pycache__
 __javascript__
 build
+
+bower_components

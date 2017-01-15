@@ -35,4 +35,5 @@ urlpatterns = [
     #url(r'^test/', include('eos_test.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^', include('eos_core.urls')),
+    url(r'^', include('eos_basic.urls')),
 ]

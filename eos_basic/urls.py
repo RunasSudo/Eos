@@ -13,21 +13,13 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core.models
+from django.conf.urls import url
+import django.contrib.auth.views
 
-import django.shortcuts
+from . import views
 
-# Authentication
-
-import django.contrib.auth.forms
-class LoginForm(django.contrib.auth.forms.AuthenticationForm):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.fields['username'].widget.attrs['placeholder'] = 'Username'
-		self.fields['password'].widget.attrs['placeholder'] = 'Password'
-
-# Eos views
-
-def election_view(request, election_id):
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
-	return django.shortcuts.render(request, 'eos_basic/election_view.html', {'election': election})
+urlpatterns = [
+	url(r'^(?P<election_id>[0-9a-f-]+)/view$$', views.election_view, name='election_view'),
+	url(r'^account/login', django.contrib.auth.views.login, {'authentication_form': views.LoginForm}, name='login'),
+	url(r'^account/logout', django.contrib.auth.views.logout, name='logout'),
+]

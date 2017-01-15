@@ -1,0 +1,44 @@
+{% extends 'eos_basic/semantic_base.html' %}
+
+{% comment %}
+    Copyright © 2017  RunasSudo (Yingtong Li)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+{% endcomment %}
+
+{% block basecontent %}
+	<div class="ui fixed inverted menu" style="margin-right: 1.5em;">
+		<div class="ui container">
+			<a href="#" class="header item">Eos Voting</a>
+			{% if user.is_authenticated %}
+				<div class="ui simple dropdown item right">
+					{{ user.username }} <i class="dropdown icon"></i>
+					<div class="menu">
+						{% if user.is_staff %}
+							<a href="{% url 'admin:index' %}" class="item">Eos Administration</a>
+							<div class="divider"></div>
+						{% endif %}
+						<a href="{% url 'logout' %}?next={{ request.get_full_path | urlencode }}" class="item">Log out</a>
+					</div>
+				</div>
+			{% else %}
+				<a href="{% url 'login' %}?next={{ request.get_full_path | urlencode }}" class="item right">Log in</a>
+			{% endif %}
+		</div>
+	</div>
+	<div class="ui main text container" style="margin-top: 7em;">
+		{% block content %}
+		{% endblock content %}
+	</div>
+{% endblock %}
