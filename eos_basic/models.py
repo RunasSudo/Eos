@@ -29,7 +29,7 @@ class ApprovalQuestion(eos_core.models.Question, eos_core.objects.EosDictObject)
 
 # All registered users are eligible to vote in this election
 class UnconditionalVoterEligibility(eos_core.models.VoterEligibility, eos_core.objects.EosObject):
-	def serialise(self):
+	def serialise(self, hashed=False):
 		return None
 	
 	@classmethod

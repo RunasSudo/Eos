@@ -20,6 +20,7 @@ import django.contrib.admin
 import django.core.exceptions
 import django.forms
 import django.utils.html
+import django.utils.timezone
 
 import datetime
 
@@ -94,12 +95,7 @@ class ElectionAdminForm(django.forms.ModelForm):
 		if self.cleaned_data['freeze']:
 			if self.instance.frozen_at:
 				raise django.core.exceptions.ValidationError('Attempted to freeze an already-frozen election')
-			self.instance.frozen_at = datetime.datetime.now()
-	
-	@property
-	def changed_data(self):
-		print('HAS CHANGED?')
-		return super().changed_data
+			self.instance.frozen_at = django.utils.timezone.now()
 
 class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	form = ElectionAdminForm

@@ -25,4 +25,4 @@ def index(request):
 
 def election_json(request, election_id):
 	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
-	return django.http.HttpResponse(eos_core.objects.to_json(eos_core.objects.EosObject.serialise_and_wrap(election, None)), content_type='application/json')
+	return django.http.HttpResponse(eos_core.objects.to_json(eos_core.objects.EosObject.serialise_and_wrap(election, None, request.GET.get('hashed', 'false') == 'true')), content_type='application/json')

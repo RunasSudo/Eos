@@ -16,6 +16,7 @@
 import eos_core
 
 import django.db.models
+import django.utils.timezone
 
 import datetime
 import json
@@ -69,42 +70,44 @@ class EosObject(metaclass=EosObjectType):
 		return eos_objects
 	
 	@staticmethod
-	def serialise_and_wrap(value, value_type):
+	def serialise_and_wrap(value, value_type, hashed=False):
 		if value is None:
 			return value
-		if value_type is not None:
+		if value_type is not None and value_type.py_type is not EosObject:
 			# The value type is guaranteed, so store directly
 			if isinstance(value_type.py_type, str):
 				# ForeignKey
-				return value.serialise()
+				return value.serialise(hashed)
 			if issubclass(value_type.py_type, EosObject):
-				return value.serialise()
+				return value.serialise(hashed)
 			elif issubclass(value_type.py_type, list):
-				return EosObject.serialise_list(value, value_type.element_type)
+				return EosObject.serialise_list(value, value_type.element_type, hashed)
 			elif issubclass(value_type.py_type, uuid.UUID):
 				return str(value)
+			elif issubclass(value_type.py_type, datetime.datetime):
+				return value.astimezone(django.utils.timezone.utc).isoformat()
 			else:
 				return value
 		else:
 			# The value type is unknown, so store wrapped
 			if isinstance(value, EosObject):
-				return { 'type': get_full_name(value), 'value': value.serialise() }
+				return { 'type': get_full_name(value), 'value': value.serialise(hashed) }
 			elif isinstance(value, list):
-				return { 'type': get_full_name(value), 'value': EosObject.serialise_list(value, None) }
+				return { 'type': get_full_name(value), 'value': EosObject.serialise_list(value, None, hashed) }
 			elif isinstance(value, uuid.UUID):
 				return { 'type': get_full_name(value), 'value': str(value) }
 			else:
 				return { 'type': get_full_name(value), 'value': value }
 	
 	@staticmethod
-	def serialise_list(value, element_type):
+	def serialise_list(value, element_type, hashed=False):
 		if value is None:
 			return value
-		return [EosObject.serialise_and_wrap(element, element_type) for element in value]
+		return [EosObject.serialise_and_wrap(element, element_type, hashed) for element in value]
 	
 	@staticmethod
 	def deserialise_and_unwrap(value, value_type):
-		if value_type is not None:
+		if value_type is not None and value_type.py_type is not EosObject:
 			# The value type is guaranteed, so should be stored directly
 			if issubclass(value_type.py_type, EosObject):
 				return value_type.py_type.deserialise(value)
@@ -129,9 +132,10 @@ class EosObject(metaclass=EosObjectType):
 
 # Stores information about a field of an EosObject for easy conversion to/from a Model
 class EosField():
-	def __init__(self, py_type, name=None, *, max_length=None, element_type=None, primary_key=False, editable=True, null=False, on_delete=None):
+	def __init__(self, py_type, name=None, *, hashed=True, max_length=None, element_type=None, primary_key=False, editable=True, null=False, on_delete=None):
 		self.name = name
 		self.py_type = py_type
+		self.hashed = hashed
 		
 		self.max_length = max_length
 		self.element_type = element_type
@@ -146,7 +150,9 @@ class EosField():
 		if isinstance(self.py_type, type):
 			if issubclass(self.py_type, EosObject):
 				import eos_core.fields
-				if self.py_type is EosObject:
+				if issubclass(self.py_type, django.db.models.Model):
+					return django.db.models.ForeignKey(self.py_type._meta.app_label + '.' + self.py_type._meta.object_name)
+				elif self.py_type is EosObject:
 					return eos_core.fields.EosObjectField(**general_keys)
 				else:
 					return eos_core.fields.EosObjectField(contained_type=self.py_type, **general_keys)
@@ -207,10 +213,11 @@ class EosDictObject(EosObject, metaclass=EosDictObjectType):
 	class EosMeta:
 		abstract = True
 	
-	def serialise(self):
+	def serialise(self, hashed=False):
 		result = {}
 		for field in self._eosmeta.eos_fields:
-			result[field.name] = EosObject.serialise_and_wrap(getattr(self, field.name), field)
+			if not hashed or field.hashed:
+				result[field.name] = EosObject.serialise_and_wrap(getattr(self, field.name), field, hashed)
 		return result
 	
 	@classmethod

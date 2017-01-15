@@ -55,7 +55,7 @@ class CoreWorkflowTask(WorkflowTask):
 	def workflow_depends(self):
 		return ['eos_basic.workflow.TaskSetElectionDetails']
 	
-	def serialise(self):
+	def serialise(self, hashed=False):
 		return self.name
 	
 	@classmethod

@@ -16,7 +16,7 @@
 import eos_core.workflow
 
 class TaskSetElectionDetails(eos_core.workflow.WorkflowTask):
-	def serialise(self):
+	def serialise(self, hashed=False):
 		return None
 	
 	@classmethod
@@ -26,7 +26,7 @@ class TaskSetElectionDetails(eos_core.workflow.WorkflowTask):
 class TaskCastVotes(eos_core.workflow.WorkflowTask):
 	workflow_depends = ['eos_basic.workflow.TaskSetElectionDetails']
 	
-	def serialise(self):
+	def serialise(self, hashed=False):
 		return None
 	
 	@classmethod
