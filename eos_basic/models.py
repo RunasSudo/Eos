@@ -22,6 +22,8 @@ import django.db
 class ApprovalQuestion(eos_core.models.Question, eos_core.objects.EosDictObject):
 	class EosMeta:
 		eos_fields = [
+			eos_core.objects.EosField(str, 'title'),
+			eos_core.objects.EosField(str, 'description'),
 			eos_core.objects.EosField(list, 'choices', element_type=eos_core.objects.EosField(str)),
 			eos_core.objects.EosField(int, 'max_choices'),
 			eos_core.objects.EosField(int, 'min_choices')

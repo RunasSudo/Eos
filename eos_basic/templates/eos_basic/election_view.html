@@ -1,4 +1,4 @@
-{% extends 'eos_basic/base.html' %}
+{% extends 'eos_basic/election_base.html' %}
 
 {% comment %}
     Copyright © 2017  RunasSudo (Yingtong Li)
@@ -17,82 +17,66 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 {% endcomment %}
 
-{% block title %}{{ election.name }}{% endblock %}
-
-{% block content %}
-	<h1 class="ui header">{{ election.name }}</h1>
-	
-	<small><b>Election fingerprint:</b> {{ election.hash }}</small>
-	
-	<div class="ui secondary pointing menu">
-		<a href="#" class="item active">Summary</a>
-		<a href="#" class="item">Questions</a>
-		<a href="#" class="item">Voters and ballots</a>
-		{% if user.is_staff %}
-			<a href="{% url 'admin:eos_core_election_change' election.id %}" class="item right"><i class="configure icon"></i> Administrate this election</a>
+{% block electioncontent %}
+	{% if election.frozen_at %}
+		{% if election.voting_has_closed %}
+			<p><button class="ui huge button">Voting in this election has closed</button></p>
+		{% elif election.voting_has_opened %}
+			<p><button class="ui huge primary button">Click here to vote in this election</button></p>
+		{% else %}
+			<p><button class="ui huge button">Voting in this election has not yet opened</button></p>
 		{% endif %}
-	</div>
-	<div class="ui container">
-		{% if election.frozen_at %}
-			{% if election.voting_has_closed %}
-				<p><button class="ui huge button">Voting in this election has closed</button></p>
-			{% elif election.voting_has_opened %}
-				<p><button class="ui huge primary button">Click here to vote in this election</button></p>
-			{% else %}
-				<p><button class="ui huge button">Voting in this election has not yet opened</button></p>
+	{% else %}
+		<p><button class="ui huge button">This election is not yet ready for voting</button></p>
+	{% endif %}
+	
+	{% if not election.frozen_at %}
+		<p>
+			The administrator of this election has not yet finished setting the election parameters. The details of the election may change at any time.
+		</p>
+	{% endif %}
+	
+	<p>
+		Voting in this election
+		{% if election.voting_has_opened %}
+			opened
+			{% if election.voting_opened_at %}
+				{{ election.voting_opened_at }}, at the administrator's discretion,
+			{% elif election.voting_opens_at %}
+				{{ election.voting_opens_at }}, according to schedule,
 			{% endif %}
 		{% else %}
-			<p><button class="ui huge button">This election is not yet ready for voting</button></p>
+			opens
+			{% if election.voting_opens_at %}
+				{{ election.voting_opens_at }},
+			{% else %}
+				at the administrator's discretion,
+			{% endif %}
 		{% endif %}
-		
-		{% if not election.frozen_at %}
-			<p>
-				The administrator of this election has not yet finished setting the election parameters. The details of the election may change at any time.
-			</p>
-		{% endif %}
-		
-		<p>
-			Voting in this election
-			{% if election.voting_has_opened %}
-				opened
-				{% if election.voting_opened_at %}
-					{{ election.voting_opened_at }}, at the administrator's discretion,
-				{% elif election.voting_opens_at %}
-					{{ election.voting_opens_at }}, according to schedule,
+		and
+		{% if election.voting_extended_until %}
+			was scheduled to close {{ election.voting_closes_at }}, but
+			{% if election.voting_has_closed %}
+				was extended until {{ election.voting_extended_until }},
+				{% if election.voting_closed_at %}
+					and closed {{ election.voting_closed_at }}, at the administrator's discretion.
+				{% else %}
+					and closed at that time.
 				{% endif %}
 			{% else %}
-				opens
-				{% if election.voting_opens_at %}
-					{{ election.voting_opens_at }},
-				{% else %}
-					at the administrator's discretion,
-				{% endif %}
+				has been extended until {{ election.voting_extended_until }}, and now closes at that time, or at the administrator's discretion.
 			{% endif %}
-			and
-			{% if election.voting_extended_until %}
-				was scheduled to close {{ election.voting_closes_at }}, but
-				{% if election.voting_has_closed %}
-					was extended until {{ election.voting_extended_until }},
-					{% if election.voting_closed_at %}
-						and closed {{ election.voting_closed_at }}, at the administrator's discretion.
-					{% else %}
-						and closed at that time.
-					{% endif %}
+		{% else %}
+			{% if election.voting_has_closed %}
+				closed
+				{% if election.voting_closed_at %}
+					{{ election.voting_closed_at }}, at the administrator's discretion.
 				{% else %}
-					has been extended until {{ election.voting_extended_until }}, and now closes at that time, or at the administrator's discretion.
+					{{ election.voting_closes_at }}, according to schedule.
 				{% endif %}
 			{% else %}
-				{% if election.voting_has_closed %}
-					closed
-					{% if election.voting_closed_at %}
-						{{ election.voting_closed_at }}, at the administrator's discretion.
-					{% else %}
-						{{ election.voting_closes_at }}, according to schedule.
-					{% endif %}
-				{% else %}
-					closes {{ election.voting_closes_at }}, or at the administrator's discretion.
-				{% endif %}
+				closes {{ election.voting_closes_at }}, or at the administrator's discretion.
 			{% endif %}
-		</p>
-	</div>
+		{% endif %}
+	</p>
 {% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'eos_basic/base.html' %}
+
+{% comment %}
+    Copyright © 2017  RunasSudo (Yingtong Li)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+{% endcomment %}
+
+{% block title %}{{ election.name }}{% endblock %}
+
+{% block content %}
+	<h1 class="ui header">{{ election.name }}</h1>
+	
+	<small><b>Election fingerprint:</b> {{ election.hash }}</small>
+	
+	<div class="ui secondary pointing menu" id="election-tab-menu">
+		<a href="{% url 'election_view' election.id %}" class="item {% if request.resolver_match.url_name == 'election_view' %}active{% endif %}">Summary</a>
+		<a href="{% url 'election_questions' election.id %}" class="item {% if request.resolver_match.url_name == 'election_questions' %}active{% endif %}">Questions</a>
+		<a href="#" class="item {% if request.resolver_match.url_name == 'election_ballots' %}active{% endif %}">Voters and ballots</a>
+		{% if user.is_staff %}
+			<a href="{% url 'admin:eos_core_election_change' election.id %}" class="item right"><i class="configure icon"></i> Administrate this election</a>
+		{% endif %}
+	</div>
+	<div class="ui container" id="election-tab-content">
+		{% block electioncontent %}
+		{% endblock %}
+	</div>
+{% endblock %}
+
+{% block basecontent %}
+	{{ block.super }}
+	
+	<script>
+		$("#election-tab-menu .item").click(function() {
+			var linkEl = $(this);
+			history.pushState({}, "", linkEl.attr("href"));
+			
+			$("#election-tab-menu .item").removeClass("active");
+			linkEl.addClass("active");
+			
+			$("#election-tab-content").html('<div class="ui active text loader">Loading. Please wait.</div>');
+			
+			$("#election-tab-content").load(linkEl.attr("href") + " #election-tab-content", function() {
+				linkEl.find(".loader").removeClass("active");
+			});
+			return false;
+		});
+	</script>
+{% endblock %}
