@@ -18,7 +18,9 @@ import eos_core
 import django.db.models
 import django.utils.timezone
 
+import base64
 import datetime
+import hashlib
 import json
 import uuid
 
@@ -54,6 +56,9 @@ class EosObjectType(type):
 class EosObject(metaclass=EosObjectType):
 	class EosMeta:
 		abstract = True
+	
+	def __str__(self):
+		return to_json(EosObject.serialise_and_wrap(self, None))
 	
 	def __eq__(self, other):
 		return (get_full_name(self) == get_full_name(other)) and (self.serialise() == other.serialise())
@@ -129,6 +134,14 @@ class EosObject(metaclass=EosObjectType):
 		if value is None:
 			return value
 		return [EosObject.deserialise_and_unwrap(element, element_type) for element in value]
+	
+	@property
+	def hash(self):
+		return eos_core.objects.EosObject.object_to_hash(self)
+	
+	@staticmethod
+	def object_to_hash(value):
+		return base64.b64encode(hashlib.sha256(to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
 
 # Stores information about a field of an EosObject for easy conversion to/from a Model
 class EosField():

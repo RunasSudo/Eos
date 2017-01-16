@@ -24,16 +24,10 @@ import django.utils.timezone
 
 import datetime
 
-class EosObjectWidget(django.contrib.admin.widgets.AdminTextareaWidget):
-	def render(self, name, value, attrs=None):
-		if not isinstance(value, str):
-			value = eos_core.objects.to_json(eos_core.objects.EosObject.serialise_and_wrap(value, None))
-		return super().render(name, value, attrs)
-
 class EosObjectFormField(django.forms.CharField):
 	def __init__(self, *args, **kwargs):
 		if 'widget' not in kwargs:
-			kwargs['widget'] = EosObjectWidget
+			kwargs['widget'] = django.contrib.admin.widgets.AdminTextareaWidget
 		super().__init__(*args, **kwargs)
 	
 	def to_python(self, value):
@@ -75,18 +69,32 @@ class WorkflowAdminForm(django.forms.ModelForm):
 class WorkflowAdmin(django.contrib.admin.ModelAdmin):
 	form = WorkflowAdminForm
 
-class LinkButtonWidget(django.forms.HiddenInput):
+class SubmitAndActionButtonWidget(django.forms.HiddenInput):
 	is_hidden = False
 	
 	def render(self, name, value, attrs=None):
-		return super().render(name, value, attrs) + '<input value="Save and freeze" type="button" onclick="document.getElementsByName(\'' + name + '\')[0].value = \'freeze\'; document.getElementsByName(\'_continue\')[0].click();">'
+		return super().render(name, value, attrs) + '<input value="' + self.button_label + '" type="button" onclick="document.getElementsByName(\'' + name + '\')[0].value = \'' + name + '\'; document.getElementsByName(\'_continue\')[0].click();">'
+
+class SubmitAndActionButtonField(django.forms.CharField):
+	def __init__(self, *args, **kwargs):
+		if 'widget' not in kwargs:
+			kwargs['widget'] = SubmitAndActionButtonWidget
+		
+		button_label = kwargs.pop('button_label')
+		
+		super().__init__(*args, **kwargs)
+		
+		self.widget.button_label = button_label
 
 class ElectionAdminForm(django.forms.ModelForm):
-	voting_starts_at = django.forms.SplitDateTimeField(required=False, widget=django.contrib.admin.widgets.AdminSplitDateTime)
-	voting_ends_at = django.forms.SplitDateTimeField(required=False, widget=django.contrib.admin.widgets.AdminSplitDateTime)
+	voting_opens_at = django.forms.SplitDateTimeField(required=False, widget=django.contrib.admin.widgets.AdminSplitDateTime)
+	voting_closes_at = django.forms.SplitDateTimeField(required=False, widget=django.contrib.admin.widgets.AdminSplitDateTime)
 	questions = EosListFormField()
 	voter_eligibility = EosObjectFormField()
-	freeze = django.forms.BooleanField(required=False, label='', widget=LinkButtonWidget)
+	
+	freeze = SubmitAndActionButtonField(required=False, label='', button_label='Save and freeze')
+	open_voting = SubmitAndActionButtonField(required=False, label='', button_label='Save and open voting')
+	close_voting = SubmitAndActionButtonField(required=False, label='', button_label='Save and close voting')
 	
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -96,6 +104,18 @@ class ElectionAdminForm(django.forms.ModelForm):
 			if self.instance.frozen_at:
 				raise django.core.exceptions.ValidationError('Attempted to freeze an already-frozen election')
 			self.instance.frozen_at = django.utils.timezone.now()
+	
+	def clean_open_voting(self):
+		if self.cleaned_data['open_voting']:
+			if self.instance.voting_has_opened:
+				raise django.core.exceptions.ValidationError('Attempted to open an already-open election')
+			self.instance.voting_opened_at = django.utils.timezone.now()
+	
+	def clean_close_voting(self):
+		if self.cleaned_data['close_voting']:
+			if self.instance.voting_has_closed:
+				raise django.core.exceptions.ValidationError('Attempted to close an already-closed election')
+			self.instance.voting_closed_at = django.utils.timezone.now()
 
 class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	form = ElectionAdminForm
@@ -108,7 +128,11 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	def get_fieldsets(self, request, obj=None):
 		return (
 			(None, {'fields': ['id', 'name', 'workflow']}),
-			('Schedule', {'fields': ['voting_starts_at', 'voting_ends_at', 'voting_extended_until']}),
+			('Schedule', {'fields':
+				['voting_opens_at', 'voting_closes_at', 'voting_extended_until'] +
+				(['voting_opened_at', 'open_voting'] if (obj is not None and obj.frozen_at and not obj.voting_has_opened) else ['voting_opened_at']) +
+				(['voting_closed_at', 'close_voting'] if (obj is not None and obj.voting_has_opened and not obj.voting_has_closed) else ['voting_closed_at'])
+			}),
 			('Questions', {'fields': ['questions']}),
 			('Voters', {'fields': ['voter_eligibility']}),
 			('Freeze Election', {'fields': ['frozen_at', 'freeze'] if (obj is None or not obj.frozen_at) else ['frozen_at']}),
@@ -116,9 +140,9 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	
 	def get_readonly_fields(self, request, obj=None):
 		return (
-			('id', 'frozen_at') +
-			(('name', 'workflow', 'voting_starts_at', 'voting_ends_at', 'questions', 'voter_eligibility') if (obj is not None and obj.frozen_at) else ()) +
-			(('voting_extended_until',) if (obj is not None and not obj.voting_ended_at) else ())
+			('id', 'frozen_at', 'voting_opened_at', 'voting_closed_at') +
+			(('name', 'workflow', 'voting_opens_at', 'voting_closes_at', 'questions', 'voter_eligibility') if (obj is not None and obj.frozen_at) else ()) +
+			(('voting_extended_until',) if (obj is None or not obj.voting_closes_at or obj.voting_closed_at) else ())
 		)
 
 django.contrib.admin.site.register(eos_core.models.Workflow, WorkflowAdmin)

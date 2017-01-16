@@ -19,6 +19,7 @@ import eos_basic.workflow
 
 import django.core.exceptions
 import django.db.models
+import django.utils.timezone
 
 import datetime
 import uuid
@@ -87,16 +88,40 @@ class Election(EosDictObjectModel):
 			eos_core.objects.EosField(list, 'questions'), # [eos_core.models.Question]
 			eos_core.objects.EosField(eos_core.objects.EosObject, 'voter_eligibility'), # eos_core.models.VoterEligibility
 			
-			eos_core.objects.EosField(datetime.datetime, 'voting_starts_at', null=True),
-			eos_core.objects.EosField(datetime.datetime, 'voting_ends_at', null=True),
+			eos_core.objects.EosField(datetime.datetime, 'voting_opens_at', null=True),
+			eos_core.objects.EosField(datetime.datetime, 'voting_closes_at', null=True),
 			
 			eos_core.objects.EosField(datetime.datetime, 'frozen_at', null=True),
 			
 			eos_core.objects.EosField(datetime.datetime, 'voting_extended_until', null=True, hashed=False),
-			eos_core.objects.EosField(datetime.datetime, 'voting_started_at', null=True, hashed=False),
-			eos_core.objects.EosField(datetime.datetime, 'voting_ended_at', null=True, hashed=False),
+			eos_core.objects.EosField(datetime.datetime, 'voting_opened_at', null=True, hashed=False),
+			eos_core.objects.EosField(datetime.datetime, 'voting_closed_at', null=True, hashed=False),
 			eos_core.objects.EosField(datetime.datetime, 'result_released_at', null=True, hashed=False),
 		]
 	
 	def __str__(self):
 		return self.name
+	
+	@property
+	def voting_has_opened(self):
+		if not self.frozen_at:
+			return False
+		
+		# Voting opened when manually opened, or when originally scheduled to open
+		voting_opened_at = self.voting_opened_at if self.voting_opened_at else self.voting_opens_at
+		
+		if voting_opened_at:
+			return django.utils.timezone.now() >= voting_opened_at
+		return False
+	
+	@property
+	def voting_has_closed(self):
+		if not self.frozen_at:
+			return False
+		
+		# Voting closed when manually closed, or when extension of voting expired, or when originally scheduled to close
+		voting_closed_at = self.voting_closed_at if self.voting_closed_at else self.voting_extended_until if self.voting_extended_until else self.voting_closes_at
+		
+		if voting_closed_at:
+			return django.utils.timezone.now() >= voting_closed_at
+		return False
