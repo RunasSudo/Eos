@@ -1,3 +1,4 @@
+#!/bin/bash
 #    Copyright © 2017  RunasSudo (Yingtong Li)
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -13,8 +14,13 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-	__pragma__
-	is_python = False
-except:
-	is_python = True
+transcrypt -bnakv eos_js.py
+cp __javascript__/eos_js.js eos_basic/static/eos_basic/js/build/eos_js.js
+
+# Patch the files
+# Javascript identifiers cannot contain dots
+#perl -pi -e 's/eos_core.objects \(\)/eos_core_objects ()/g' eos_basic/static/eos_basic/js/build/eos_core.objects.js
+# Transcrypt attempts to initialise circularly-imported modules before they are ready
+#perl -pi -e 's/\(!module.__inited__\)/(!module.__inited__ \&\& module.__all__)/g' eos_basic/static/eos_basic/js/build/eos_core.objects.js
+# __pragma__ sometimes stops working???
+perl -0777 -pi -e "s/__pragma__ \('.*?'\)//gs" eos_basic/static/eos_basic/js/build/eos_js.js

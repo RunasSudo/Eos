@@ -24,7 +24,7 @@
 {% block content %}
 	<h1>{{ election.name }}</h1>
 	
-	<small><b>Election fingerprint:</b> {{ election.hash }}</small>
+	<p><small><b>Election fingerprint:</b> {{ election.hash }}</small></p>
 	
 	<div class="ui container" id="booth-content">
 		<div class="ui active text loader">Loading voting booth. Please wait.</div>
@@ -38,6 +38,7 @@
 
 {% block basecontent %}
 	{{ block.super }}
+	<script src="/static/eos_basic/js/build/eos_js.js"></script>
 	<script>
 		var templates = {
 			"landing": null

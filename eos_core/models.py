@@ -13,33 +13,40 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core.fields
+import eos_core
 import eos_core.objects
 import eos_basic.workflow
 
-import django.core.exceptions
-import django.db.models
-import django.utils.timezone
-
-import datetime
-import uuid
-
-class EosDictObjectModelType(eos_core.objects.EosDictObjectType, django.db.models.base.ModelBase):
-	def __new__(meta, name, bases, attrs):
-		#import pdb; pdb.set_trace()
-		meta, name, bases, attrs = eos_core.objects.EosDictObjectType._before_new(meta, name, bases, attrs)
-		cls = django.db.models.base.ModelBase.__new__(meta, name, bases, attrs)
-		cls = eos_core.objects.EosObjectType._after_new(cls, meta, name, bases, attrs)
-		return cls
+if eos_core.is_python:
+	__pragma__ = lambda x: None
+	__pragma__('skip')
 	
-	def __call__(cls, *args, **kwargs):
-		instance = django.db.models.base.ModelBase.__call__(cls, *args, **kwargs)
-		instance = eos_core.objects.EosDictObjectType._after_call(instance, cls, *args, **kwargs)
-		return instance
-
-class EosDictObjectModel(django.db.models.Model, eos_core.objects.EosDictObject, metaclass=EosDictObjectModelType):
-	class Meta:
-		abstract = True
+	import django.core.exceptions
+	import django.db.models
+	import django.utils.timezone
+	
+	import datetime
+	import uuid
+	
+	class EosDictObjectModelType(eos_core.objects.EosDictObjectType, django.db.models.base.ModelBase):
+		def __new__(meta, name, bases, attrs):
+			#import pdb; pdb.set_trace()
+			meta, name, bases, attrs = eos_core.objects.EosDictObjectType._before_new(meta, name, bases, attrs)
+			cls = django.db.models.base.ModelBase.__new__(meta, name, bases, attrs)
+			cls = eos_core.objects.EosObjectType._after_new(cls, meta, name, bases, attrs)
+			return cls
+	
+	class EosDictObjectModel(django.db.models.Model, eos_core.objects.EosDictObject, metaclass=EosDictObjectModelType):
+		class Meta:
+			abstract = True
+		
+		def __init__(self, *args, **kwargs):
+			django.db.models.Model.__init__(self, *args, **kwargs)
+	
+	__pragma__('noskip')
+else:
+	EosDictObjectModelType = eos_core.objects.EosDictObjectType
+	EosDictObjectModel = eos_core.objects.EosDictObject
 
 
 class Question(eos_core.objects.EosObject):
@@ -52,8 +59,9 @@ class VoterEligibility(eos_core.objects.EosObject):
 
 class Workflow(EosDictObjectModel):
 	class EosMeta:
+		eos_name = 'eos_core.models.Workflow'
 		eos_fields = [
-			eos_core.objects.EosField(uuid.UUID, 'id', primary_key=True, editable=False),
+			eos_core.objects.EosField(eos_core.objects.uuid, 'id', primary_key=True, editable=False),
 			eos_core.objects.EosField(str, 'name', max_length=100),
 			eos_core.objects.EosField(list, 'tasks'), # [eos_core.workflow.WorkflowTask]
 		]
@@ -80,23 +88,24 @@ class Workflow(EosDictObjectModel):
 
 class Election(EosDictObjectModel):
 	class EosMeta:
+		eos_name = 'eos_core.models.Election'
 		eos_fields = [
-			eos_core.objects.EosField(uuid.UUID, 'id', primary_key=True, editable=False),
+			eos_core.objects.EosField(eos_core.objects.uuid, 'id', primary_key=True, editable=False),
 			eos_core.objects.EosField(str, 'name', max_length=100),
-			eos_core.objects.EosField(Workflow, 'workflow', on_delete=django.db.models.PROTECT),
+			eos_core.objects.EosField(Workflow, 'workflow', on_delete='PROTECT'),
 			
 			eos_core.objects.EosField(list, 'questions'), # [eos_core.models.Question]
 			eos_core.objects.EosField(eos_core.objects.EosObject, 'voter_eligibility'), # eos_core.models.VoterEligibility
 			
-			eos_core.objects.EosField(datetime.datetime, 'voting_opens_at', null=True),
-			eos_core.objects.EosField(datetime.datetime, 'voting_closes_at', null=True),
+			eos_core.objects.EosField(eos_core.objects.datetime, 'voting_opens_at', nullable=True),
+			eos_core.objects.EosField(eos_core.objects.datetime, 'voting_closes_at', nullable=True),
 			
-			eos_core.objects.EosField(datetime.datetime, 'frozen_at', null=True),
+			eos_core.objects.EosField(eos_core.objects.datetime, 'frozen_at', nullable=True),
 			
-			eos_core.objects.EosField(datetime.datetime, 'voting_extended_until', null=True, hashed=False),
-			eos_core.objects.EosField(datetime.datetime, 'voting_opened_at', null=True, hashed=False),
-			eos_core.objects.EosField(datetime.datetime, 'voting_closed_at', null=True, hashed=False),
-			eos_core.objects.EosField(datetime.datetime, 'result_released_at', null=True, hashed=False),
+			eos_core.objects.EosField(eos_core.objects.datetime, 'voting_extended_until', nullable=True, hashed=False),
+			eos_core.objects.EosField(eos_core.objects.datetime, 'voting_opened_at', nullable=True, hashed=False),
+			eos_core.objects.EosField(eos_core.objects.datetime, 'voting_closed_at', nullable=True, hashed=False),
+			eos_core.objects.EosField(eos_core.objects.datetime, 'result_released_at', nullable=True, hashed=False),
 		]
 	
 	def __str__(self):

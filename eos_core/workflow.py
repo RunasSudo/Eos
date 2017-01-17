@@ -19,7 +19,8 @@ workflow_tasks = {}
 
 class WorkflowTaskType(eos_core.objects.EosObjectType):
 	def __new__(meta, name, bases, attrs):
-		cls = super().__new__(meta, name, bases, attrs)
+		#cls = super().__new__(meta, name, bases, attrs)
+		cls = eos_core.objects.EosObjectType.__new__(meta, name, bases, attrs)
 		
 		if not getattr(cls._eosmeta, 'abstract', False):
 			workflow_tasks[eos_core.objects.get_full_name(cls)] = cls
@@ -38,16 +39,19 @@ class WorkflowTask(eos_core.objects.EosObject, metaclass=WorkflowTaskType):
 	
 	@staticmethod
 	def get_all():
-		import eos.settings
-		import importlib
-		for app in eos.settings.INSTALLED_APPS:
-			try:
-				importlib.import_module(app + '.workflow')
-			except ImportError:
-				pass
+		#import eos.settings
+		#import importlib
+		#for app in eos.settings.INSTALLED_APPS:
+		#	try:
+		#		importlib.import_module(app + '.workflow')
+		#	except ImportError:
+		#		pass
 		return workflow_tasks
 
 class CoreWorkflowTask(WorkflowTask):
+	class EosMeta:
+		eos_name = 'eos_core.workflow.CoreWorkflowTask'
+	
 	def __init__(self, name=None):
 		self.name = name
 	

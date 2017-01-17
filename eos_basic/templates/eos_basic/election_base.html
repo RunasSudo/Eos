@@ -22,7 +22,7 @@
 {% block content %}
 	<h1 class="ui header">{{ election.name }}</h1>
 	
-	<small><b>Election fingerprint:</b> {{ election.hash }}</small>
+	<p><small><b>Election fingerprint:</b> {{ election.hash }}</small></p>
 	
 	<div class="ui secondary pointing menu" id="election-tab-menu">
 		<a href="{% url 'election_view' election.id %}" class="item {% if request.resolver_match.url_name == 'election_view' %}active{% endif %}">Summary</a>

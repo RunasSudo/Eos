@@ -13,8 +13,5 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-	__pragma__
-	is_python = False
-except:
-	is_python = True
+import eos_core.objects
+import eos_core.models

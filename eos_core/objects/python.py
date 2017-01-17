@@ -13,24 +13,30 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core
+import eos_core.objects
 
 import django.db.models
 import django.utils.timezone
 
 import base64
-import datetime
+import datetime as datetime_module
 import hashlib
 import json
-import uuid
+import uuid as uuid_module
+
+datetime = datetime_module.datetime
+uuid = uuid_module.UUID
 
 def get_full_name(obj):
-	if isinstance(obj, type):
-		return obj.__module__ + '.' + obj.__qualname__
-	else:
-		return type(obj).__module__ + '.' + type(obj).__qualname__
-
-eos_objects = {}
+	if not isinstance(obj, type): # an instance instead of a class
+		obj = type(obj)
+	
+	if obj.__module__ == 'builtins':
+		return obj.__module__ + '.' + obj.__name__
+	if hasattr(obj._eosmeta, 'eos_name'):
+		return obj._eosmeta.eos_name
+	
+	return obj.__module__ + '.' + obj.__name__
 
 class EosObjectType(type):
 	def __new__(meta, name, bases, attrs):
@@ -48,7 +54,7 @@ class EosObjectType(type):
 		cls._eosmeta = cls.EosMeta
 		
 		if not getattr(cls._eosmeta, 'abstract', False):
-			eos_objects[get_full_name(cls)] = cls
+			eos_core.objects.eos_objects[get_full_name(cls)] = cls
 		
 		return cls
 
@@ -58,7 +64,7 @@ class EosObject(metaclass=EosObjectType):
 		abstract = True
 	
 	def __str__(self):
-		return to_json(EosObject.serialise_and_wrap(self, None))
+		return eos_core.objects.to_json(EosObject.serialise_and_wrap(self, None))
 	
 	def __eq__(self, other):
 		return (get_full_name(self) == get_full_name(other)) and (self.serialise() == other.serialise())
@@ -72,7 +78,7 @@ class EosObject(metaclass=EosObjectType):
 				importlib.import_module(app + '.objects')
 			except ImportError:
 				pass
-		return eos_objects
+		return eos_core.objects.eos_objects
 	
 	@staticmethod
 	def serialise_and_wrap(value, value_type, hashed=False):
@@ -87,9 +93,9 @@ class EosObject(metaclass=EosObjectType):
 				return value.serialise(hashed)
 			elif issubclass(value_type.py_type, list):
 				return EosObject.serialise_list(value, value_type.element_type, hashed)
-			elif issubclass(value_type.py_type, uuid.UUID):
+			elif issubclass(value_type.py_type, uuid):
 				return str(value)
-			elif issubclass(value_type.py_type, datetime.datetime):
+			elif issubclass(value_type.py_type, datetime):
 				return value.astimezone(django.utils.timezone.utc).isoformat()
 			else:
 				return value
@@ -99,7 +105,7 @@ class EosObject(metaclass=EosObjectType):
 				return { 'type': get_full_name(value), 'value': value.serialise(hashed) }
 			elif isinstance(value, list):
 				return { 'type': get_full_name(value), 'value': EosObject.serialise_list(value, None, hashed) }
-			elif isinstance(value, uuid.UUID):
+			elif isinstance(value, uuid):
 				return { 'type': get_full_name(value), 'value': str(value) }
 			else:
 				return { 'type': get_full_name(value), 'value': value }
@@ -122,8 +128,8 @@ class EosObject(metaclass=EosObjectType):
 				return value
 		else:
 			# The value type is unknown, so should be stored wrapped
-			if value['type'] in eos_objects:
-				return eos_objects[value['type']].deserialise(value['value'])
+			if value['type'] in eos_core.objects.eos_objects:
+				return eos_core.objects.eos_objects[value['type']].deserialise(value['value'])
 			elif value['type'] == get_full_name(list):
 				return EosObject.deserialise_list(value['value'], None)
 			else:
@@ -141,11 +147,11 @@ class EosObject(metaclass=EosObjectType):
 	
 	@staticmethod
 	def object_to_hash(value):
-		return base64.b64encode(hashlib.sha256(to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
+		return base64.b64encode(hashlib.sha256(eos_core.objects.to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
 
 # Stores information about a field of an EosObject for easy conversion to/from a Model
 class EosField():
-	def __init__(self, py_type, name=None, *, hashed=True, max_length=None, element_type=None, primary_key=False, editable=True, null=False, on_delete=None):
+	def __init__(self, py_type, name=None, *, hashed=True, max_length=None, element_type=None, primary_key=False, editable=True, nullable=False, on_delete=None):
 		self.name = name
 		self.py_type = py_type
 		self.hashed = hashed
@@ -154,7 +160,7 @@ class EosField():
 		self.element_type = element_type
 		self.primary_key = primary_key
 		self.editable = editable
-		self.null = null
+		self.null = nullable # 'null' is a JS keyword
 		self.on_delete = on_delete
 	
 	def create_django_field(self):
@@ -180,10 +186,10 @@ class EosField():
 				import eos_core.fields
 				return eos_core.fields.EosListField(element_type=self.element_type, **general_keys)
 		if isinstance(self.py_type, str):
-			return django.db.models.ForeignKey(self.py_type, on_delete=self.on_delete, **general_keys)
-		if self.py_type is uuid.UUID:
-			return django.db.models.UUIDField(default=uuid.uuid4, **general_keys)
-		if self.py_type is datetime.datetime:
+			return django.db.models.ForeignKey(self.py_type, on_delete=getattr(django.db.models, self.on_delete), **general_keys)
+		if self.py_type is uuid:
+			return django.db.models.UUIDField(default=uuid_module.uuid4, **general_keys)
+		if self.py_type is datetime:
 			return django.db.models.DateTimeField(**general_keys)
 		raise Exception('Attempted to create Django field for unsupported Python type {}'.format(self.py_type))
 
@@ -204,44 +210,3 @@ class EosDictObjectType(EosObjectType):
 				attrs[field.name] = field.create_django_field()
 		
 		return meta, name, bases, attrs
-	
-	def __call__(cls, *args, **kwargs):
-		instance = super().__call__()
-		instance = EosDictObjectType._after_call(instance, cls, *args, **kwargs)
-		return instance
-	
-	def _after_call(instance, cls, *args, **kwargs):
-		if eos_core.is_python and isinstance(instance, django.db.models.Model):
-			pass
-		else:
-			fields = [field.name for field in instance._eosmeta.eos_fields]
-			for arg in kwargs:
-				if arg in fields and not hasattr(instance, arg):
-					setattr(instance, arg, kwargs[arg])
-		
-		return instance
-
-# Must declare eos_fields field
-class EosDictObject(EosObject, metaclass=EosDictObjectType):
-	class EosMeta:
-		abstract = True
-	
-	def serialise(self, hashed=False):
-		result = {}
-		for field in self._eosmeta.eos_fields:
-			if not hashed or field.hashed:
-				result[field.name] = EosObject.serialise_and_wrap(getattr(self, field.name), field, hashed)
-		return result
-	
-	@classmethod
-	def deserialise(cls, value):
-		result = {}
-		for field in cls._eosmeta.eos_fields:
-			result[field.name] = EosObject.deserialise_and_unwrap(value[field.name], field)
-		return cls(**result)
-
-def to_json(value):
-	return json.dumps(value, sort_keys=True)
-
-def from_json(value):
-	return json.loads(value)
