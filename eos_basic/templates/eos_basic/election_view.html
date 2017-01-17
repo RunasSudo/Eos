@@ -22,7 +22,7 @@
 		{% if election.voting_has_closed %}
 			<p><button class="ui huge button">Voting in this election has closed</button></p>
 		{% elif election.voting_has_opened %}
-			<p><button class="ui huge primary button">Click here to vote in this election</button></p>
+			<p><a href="{% url 'election_voting_booth' election.id %}" class="ui huge primary button">Click here to vote in this election</a></p>
 		{% else %}
 			<p><button class="ui huge button">Voting in this election has not yet opened</button></p>
 		{% endif %}
@@ -48,10 +48,9 @@
 		{% else %}
 			opens
 			{% if election.voting_opens_at %}
-				{{ election.voting_opens_at }},
-			{% else %}
-				at the administrator's discretion,
+				{{ election.voting_opens_at }}, or
 			{% endif %}
+			at the administrator's discretion,
 		{% endif %}
 		and
 		{% if election.voting_extended_until %}
@@ -75,7 +74,11 @@
 					{{ election.voting_closes_at }}, according to schedule.
 				{% endif %}
 			{% else %}
-				closes {{ election.voting_closes_at }}, or at the administrator's discretion.
+				closes
+				{% if election.voting_closed_at %}
+					{{ election.voting_closes_at }}, or
+				{% endif %}
+				at the administrator's discretion.
 			{% endif %}
 		{% endif %}
 	</p>

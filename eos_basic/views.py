@@ -35,3 +35,7 @@ def election_view(request, election_id):
 def election_questions(request, election_id):
 	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
 	return django.shortcuts.render(request, 'eos_basic/election_questions.html', {'election': election})
+
+def election_voting_booth(request, election_id):
+	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	return django.shortcuts.render(request, 'eos_basic/election_voting_booth.html', {'election': election})

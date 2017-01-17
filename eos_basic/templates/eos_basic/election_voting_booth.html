@@ -1,0 +1,66 @@
+{% extends 'eos_basic/base.html' %}
+
+{% comment %}
+    Copyright © 2017  RunasSudo (Yingtong Li)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+{% endcomment %}
+
+{% load static %}
+
+{% block title %}{{ election.name }}{% endblock %}
+
+{% block content %}
+	<h1>{{ election.name }}</h1>
+	
+	<small><b>Election fingerprint:</b> {{ election.hash }}</small>
+	
+	<div class="ui container" id="booth-content">
+		<div class="ui active text loader">Loading voting booth. Please wait.</div>
+	</div>
+{% endblock %}
+
+{% block head %}
+	{{ block.super }}
+	<script src="{% static 'eos_basic/bower_components/nunjucks/browser/nunjucks.min.js' %}"></script>
+{% endblock %}
+
+{% block basecontent %}
+	{{ block.super }}
+	<script>
+		var templates = {
+			"landing": null
+		};
+		
+		// Load all the templates
+		var templateUrls = Object.keys(templates);
+		var numTemplatesLoaded = 0;
+		for (var templateUrl of templateUrls) {
+			(function(templateUrl) {
+				$.get("{% static 'eos_basic/templates' %}/" + templateUrl + ".html")
+					.done(function(data) {
+						templates[templateUrl] = data;
+						numTemplatesLoaded += 1;
+						if (numTemplatesLoaded == templateUrls.length) {
+							// All templates loaded. Show voting booth
+							$("#booth-content").html(nunjucks.renderString(templates["landing"]));
+						}
+					})
+					.fail(function(data) {
+						$("#booth-content").html('<div class="ui error message"><p>We were unable to load the voting booth for this election. Please try again. If this problem persists, contact the election administrator.</p>');
+					});
+			})(templateUrl);
+		}
+	</script>
+{% endblock %}
