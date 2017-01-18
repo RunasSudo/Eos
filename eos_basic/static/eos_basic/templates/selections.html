@@ -1,0 +1,51 @@
+<h1 class="ui header">{{ election.election_name }}</h1>
+
+<p><small><b>Election fingerprint:</b> {{ election.hash() }}</small></p>
+
+<div class="ui secondary pointing menu" id="election-tab-menu">
+	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">1. Welcome</a>
+	<a href="#" class="ui active item">2. Make selections</a>
+	<a href="#" class="ui item" style="color: #767676;">3. Review selections</a>
+	<a href="#" class="ui item" style="color: #767676;">4. Audit ballot</a>
+	<a href="#" class="ui item" style="color: #767676;">5. Cast ballot</a>
+</div>
+
+<div id="question-box" class="ui container"></div>
+
+<div class="ui container">
+	<a href="#" class="ui left floated button" onclick="previousQuestion(); return false;">Back</a>
+	<button href="#" class="ui right floated primary button" onclick="nextQuestion(); return false;">Continue</button>
+</div>
+
+<script>
+	booth.questionNum = 0;
+	showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+	
+	function saveSelections() {
+		selections = [];
+		$("#question-choices input:checked").each(function(i, el) {
+			selections.push(parseInt(el.id.substring(16)))
+		});
+		booth.selections[booth.questionNum] = selections;
+	}
+	
+	function previousQuestion() {
+		saveSelections();
+		if (booth.questionNum == 0) {
+			showTemplate("landing");
+		} else {
+			booth.questionNum--;
+			showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+		}
+	}
+	
+	function nextQuestion() {
+		saveSelections();
+		if (booth.questionNum == election.questions.length - 1) {
+			showTemplate("review");
+		} else {
+			booth.questionNum++;
+			showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+		}
+	}
+</script>

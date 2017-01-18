@@ -1,0 +1,44 @@
+<h1 class="ui header">{{ election.election_name }}</h1>
+
+<p><small><b>Election fingerprint:</b> {{ election.hash() }}</small></p>
+
+<div class="ui secondary pointing menu" id="election-tab-menu">
+	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">1. Welcome</a>
+	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">2. Make selections</a>
+	<a href="#" class="ui active item">3. Review selections</a>
+	<a href="#" class="ui item" style="color: #767676;">4. Audit ballot</a>
+	<a href="#" class="ui item" style="color: #767676;">5. Cast ballot</a>
+</div>
+
+<div class="ui container" style="margin-bottom: 1em;">
+	{% for question in election.questions %}
+		<h2>{{ loop.index }}. {{ question.title }}</h2>
+		
+		<div class="ui list">
+			{% if booth.selections[loop.index0].length > 0 %}
+				{% for selection in booth.selections[loop.index0] %}
+					<div class="item">
+						<i class="checkmark icon"></i>
+						<div class="content">{{ question.choices[selection] }}</div>
+					</div>
+				{% endfor %}
+			{% else %}
+				<div class="item">
+					<i class="warning circle icon"></i>
+					<div class="content">No candidates selected</div>
+				</div>
+			{% endif %}
+		</div>
+		
+		{% if booth.selections[loop.index0].length < question.max_choices %}
+			<div class="ui warning message">
+				<p>You have selected fewer than the maximum allowed number of candidates. If this was not your intention, please click the "Back" button below now, and correct your selections.</p>
+			</div>
+		{% endif %}
+	{% endfor %}
+</div>
+
+<div class="ui container">
+	<a href="#" class="ui left floated button" onclick="showTemplate('selections'); return false;">Back</a>
+	<button href="#" class="ui right floated primary button" onclick="showTemplate('audit'); return false;">Continue</button>
+</div>

@@ -39,9 +39,15 @@
 	<script src="/static/eos_basic/js/build/eos_js.js"></script>
 	<script>
 		var templates = {
-			"landing": null
+			"landing": null,
+			"selections": null,
+			"question": null,
+			"review": null
 		};
 		var election = null;
+		var booth = {
+			selections: [],
+		};
 		
 		function loadElection() {
 			$.ajax({ url: "{% url 'election_json' election.id %}", dataType: "text" })
@@ -64,7 +70,7 @@
 							numTemplatesLoaded += 1;
 							if (numTemplatesLoaded == templateUrls.length) {
 								// All templates loaded. Show voting booth
-								$("#booth-content").html(nunjucks.renderString(templates["landing"], { "election_base_url": "{% url 'election_json' election.id %}", "election": election }));
+								showTemplate("landing");
 							}
 						})
 						.fail(loadError);
@@ -74,6 +80,17 @@
 		
 		function loadError() {
 			$("#booth-content").html('<div class="ui error message"><p>We were unable to load the voting booth for this election. Please try again. If this problem persists, contact the election administrator.</p>');
+		}
+		
+		function showTemplate(template, destination, opts) {
+			if (!destination) {
+				destination = "#booth-content";
+			}
+			if (!opts) {
+				opts = {};
+			}
+			opts = $.extend({ "election_base_url": "{% url 'election_json' election.id %}", "election": election, "booth": booth }, opts);
+			$(destination).html(nunjucks.renderString(templates[template], opts));
 		}
 		
 		loadElection();

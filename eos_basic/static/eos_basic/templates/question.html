@@ -1,0 +1,42 @@
+<h2>{{ questionNum + 1 }}. {{ election.questions[questionNum].title }}</h2>
+
+<p><small>Vote for between {{ election.questions[questionNum].min_choices }} and {{ election.questions[questionNum].max_choices }} candidates. Click the check-boxes to the left of the candidates' names to make your selection. If you make a mistake, click the check-boxes again to clear your selection.</small></p>
+
+<div id="question-choices" class="ui form" style="margin-bottom: 1em;">
+	<div class="grouped fields">
+		{% for choice in election.questions[questionNum].choices %}
+			<div class="field">
+				<div class="ui checkbox">
+					<input type="checkbox" id="question-choice-{{ loop.index0 }}" onchange="choicesChanged();">
+					<label for="question-choice-{{ loop.index0 }}">{{ choice }}</label>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+</div>
+
+<div class="ui hidden message" id="message-max-choices">
+	<p>You have now selected the maximum allowed number of candidates. If you wish to change your selections, you must first use the check-boxes to deselect a candidate.</p>
+</div>
+
+<script>
+	function choicesChanged() {
+		var numChoices = $("#question-choices input:checked").length;
+		if (numChoices >= election.questions[booth.questionNum].max_choices) {
+			// Prevent making any more selections
+			$("#question-choices input:not(:checked)").prop("disabled", true);
+			$("#message-max-choices").removeClass("hidden");
+		} else {
+			$("#question-choices input").prop("disabled", false);
+			$("#message-max-choices").addClass("hidden");
+		}
+	}
+	
+	// Fill in ballot with previous selections
+	if (booth.selections[booth.questionNum]) {
+		for (var selection of booth.selections[booth.questionNum]) {
+			$("#question-choice-" + selection).prop("checked", true);
+		}
+		choicesChanged();
+	}
+</script>
