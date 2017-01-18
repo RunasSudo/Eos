@@ -146,9 +146,9 @@ class EosObject(metaclass=EosObjectType):
 	
 	@staticmethod
 	def object_to_hash(value):
-		# TODO
-		return 'DEADBEEF'
-		#return base64.b64encode(hashlib.sha256(to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
+		sha = __new__(jsSHA('SHA-256', 'TEXT'))
+		getattr(sha, 'update')(to_json(EosObject.serialise_and_wrap(value, None, True)))
+		return sha.getHash('B64')
 	
 	# TNYI: Transcrypt's handling of class methods is strange
 	@classmethod
@@ -224,7 +224,7 @@ class EosDictObject(EosObject, metaclass=EosDictObjectType):
 		return cls(**result)
 
 def to_json(value):
-	return eos_json.serialise(value)
+	return eos_json.stringify(value)
 
 def from_json(value):
 	return JSON.parse(value)

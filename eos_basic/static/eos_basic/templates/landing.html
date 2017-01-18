@@ -1,4 +1,4 @@
-<h1>{{ election.election_name }}</h1>
+<h1 class="ui header">{{ election.election_name }}</h1>
 
 <p><small><b>Election fingerprint:</b> {{ election.hash() }}</small></p>
 
@@ -12,4 +12,4 @@
 
 <p>Hello World!</p>
 
-<button class="ui left floated button">Back</button><button class="ui right floated primary button">Continue</button>
+<a href="{{ election_base_url }}/view" class="ui left floated button">Back</a><button class="ui right floated primary button">Continue</button>
