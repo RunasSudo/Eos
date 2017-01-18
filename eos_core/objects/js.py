@@ -13,15 +13,33 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Transcrypt doesn't like this circular import
-#import eos_core.objects
+import eos_core
+
+datetime = str
+uuid = str
+
+eos_objects = {}
+
+# TNYI
+def issubclass(cls1, cls2):
+	if cls1 == cls2:
+		return True
+	if hasattr(cls1, '__bases__'):
+		for base in cls1.__bases__:
+			if issubclass(base, cls2):
+				return True
+	return False
 
 def get_full_name(obj):
 	if typeof(obj) != 'function':
 		obj = type(obj)
 	
-	if hasattr(obj._eosmeta, 'eos_name'):
-		return obj._eosmeta.eos_name
+	if obj is list:
+		return 'builtins.' + obj.__name__
+	
+	if hasattr(obj, '_eosmeta'):
+		if hasattr(obj._eosmeta, 'eos_name'):
+			return obj._eosmeta.eos_name
 	
 	raise ('Unknown full name for object ' + obj.__name__)
 
@@ -40,8 +58,7 @@ class EosObjectType(type):
 		cls._eosmeta = cls.EosMeta
 		
 		if not getattr(cls._eosmeta, 'abstract', False):
-			import eos_core.objects
-			eos_core.objects.eos_objects[get_full_name(cls)] = cls
+			eos_objects[get_full_name(cls)] = cls
 		
 		return cls
 
@@ -51,15 +68,14 @@ class EosObject(metaclass=EosObjectType):
 		abstract = True
 	
 	def __str__(self):
-		return eos_core.objects.to_json(EosObject.serialise_and_wrap(self, None))
+		return to_json(EosObject.serialise_and_wrap(self, None))
 	
 	def __eq__(self, other):
 		return (get_full_name(self) == get_full_name(other)) and (self.serialise() == other.serialise())
 	
 	@staticmethod
 	def get_all():
-		import eos_core.objects
-		return eos_core.objects.eos_objects
+		return eos_objects
 	
 	@staticmethod
 	def serialise_and_wrap(value, value_type, hashed=False):
@@ -111,8 +127,8 @@ class EosObject(metaclass=EosObjectType):
 				return value
 		else:
 			# The value type is unknown, so should be stored wrapped
-			if value['type'] in eos_core.objects.eos_objects:
-				return eos_core.objects.eos_objects[value['type']].deserialise(value['value'])
+			if value['type'] in eos_objects:
+				return eos_objects[value['type']].deserialise(value['value'])
 			elif value['type'] == get_full_name(list):
 				return EosObject.deserialise_list(value['value'], None)
 			else:
@@ -126,14 +142,20 @@ class EosObject(metaclass=EosObjectType):
 	
 	@property
 	def hash(self):
-		import eos_core.objects
-		return eos_core.objects.EosObject.object_to_hash(self)
+		return EosObject.object_to_hash(self)
 	
 	@staticmethod
 	def object_to_hash(value):
 		# TODO
 		return 'DEADBEEF'
-		#return base64.b64encode(hashlib.sha256(eos_core.objects.to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
+		#return base64.b64encode(hashlib.sha256(to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
+	
+	# TNYI: Transcrypt's handling of class methods is strange
+	@classmethod
+	def deserialise(cls, value):
+		value = cls
+		cls = this
+		return cls._deserialise(cls, value)
 
 # Stores information about a field of an EosObject for easy conversion to/from a Model
 class EosField():
@@ -157,3 +179,52 @@ class EosDictObjectType(EosObjectType):
 	
 	def _before_new(meta, name, bases, attrs):
 		return meta, name, bases, attrs
+
+def testdecorator(f):
+	if eos_core.is_python:
+		def wrapper(*args, **kwargs):
+			print('Hello World!')
+		return wrapper
+	return f
+
+# Must declare eos_fields field
+class EosDictObject(EosObject, metaclass=EosDictObjectType):
+	class EosMeta:
+		abstract = True
+	
+	def __init__(self, *args, **kwargs):
+		# Emulate Django and set the fields
+		#super().__init__()
+		
+		fields = [field.name for field in self._eosmeta.eos_fields]
+		
+		# We must handle both regular Python convention (kwargs) and Javascript-compatible syntax (args object)
+		if len(args) == 1 and len(kwargs) == 0 and typeof(args[0]) == "object":
+			# kwargs is always a JS object so this is okay
+			kwargs = args.pop()
+		
+		__pragma__('jsiter')
+		for arg in kwargs:
+			if arg in fields and not hasattr(self, arg):
+				setattr(self, arg, kwargs[arg])
+		__pragma__('nojsiter')
+	
+	def serialise(self, hashed=False):
+		result = {}
+		for field in self._eosmeta.eos_fields:
+			if not hashed or field.hashed:
+				result[field.name] = EosObject.serialise_and_wrap(getattr(self, field.name), field, hashed)
+		return result
+	
+	@staticmethod
+	def _deserialise(cls, value):
+		result = {}
+		for field in cls._eosmeta.eos_fields:
+			result[field.name] = EosObject.deserialise_and_unwrap(value[field.name], field)
+		return cls(**result)
+
+def to_json(value):
+	return eos_json.serialise(value)
+
+def from_json(value):
+	return JSON.parse(value)

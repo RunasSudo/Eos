@@ -39,6 +39,8 @@ if eos_core.is_python:
 	class EosDictObjectModel(django.db.models.Model, eos_core.objects.EosDictObject, metaclass=EosDictObjectModelType):
 		class Meta:
 			abstract = True
+		class EosMeta:
+			abstract = True
 		
 		def __init__(self, *args, **kwargs):
 			django.db.models.Model.__init__(self, *args, **kwargs)
@@ -62,12 +64,12 @@ class Workflow(EosDictObjectModel):
 		eos_name = 'eos_core.models.Workflow'
 		eos_fields = [
 			eos_core.objects.EosField(eos_core.objects.uuid, 'id', primary_key=True, editable=False),
-			eos_core.objects.EosField(str, 'name', max_length=100),
+			eos_core.objects.EosField(str, 'workflow_name', max_length=100),
 			eos_core.objects.EosField(list, 'tasks'), # [eos_core.workflow.WorkflowTask]
 		]
 	
 	def __str__(self):
-		return self.name
+		return self.workflow_name
 	
 	def clean(self):
 		for i, task in enumerate(self.tasks):
@@ -91,7 +93,7 @@ class Election(EosDictObjectModel):
 		eos_name = 'eos_core.models.Election'
 		eos_fields = [
 			eos_core.objects.EosField(eos_core.objects.uuid, 'id', primary_key=True, editable=False),
-			eos_core.objects.EosField(str, 'name', max_length=100),
+			eos_core.objects.EosField(str, 'election_name', max_length=100),
 			eos_core.objects.EosField(Workflow, 'workflow', on_delete='PROTECT'),
 			
 			eos_core.objects.EosField(list, 'questions'), # [eos_core.models.Question]
@@ -109,7 +111,7 @@ class Election(EosDictObjectModel):
 		]
 	
 	def __str__(self):
-		return self.name
+		return self.election_name
 	
 	@property
 	def voting_has_opened(self):

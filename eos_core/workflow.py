@@ -13,6 +13,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import eos_core
 import eos_core.objects
 
 workflow_tasks = {}
@@ -62,6 +63,6 @@ class CoreWorkflowTask(WorkflowTask):
 	def serialise(self, hashed=False):
 		return self.name
 	
-	@classmethod
-	def deserialise(cls, value):
+	@staticmethod
+	def _deserialise(cls, value):
 		return cls(name=value)

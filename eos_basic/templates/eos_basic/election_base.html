@@ -17,10 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 {% endcomment %}
 
-{% block title %}{{ election.name }}{% endblock %}
+{% block title %}{{ election.election_name }}{% endblock %}
 
 {% block content %}
-	<h1 class="ui header">{{ election.name }}</h1>
+	<h1 class="ui header">{{ election.election_name }}</h1>
 	
 	<p><small><b>Election fingerprint:</b> {{ election.hash }}</small></p>
 	

@@ -17,3 +17,9 @@ To apply the patch:
 ```bash
 patch -b -p1 -d 'venv/lib/python3.6/site-packages' < patches/metaclass_migration.patch
 ```
+
+## EosObject notes
+
+* `super()` is not supported
+* `name` as an attribute is not supported
+* `@classmethod` does not work correctly natively and requires a wrapper (until method decorators are implemented in Transcrypt)

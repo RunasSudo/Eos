@@ -16,11 +16,10 @@
 import eos_core.models
 import eos_core.objects
 
-import django.db
-
 # A type of question which permits voters to place check marks against the names of a specified number of candidates
-class ApprovalQuestion(eos_core.models.Question, eos_core.objects.EosDictObject):
+class ApprovalQuestion(eos_core.objects.EosDictObject, eos_core.models.Question):
 	class EosMeta:
+		eos_name = 'eos_basic.models.ApprovalQuestion'
 		eos_fields = [
 			eos_core.objects.EosField(str, 'title'),
 			eos_core.objects.EosField(str, 'description'),
@@ -31,9 +30,12 @@ class ApprovalQuestion(eos_core.models.Question, eos_core.objects.EosDictObject)
 
 # All registered users are eligible to vote in this election
 class UnconditionalVoterEligibility(eos_core.models.VoterEligibility, eos_core.objects.EosObject):
+	class EosMeta:
+		eos_name = 'eos_basic.models.UnconditionalVoterEligibility'
+	
 	def serialise(self, hashed=False):
 		return None
 	
-	@classmethod
-	def deserialise(cls, value):
+	@staticmethod
+	def _deserialise(cls, value):
 		return cls()

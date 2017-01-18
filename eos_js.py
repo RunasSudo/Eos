@@ -15,3 +15,8 @@
 
 import eos_core.objects
 import eos_core.models
+import eos_core.workflow
+
+import eos_basic.objects
+import eos_basic.models
+import eos_basic.workflow

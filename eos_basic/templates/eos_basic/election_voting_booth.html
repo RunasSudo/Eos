@@ -19,13 +19,9 @@
 
 {% load static %}
 
-{% block title %}{{ election.name }}{% endblock %}
+{% block title %}{{ election.election_name }}{% endblock %}
 
 {% block content %}
-	<h1>{{ election.name }}</h1>
-	
-	<p><small><b>Election fingerprint:</b> {{ election.hash }}</small></p>
-	
 	<div class="ui container" id="booth-content">
 		<div class="ui active text loader">Loading voting booth. Please wait.</div>
 	</div>
@@ -38,30 +34,47 @@
 
 {% block basecontent %}
 	{{ block.super }}
+	<script src="/static/eos_basic/js/eos_json.js"></script>
 	<script src="/static/eos_basic/js/build/eos_js.js"></script>
 	<script>
 		var templates = {
 			"landing": null
 		};
+		var election = null;
 		
-		// Load all the templates
-		var templateUrls = Object.keys(templates);
-		var numTemplatesLoaded = 0;
-		for (var templateUrl of templateUrls) {
-			(function(templateUrl) {
-				$.get("{% static 'eos_basic/templates' %}/" + templateUrl + ".html")
-					.done(function(data) {
-						templates[templateUrl] = data;
-						numTemplatesLoaded += 1;
-						if (numTemplatesLoaded == templateUrls.length) {
-							// All templates loaded. Show voting booth
-							$("#booth-content").html(nunjucks.renderString(templates["landing"]));
-						}
-					})
-					.fail(function(data) {
-						$("#booth-content").html('<div class="ui error message"><p>We were unable to load the voting booth for this election. Please try again. If this problem persists, contact the election administrator.</p>');
-					});
-			})(templateUrl);
+		function loadElection() {
+			$.ajax({ url: "{% url 'election_json' election.id %}", dataType: "text" })
+				.done(function(data) {
+					election = eos_js.eos_core.objects.__all__.EosObject.deserialise_and_unwrap(eos_js.eos_core.objects.__all__.from_json(data), null);
+					loadTemplates();
+				})
+				.fail(loadError);
 		}
+		
+		function loadTemplates() {
+			// Load all the templates
+			var templateUrls = Object.keys(templates);
+			var numTemplatesLoaded = 0;
+			for (var templateUrl of templateUrls) {
+				(function(templateUrl) {
+					$.ajax({ url: "{% static 'eos_basic/templates' %}/" + templateUrl + ".html", dataType: "text" })
+						.done(function(data) {
+							templates[templateUrl] = data;
+							numTemplatesLoaded += 1;
+							if (numTemplatesLoaded == templateUrls.length) {
+								// All templates loaded. Show voting booth
+								$("#booth-content").html(nunjucks.renderString(templates["landing"], { "election": election }));
+							}
+						})
+						.fail(loadError);
+				})(templateUrl);
+			}
+		}
+		
+		function loadError() {
+			$("#booth-content").html('<div class="ui error message"><p>We were unable to load the voting booth for this election. Please try again. If this problem persists, contact the election administrator.</p>');
+		}
+		
+		loadElection();
 	</script>
 {% endblock %}

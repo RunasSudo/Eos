@@ -31,12 +31,15 @@ def get_full_name(obj):
 	if not isinstance(obj, type): # an instance instead of a class
 		obj = type(obj)
 	
+	if obj.__module__ == '__fake__':
+		# For Django migrations, the name is not important
+		return obj.__module__ + '.' + obj.__name__
 	if obj.__module__ == 'builtins':
 		return obj.__module__ + '.' + obj.__name__
 	if hasattr(obj._eosmeta, 'eos_name'):
 		return obj._eosmeta.eos_name
 	
-	return obj.__module__ + '.' + obj.__name__
+	raise Exception('Unknown full name for object ' + obj.__name__ + '; suggesting ' + obj.__module__ + '.' + obj.__name__)
 
 class EosObjectType(type):
 	def __new__(meta, name, bases, attrs):
@@ -148,6 +151,10 @@ class EosObject(metaclass=EosObjectType):
 	@staticmethod
 	def object_to_hash(value):
 		return base64.b64encode(hashlib.sha256(eos_core.objects.to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls._deserialise(cls, value)
 
 # Stores information about a field of an EosObject for easy conversion to/from a Model
 class EosField():
@@ -210,3 +217,41 @@ class EosDictObjectType(EosObjectType):
 				attrs[field.name] = field.create_django_field()
 		
 		return meta, name, bases, attrs
+
+# Must declare eos_fields field
+class EosDictObject(EosObject, metaclass=EosDictObjectType):
+	class EosMeta:
+		abstract = True
+	
+	def __init__(self, *args, **kwargs):
+		if isinstance(self, django.db.models.Model):
+			# Allow Django to manage setup
+			super().__init__(*args, **kwargs)
+		else:
+			# Emulate Django and set the fields
+			#super().__init__()
+			
+			fields = [field.name for field in self._eosmeta.eos_fields]
+			for arg in kwargs:
+				if arg in fields and not hasattr(self, arg):
+					setattr(self, arg, kwargs[arg])
+	
+	def serialise(self, hashed=False):
+		result = {}
+		for field in self._eosmeta.eos_fields:
+			if not hashed or field.hashed:
+				result[field.name] = EosObject.serialise_and_wrap(getattr(self, field.name), field, hashed)
+		return result
+	
+	@staticmethod
+	def _deserialise(cls, value):
+		result = {}
+		for field in cls._eosmeta.eos_fields:
+			result[field.name] = EosObject.deserialise_and_unwrap(value[field.name], field)
+		return cls(**result)
+
+def to_json(value):
+	return json.dumps(value, sort_keys=True)
+
+def from_json(value):
+	return json.loads(value)

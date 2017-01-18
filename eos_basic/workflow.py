@@ -22,19 +22,19 @@ class TaskSetElectionDetails(eos_core.workflow.WorkflowTask):
 	def serialise(self, hashed=False):
 		return None
 	
-	@classmethod
-	def deserialise(cls, value):
+	@staticmethod
+	def _deserialise(cls, value):
 		return cls()
 
 class TaskCastVotes(eos_core.workflow.WorkflowTask):
 	class EosMeta:
-		eos_name = 'eos_basic.workflow.TaskSetElectionDetails'
+		eos_name = 'eos_basic.workflow.TaskCastVotes'
 	
 	workflow_depends = ['eos_basic.workflow.TaskSetElectionDetails']
 	
 	def serialise(self, hashed=False):
 		return None
 	
-	@classmethod
-	def deserialise(cls, value):
+	@staticmethod
+	def _deserialise(cls, value):
 		return cls()

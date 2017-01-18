@@ -127,7 +127,7 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	
 	def get_fieldsets(self, request, obj=None):
 		return (
-			(None, {'fields': ['id', 'name', 'workflow']}),
+			(None, {'fields': ['id', 'election_name', 'workflow']}),
 			('Schedule', {'fields':
 				['voting_opens_at', 'voting_closes_at', 'voting_extended_until'] +
 				(['voting_opened_at', 'open_voting'] if (obj is not None and obj.frozen_at and not obj.voting_has_opened) else ['voting_opened_at']) +

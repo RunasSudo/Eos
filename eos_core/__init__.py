@@ -16,5 +16,18 @@
 try:
 	__pragma__
 	is_python = False
+	
+	def tclassmethod(func):
+		# TNYI: Transcrypt seems to pass the class as "this" rather than the first parameter
+		@classmethod
+		def wrapper(*args, **kwargs):
+			return func(this, *args, **kwargs)
+		return wrapper
 except:
 	is_python = True
+	
+	def tclassmethod(func):
+		@classmethod
+		def wrapper(*args, **kwargs):
+			return func(*args, **kwargs)
+		return wrapper
