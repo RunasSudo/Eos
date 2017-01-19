@@ -13,12 +13,12 @@
 <div id="question-box" class="ui container"></div>
 
 <div class="ui container">
-	<a href="#" class="ui left floated button" onclick="previousQuestion(); return false;">Back</a>
-	<button href="#" class="ui right floated primary button" onclick="nextQuestion(); return false;">Continue</button>
+	<button class="ui left floated button" onclick="previousQuestion();">Back</a>
+	<button class="ui right floated primary button" onclick="nextQuestion();">Continue</button>
 </div>
 
 <script>
-	booth.questionNum = 0;
+	booth.questionNum = {{ questionNum }};
 	showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
 	
 	function saveSelections() {

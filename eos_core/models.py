@@ -136,3 +136,31 @@ class Election(EosDictObjectModel):
 		if voting_closed_at:
 			return django.utils.timezone.now() >= voting_closed_at
 		return False
+
+class Voter(eos_core.objects.EosObject):
+	class EosMeta:
+		abstract = True
+
+# Represents a vote in hashable form, which is likely but not necessarily encrypted
+class EncryptedVote(eos_core.objects.EosObject):
+	class EosMeta:
+		abstract = True
+
+class PlaintextVote(EncryptedVote, eos_core.objects.EosDictObject):
+	class EosMeta:
+		eos_name = 'eos_core.models.PlaintextVote'
+
+class CastVote(EosDictObjectModel):
+	class EosMeta:
+		eos_name = 'eos_core.models.CastVote'
+		eos_fields = [
+			eos_core.objects.EosField(eos_core.objects.uuid, 'id', primary_key=True, editable=False),
+			eos_core.objects.EosField(Election, 'election', on_delete='PROTECT'),
+			eos_core.objects.EosField(eos_core.objects.EosObject, 'voter'), # eos_core.models.Voter
+			# We store the EncryptedVote inside rather than alongside CastVote as EncryptedVote may be of many different types
+			eos_core.objects.EosField(eos_core.objects.EosObject, 'encrypted_vote'), # eos_core.models.EncryptedVote
+			eos_core.objects.EosField(eos_core.objects.datetime, 'vote_received_at'),
+		]
+	
+	def abc(self):
+		pass

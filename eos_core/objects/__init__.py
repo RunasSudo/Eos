@@ -24,3 +24,5 @@ if eos_core.is_python:
 	__pragma__('noskip')
 else:
 	from eos_core.objects.js import *
+
+# We want to keep this file clean for when others import it, so unlike other modules, the concrete objects in eos_core are in eos_core.models

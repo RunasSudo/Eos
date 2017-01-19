@@ -32,13 +32,13 @@
 		
 		{% if booth.selections[loop.index0].length < question.max_choices %}
 			<div class="ui warning message">
-				<p>You have selected fewer than the maximum allowed number of candidates. If this was not your intention, please click the "Back" button below now, and correct your selections.</p>
+				<p>You have selected fewer than the maximum allowed number of candidates. If this was not your intention, please click the ‘Back’ button below now, and correct your selections.</p>
 			</div>
 		{% endif %}
 	{% endfor %}
 </div>
 
 <div class="ui container">
-	<a href="#" class="ui left floated button" onclick="showTemplate('selections'); return false;">Back</a>
-	<button href="#" class="ui right floated primary button" onclick="showTemplate('audit'); return false;">Continue</button>
+	<button class="ui left floated button" onclick="showTemplate('selections', '#booth-content', { 'questionNum': election.questions.length - 1 });">Back</a>
+	<button class="ui right floated primary button" onclick="showTemplate('audit');">Continue</button>
 </div>
