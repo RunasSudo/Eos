@@ -40,5 +40,35 @@
 
 <div class="ui container">
 	<button class="ui left floated button" onclick="showTemplate('selections', '#booth-content', { 'questionNum': election.questions.length - 1 });">Back</a>
-	<button class="ui right floated primary button" onclick="showTemplate('audit');">Continue</button>
+	<button class="ui right floated primary button" onclick="prepareBallotThenAudit();">Continue</button>
 </div>
+
+<script>
+	function prepareBallotThenAudit() {
+		$("#booth-content").html('<div class="ui active text loader">Preparing your ballot. Please wait.</div>');
+		boothWorker.onmessage = function(msg) {
+			try {
+				booth.encryptedVote = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(msg.data, null);
+				showTemplate('audit');
+			} catch (err) {
+				boothError();
+				throw err;
+			}
+		}
+		boothWorker.onerror = function(err) {
+			boothError();
+			throw err;
+		}
+		try {
+			boothWorker.postMessage({
+				"action": "generateEncryptedVote",
+				"static_base_url": {{ static_base_url }},
+				"election": eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(election, null),
+				"selections": booth.selections,
+			});
+		} catch (err) {
+			boothError();
+			throw err;
+		}
+	}
+</script>

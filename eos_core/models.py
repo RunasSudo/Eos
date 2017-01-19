@@ -141,6 +141,3 @@ class CastVote(EosDictObjectModel):
 			eos_core.libobjects.EosField(eos_core.libobjects.EosObject, 'encrypted_vote'), # eos_core.objects.EncryptedVote
 			eos_core.libobjects.EosField(eos_core.libobjects.datetime, 'vote_received_at'),
 		]
-	
-	def abc(self):
-		pass

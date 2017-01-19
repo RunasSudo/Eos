@@ -34,26 +34,42 @@
 
 {% block basecontent %}
 	{{ block.super }}
-	<script src="/static/eos_basic/js/eos_json.js"></script>
-	<script src="/static/eos_basic/js/jssha-sha256.js"></script>
-	<script src="/static/eos_basic/js/build/eos_js.js"></script>
+	<script src="{% static 'eos_basic/js/eos_json.js' %}"></script>
+	<script src="{% static 'eos_basic/js/jssha-sha256.js' %}"></script>
+	<script src="{% static 'eos_basic/js/build/eos_js.js' %}"></script>
 	<script>
 		var templates = {
 			"landing": null,
 			"selections": null,
 			"question": null,
-			"review": null
+			"review": null,
+			"audit": null,
+			"complete": null,
 		};
 		var election = null;
-		var booth = {
-			selections: [],
-		};
+		var booth = null;
+		var boothWorker = null;
+		
+		function resetBooth() {
+			booth = {
+				"selections": [],
+			};
+		}
+		resetBooth();
 		
 		function loadElection() {
 			$.ajax({ url: "{% url 'election_json' election.id %}", dataType: "text" })
 				.done(function(data) {
-					election = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(eos_js.eos_core.libobjects.__all__.from_json(data), null);
-					loadTemplates();
+					try {
+						election = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(eos_js.eos_core.libobjects.__all__.from_json(data), null);
+						
+						boothWorker = new Worker("{% static 'eos_basic/js/booth_worker.js' %}");
+						
+						loadTemplates();
+					} catch (err) {
+						loadError();
+						throw err;
+					}
 				})
 				.fail(loadError);
 		}
@@ -82,15 +98,30 @@
 			$("#booth-content").html('<div class="ui error message"><p>We were unable to load the voting booth for this election. Please try again. If this problem persists, contact the election administrator.</p>');
 		}
 		
+		function boothError() {
+			resetBooth();
+			$("#booth-content").html('<div class="ui error message"><p>We were unable to display the next page of the voting booth. For your security, your ballot selections have been cleared. Please try again. If this problem persists, contact the election administrator.</p>');
+		}
+		
 		function showTemplate(template, destination, opts) {
-			if (!destination) {
-				destination = "#booth-content";
+			try {
+				if (!destination) {
+					destination = "#booth-content";
+				}
+				if (!opts) {
+					opts = {};
+				}
+				opts = $.extend({
+					"election_base_url": "{% url 'election_json' election.id %}",
+					"static_base_url": "{% static '' %}",
+					"election": election,
+					"booth": booth,
+				}, opts);
+				$(destination).html(nunjucks.renderString(templates[template], opts));
+			} catch (err) {
+				boothError();
+				throw err;
 			}
-			if (!opts) {
-				opts = {};
-			}
-			opts = $.extend({ "election_base_url": "{% url 'election_json' election.id %}", "election": election, "booth": booth }, opts);
-			$(destination).html(nunjucks.renderString(templates[template], opts));
 		}
 		
 		loadElection();

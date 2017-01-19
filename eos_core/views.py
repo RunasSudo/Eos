@@ -17,8 +17,11 @@ import eos_core.models
 import eos_core.libobjects
 import eos_core.workflow
 
+import eos_basic.objects # TODO: UH OH!
+
 import django.http
 import django.shortcuts
+import django.utils.timezone
 
 def index(request):
 	return django.shortcuts.render(request, 'eos_core/index.html', {'workflow_tasks': eos_core.workflow.WorkflowTask.get_all() })
@@ -26,3 +29,20 @@ def index(request):
 def election_json(request, election_id):
 	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
 	return django.http.HttpResponse(eos_core.libobjects.to_json(eos_core.libobjects.EosObject.serialise_and_wrap(election, None, request.GET.get('hashed', 'false') == 'true')), content_type='application/json')
+
+def election_cast_vote(request, election_id):
+	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	
+	encrypted_vote = eos_core.libobjects.EosObject.deserialise_and_unwrap(eos_core.libobjects.from_json(request.POST['encrypted_vote']), None)
+	
+	voter = eos_basic.objects.DjangoAuthVoter(request.user.id)
+	
+	cast_vote = eos_core.models.CastVote(
+		election=election,
+		voter=voter,
+		encrypted_vote=encrypted_vote,
+		vote_received_at=django.utils.timezone.now(),
+	)
+	cast_vote.save()
+	
+	return django.http.HttpResponse(status=204)

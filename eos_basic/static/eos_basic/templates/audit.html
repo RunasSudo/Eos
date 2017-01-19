@@ -1,0 +1,58 @@
+<h1 class="ui header">{{ election.election_name }}</h1>
+
+<p><small><b>Election fingerprint:</b> {{ election.hash() }}</small></p>
+
+<div class="ui secondary pointing menu" id="election-tab-menu">
+	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">1. Welcome</a>
+	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">2. Make selections</a>
+	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">3. Review selections</a>
+	<a href="#" class="ui active item">4. Audit ballot</a>
+	<a href="#" class="ui item" style="color: #767676;">5. Cast ballot</a>
+</div>
+
+<div class="ui container" style="margin-bottom: 1em;">
+	<p>Your ballot has now been prepared. Your smart ballot tracker is <b style="font-family: monospace; word-wrap: break-word;">{{ booth.encryptedVote.hash() }}</b>.</p>
+	<p>Please note that <b style="color: #9F3A38;"><u>your vote has not yet been cast</u></b>, and will not be cast until you click the ‘Cast ballot’ button below.</p>
+	<p>If you have disconnected your internet connection, you should now re-connect it before casting your ballot.</p>
+	<p>Click the ‘Cast ballot’ button below to cast your ballot in this election.</p>
+</div>
+
+<div class="ui container">
+	<button class="ui left floated button" onclick="showTemplate('review');">Back</a>
+	<button class="ui right floated primary button" onclick="castBallot();">Cast ballot</button>
+</div>
+
+<script>
+	function getCookie(name) {
+		if (document.cookie) {
+			var cookies = document.cookie.split(";");
+			for (var cookie of cookies) {
+				cookie = cookie.trim();
+				if (cookie.startsWith(name + "=")) {
+					return decodeURIComponent(cookie.substring(name.length + 1));
+				}
+			}
+		}
+		return null;
+	}
+	
+	function castBallot() {
+		try {
+			encryptedVoteJson = eos_js.eos_core.libobjects.__all__.to_json(eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(booth.encryptedVote, null));
+			$.ajax({
+				url: "{{ election_base_url }}/cast_vote",
+				type: "POST",
+				data: { "encrypted_vote": encryptedVoteJson },
+				dataType: "text",
+				beforeSend: function(xhr) { xhr.setRequestHeader("X-CSRFToken", getCookie("csrftoken")); }
+			})
+				.done(function(data) {
+					showTemplate("complete");
+				})
+				.fail(boothError);
+		} catch (err) {
+			boothError();
+			throw err;
+		}
+	}
+</script>

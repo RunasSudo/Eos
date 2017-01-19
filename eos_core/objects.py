@@ -32,6 +32,11 @@ class EncryptedVote(eos_core.libobjects.EosObject):
 	class EosMeta:
 		abstract = True
 
-class PlaintextVote(EncryptedVote, eos_core.libobjects.EosDictObject):
+class PlaintextVote(eos_core.libobjects.EosDictObject, EncryptedVote):
 	class EosMeta:
 		eos_name = 'eos_core.models.PlaintextVote'
+		eos_fields = [
+			eos_core.libobjects.EosField(list, 'choices', element_type=eos_core.libobjects.EosField(list, 'choices', element_type=eos_core.libobjects.EosField(int))),
+			eos_core.libobjects.EosField(eos_core.libobjects.uuid, 'election_uuid'),
+			eos_core.libobjects.EosField(str, 'election_hash'),
+		]
