@@ -21,6 +21,7 @@ from . import views
 urlpatterns = [
 	url(r'^(?P<election_id>[0-9a-f-]+)/view$$', views.election_view, name='election_view'),
 	url(r'^(?P<election_id>[0-9a-f-]+)/questions$$', views.election_questions, name='election_questions'),
+	url(r'^(?P<election_id>[0-9a-f-]+)/ballots$$', views.election_ballots, name='election_ballots'),
 	url(r'^(?P<election_id>[0-9a-f-]+)/voting_booth$$', views.election_voting_booth, name='election_voting_booth'),
 	url(r'^account/login', django.contrib.auth.views.login, {'authentication_form': views.LoginForm}, name='login'),
 	url(r'^account/logout', django.contrib.auth.views.logout, name='logout'),

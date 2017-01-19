@@ -17,6 +17,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 {% endcomment %}
 
+{% load static %}
+{% block head %}
+	<link rel="stylesheet" href="{% static 'eos_basic/css/main.css' %}" type="text/css">
+{% endblock %}
+
 {% block basecontent %}
 	<div class="ui fixed inverted menu" style="margin-right: 1.5em;">
 		<div class="ui container">

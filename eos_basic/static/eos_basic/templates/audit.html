@@ -1,6 +1,6 @@
 <h1 class="ui header">{{ election.election_name }}</h1>
 
-<p><small><b>Election fingerprint:</b> {{ election.hash() }}</small></p>
+<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash() }}</span></small></p>
 
 <div class="ui secondary pointing menu" id="election-tab-menu">
 	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">1. Welcome</a>
@@ -11,7 +11,7 @@
 </div>
 
 <div class="ui container" style="margin-bottom: 1em;">
-	<p>Your ballot has now been prepared. Your smart ballot tracker is <b style="font-family: monospace; word-wrap: break-word;">{{ booth.encryptedVote.hash() }}</b>.</p>
+	<p>Your ballot has now been prepared. Your smart ballot tracker is <b class="hash">{{ booth.encryptedVote.hash() }}</b>.</p>
 	<p>Please note that <b style="color: #9F3A38;"><u>your vote has not yet been cast</u></b>, and will not be cast until you click the ‘Cast ballot’ button below.</p>
 	<p>If you have disconnected your internet connection, you should now re-connect it before casting your ballot.</p>
 	<p>Click the ‘Cast ballot’ button below to cast your ballot in this election.</p>

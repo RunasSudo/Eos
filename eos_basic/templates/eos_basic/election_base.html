@@ -22,12 +22,12 @@
 {% block content %}
 	<h1 class="ui header">{{ election.election_name }}</h1>
 	
-	<p><small><b>Election fingerprint:</b> {{ election.hash }}</small></p>
+	<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash }}</span></small></p>
 	
 	<div class="ui secondary pointing menu" id="election-tab-menu">
 		<a href="{% url 'election_view' election.id %}" class="item {% if request.resolver_match.url_name == 'election_view' %}active{% endif %}">Summary</a>
 		<a href="{% url 'election_questions' election.id %}" class="item {% if request.resolver_match.url_name == 'election_questions' %}active{% endif %}">Questions</a>
-		<a href="#" class="item {% if request.resolver_match.url_name == 'election_ballots' %}active{% endif %}">Voters and ballots</a>
+		<a href="{% url 'election_ballots' election.id %}" class="item {% if request.resolver_match.url_name == 'election_ballots' %}active{% endif %}">Ballot tracking centre</a>
 		{% if user.is_staff %}
 			<a href="{% url 'admin:eos_core_election_change' election.id %}" class="item right"><i class="configure icon"></i> Administrate this election</a>
 		{% endif %}

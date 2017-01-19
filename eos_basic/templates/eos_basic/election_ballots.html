@@ -18,27 +18,20 @@
 {% endcomment %}
 
 {% block electioncontent %}
-	<p>
-		There
-		{% if election.questions|length == 1 %}
-			is {{ election.questions | length }} question
-		{% else %}
-			are {{ election.questions | length }} questions
-		{% endif %}
-		on the ballot in this election.
-	</p>
-	
-	{% for question in election.questions %}
-		<h2>Question {{ forloop.counter }}: {{ question.title }}</h2>
-		
-		<p>{{ question.description }}</p>
-		
-		<p><small>Vote for between {{ question.min_choices }} and {{ question.max_choices }} candidates.</small></p>
-		
-		<div class="ui bulleted list">
-			{% for choice in question.choices %}
-				<div class="item">{{ choice }}</div>
+	<table class="ui celled table">
+		<thead>
+			<tr>
+				<th>Voter</th>
+				<th>Smart ballot tracker</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for cast_vote in election.get_valid_votes %}
+				<tr>
+					<td>{{ cast_vote.voter.name }}</td>
+					<td class="hash">{{ cast_vote.encrypted_vote.hash }}</td>
+				</tr>
 			{% endfor %}
-		</div>
-	{% endfor %}
+		</tbody>
+	</table>
 {% endblock %}

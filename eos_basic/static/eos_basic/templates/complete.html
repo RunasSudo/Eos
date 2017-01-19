@@ -1,6 +1,6 @@
 <h1 class="ui header">{{ election.election_name }}</h1>
 
-<p><small><b>Election fingerprint:</b> {{ election.hash() }}</small></p>
+<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash() }}</span></small></p>
 
 <div class="ui secondary pointing menu" id="election-tab-menu">
 	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">1. Welcome</a>
@@ -12,7 +12,7 @@
 
 <div class="ui container" style="margin-bottom: 1em;">
 	<p><b>Your ballot has been successfully cast!</b></p>
-	<p>Your smart ballot tracker is <b style="font-family: monospace; word-wrap: break-word;">{{ booth.encryptedVote.hash() }}</b>.</p>
+	<p>Your smart ballot tracker is <b class="hash">{{ booth.encryptedVote.hash() }}</b>.</p>
 	<p>We recommend that you make a note of your smart ballot tracker, as shown above, and verify that it appears correctly in the ballot tracking centre. If you wish, you may print this page as a receipt. <a href="#" onclick="window.print(); return false;">Click here to print a copy of this page.</a></p>
 </div>
 

@@ -17,6 +17,8 @@ import eos_core.libobjects
 import eos_core.objects
 import eos_core.models
 
+import django.contrib.auth.models
+
 # A type of question which permits voters to place check marks against the names of a specified number of candidates
 class ApprovalQuestion(eos_core.libobjects.EosDictObject, eos_core.objects.Question):
 	class EosMeta:
@@ -54,3 +56,7 @@ class DjangoAuthVoter(eos_core.objects.Voter):
 	@staticmethod
 	def _deserialise(cls, value):
 		return cls(auth_user_id=value)
+	
+	@property
+	def name(self):
+		return django.contrib.auth.models.User.objects.get(id=self.auth_user_id).username

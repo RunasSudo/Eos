@@ -129,6 +129,13 @@ class Election(EosDictObjectModel):
 		if voting_closed_at:
 			return django.utils.timezone.now() >= voting_closed_at
 		return False
+	
+	# Return a list of the latest valid vote for each voter
+	def get_valid_votes(self):
+		cast_votes = []
+		for voter in self.castvote_set.values('voter').distinct():
+			cast_votes.append(self.castvote_set.filter(voter=voter['voter']).latest('vote_received_at'))
+		return cast_votes
 
 class CastVote(EosDictObjectModel):
 	class EosMeta:

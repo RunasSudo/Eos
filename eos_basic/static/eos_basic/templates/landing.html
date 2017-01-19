@@ -1,6 +1,6 @@
 <h1 class="ui header">{{ election.election_name }}</h1>
 
-<p><small><b>Election fingerprint:</b> {{ election.hash() }}</small></p>
+<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash() }}</span></small></p>
 
 <div class="ui secondary pointing menu" id="election-tab-menu">
 	<a href="#" class="ui active item">1. Welcome</a>
