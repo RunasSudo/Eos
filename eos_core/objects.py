@@ -14,10 +14,24 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import eos_core.libobjects
-import eos_core.objects
-import eos_core.models
-import eos_core.workflow
 
-import eos_basic.objects
-import eos_basic.models
-import eos_basic.workflow
+class Question(eos_core.libobjects.EosObject):
+	class EosMeta:
+		abstract = True
+
+class VoterEligibility(eos_core.libobjects.EosObject):
+	class EosMeta:
+		abstract = True
+
+class Voter(eos_core.libobjects.EosObject):
+	class EosMeta:
+		abstract = True
+
+# Represents a vote in hashable form, which is likely but not necessarily encrypted
+class EncryptedVote(eos_core.libobjects.EosObject):
+	class EosMeta:
+		abstract = True
+
+class PlaintextVote(EncryptedVote, eos_core.libobjects.EosDictObject):
+	class EosMeta:
+		eos_name = 'eos_core.models.PlaintextVote'

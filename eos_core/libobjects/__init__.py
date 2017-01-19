@@ -20,9 +20,7 @@ eos_objects = {}
 if eos_core.is_python:
 	__pragma__ = lambda x: None
 	__pragma__('skip')
-	from eos_core.objects.python import *
+	from eos_core.libobjects.python import *
 	__pragma__('noskip')
 else:
-	from eos_core.objects.js import *
-
-# We want to keep this file clean for when others import it, so unlike other modules, the concrete objects in eos_core are in eos_core.models
+	from eos_core.libobjects.js import *

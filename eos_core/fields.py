@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core.objects
+import eos_core.libobjects
 
 import django.db.models
 
@@ -32,14 +32,14 @@ class EosObjectField(django.db.models.Field):
 		return self.to_python(value)
 	
 	def to_python(self, value):
-		if isinstance(value, eos_core.objects.EosObject):
+		if isinstance(value, eos_core.libobjects.EosObject):
 			return value
 		if value is None:
 			return value
-		return eos_core.objects.EosObject.deserialise_and_unwrap(eos_core.objects.from_json(value), self.field_type)
+		return eos_core.libobjects.EosObject.deserialise_and_unwrap(eos_core.libobjects.from_json(value), self.field_type)
 	
 	def get_prep_value(self, value):
-		return eos_core.objects.to_json(eos_core.objects.EosObject.serialise_and_wrap(value, self.field_type))
+		return eos_core.libobjects.to_json(eos_core.libobjects.EosObject.serialise_and_wrap(value, self.field_type))
 	
 	def get_internal_type(self):
 		return 'TextField'
@@ -62,10 +62,10 @@ class EosListField(django.db.models.Field):
 			return value
 		if value is None:
 			return value
-		return eos_core.objects.EosObject.deserialise_list(eos_core.objects.from_json(value), self.element_type)
+		return eos_core.libobjects.EosObject.deserialise_list(eos_core.libobjects.from_json(value), self.element_type)
 	
 	def get_prep_value(self, value):
-		return eos_core.objects.to_json(eos_core.objects.EosObject.serialise_list(value, self.element_type))
+		return eos_core.libobjects.to_json(eos_core.libobjects.EosObject.serialise_list(value, self.element_type))
 	
 	def get_internal_type(self):
 		return 'TextField'

@@ -14,28 +14,4 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import eos_core.models
-import eos_core.objects
-
-# A type of question which permits voters to place check marks against the names of a specified number of candidates
-class ApprovalQuestion(eos_core.objects.EosDictObject, eos_core.models.Question):
-	class EosMeta:
-		eos_name = 'eos_basic.models.ApprovalQuestion'
-		eos_fields = [
-			eos_core.objects.EosField(str, 'title'),
-			eos_core.objects.EosField(str, 'description'),
-			eos_core.objects.EosField(list, 'choices', element_type=eos_core.objects.EosField(str)),
-			eos_core.objects.EosField(int, 'max_choices'),
-			eos_core.objects.EosField(int, 'min_choices')
-		]
-
-# All registered users are eligible to vote in this election
-class UnconditionalVoterEligibility(eos_core.models.VoterEligibility, eos_core.objects.EosObject):
-	class EosMeta:
-		eos_name = 'eos_basic.models.UnconditionalVoterEligibility'
-	
-	def serialise(self, hashed=False):
-		return None
-	
-	@staticmethod
-	def _deserialise(cls, value):
-		return cls()
+import eos_core.libobjects

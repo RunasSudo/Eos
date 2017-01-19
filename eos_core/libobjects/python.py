@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core.objects
+import eos_core.libobjects
 
 import django.db.models
 import django.utils.timezone
@@ -57,7 +57,7 @@ class EosObjectType(type):
 		cls._eosmeta = cls.EosMeta
 		
 		if not getattr(cls._eosmeta, 'abstract', False):
-			eos_core.objects.eos_objects[get_full_name(cls)] = cls
+			eos_core.libobjects.eos_objects[get_full_name(cls)] = cls
 		
 		return cls
 
@@ -67,7 +67,7 @@ class EosObject(metaclass=EosObjectType):
 		abstract = True
 	
 	def __str__(self):
-		return eos_core.objects.to_json(EosObject.serialise_and_wrap(self, None))
+		return eos_core.libobjects.to_json(EosObject.serialise_and_wrap(self, None))
 	
 	def __eq__(self, other):
 		return (get_full_name(self) == get_full_name(other)) and (self.serialise() == other.serialise())
@@ -81,7 +81,7 @@ class EosObject(metaclass=EosObjectType):
 				importlib.import_module(app + '.objects')
 			except ImportError:
 				pass
-		return eos_core.objects.eos_objects
+		return eos_core.libobjects.eos_objects
 	
 	@staticmethod
 	def serialise_and_wrap(value, value_type, hashed=False):
@@ -131,8 +131,8 @@ class EosObject(metaclass=EosObjectType):
 				return value
 		else:
 			# The value type is unknown, so should be stored wrapped
-			if value['type'] in eos_core.objects.eos_objects:
-				return eos_core.objects.eos_objects[value['type']].deserialise(value['value'])
+			if value['type'] in EosObject.get_all():
+				return EosObject.get_all()[value['type']].deserialise(value['value'])
 			elif value['type'] == get_full_name(list):
 				return EosObject.deserialise_list(value['value'], None)
 			else:
@@ -146,11 +146,11 @@ class EosObject(metaclass=EosObjectType):
 	
 	@property
 	def hash(self):
-		return eos_core.objects.EosObject.object_to_hash(self)
+		return eos_core.libobjects.EosObject.object_to_hash(self)
 	
 	@staticmethod
 	def object_to_hash(value):
-		return base64.b64encode(hashlib.sha256(eos_core.objects.to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
+		return base64.b64encode(hashlib.sha256(eos_core.libobjects.to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
 	
 	@classmethod
 	def deserialise(cls, value):

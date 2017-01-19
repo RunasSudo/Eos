@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import eos_core.models
-import eos_core.objects
+import eos_core.libobjects
 
 import django.contrib.admin
 import django.core.exceptions
@@ -31,12 +31,12 @@ class EosObjectFormField(django.forms.CharField):
 		super().__init__(*args, **kwargs)
 	
 	def to_python(self, value):
-		return eos_core.objects.EosObject.deserialise_and_unwrap(eos_core.objects.from_json(value), None)
+		return eos_core.libobjects.EosObject.deserialise_and_unwrap(eos_core.libobjects.from_json(value), None)
 
 class EosListWidget(django.contrib.admin.widgets.AdminTextareaWidget):
 	def render(self, name, value, attrs=None):
 		if not isinstance(value, str):
-			value = eos_core.objects.to_json(eos_core.objects.EosObject.serialise_list(value, None))
+			value = eos_core.libobjects.to_json(eos_core.libobjects.EosObject.serialise_list(value, None))
 		return super().render(name, value, attrs)
 
 class EosListFormField(django.forms.CharField):
@@ -46,12 +46,12 @@ class EosListFormField(django.forms.CharField):
 		super().__init__(*args, **kwargs)
 	
 	def to_python(self, value):
-		return eos_core.objects.EosObject.deserialise_list(eos_core.objects.from_json(value), None)
+		return eos_core.libobjects.EosObject.deserialise_list(eos_core.libobjects.from_json(value), None)
 
 class WorkflowTasksWidget(EosListWidget):
 	def render(self, name, value, attrs=None):
 		if not isinstance(value, str):
-			value = eos_core.objects.to_json(eos_core.objects.EosObject.serialise_list(value, None))
+			value = eos_core.libobjects.to_json(eos_core.libobjects.EosObject.serialise_list(value, None))
 		tasks_field = super().render(name, value, attrs)
 		# Oh my...
 		# TODO: Use a template or something
@@ -62,7 +62,7 @@ class WorkflowAdminForm(django.forms.ModelForm):
 	
 	def clean_tasks(self):
 		data = self.cleaned_data['tasks']
-		if not isinstance(eos_core.objects.EosObject.deserialise_list(eos_core.objects.from_json(data), None), list):
+		if not isinstance(eos_core.libobjects.EosObject.deserialise_list(eos_core.libobjects.from_json(data), None), list):
 			raise django.forms.ValidationError('This field must be a list.')
 		return data
 

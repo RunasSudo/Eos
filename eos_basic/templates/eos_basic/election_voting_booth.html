@@ -52,7 +52,7 @@
 		function loadElection() {
 			$.ajax({ url: "{% url 'election_json' election.id %}", dataType: "text" })
 				.done(function(data) {
-					election = eos_js.eos_core.objects.__all__.EosObject.deserialise_and_unwrap(eos_js.eos_core.objects.__all__.from_json(data), null);
+					election = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(eos_js.eos_core.libobjects.__all__.from_json(data), null);
 					loadTemplates();
 				})
 				.fail(loadError);

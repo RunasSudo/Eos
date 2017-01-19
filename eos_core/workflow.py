@@ -14,21 +14,21 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import eos_core
-import eos_core.objects
+import eos_core.libobjects
 
 workflow_tasks = {}
 
-class WorkflowTaskType(eos_core.objects.EosObjectType):
+class WorkflowTaskType(eos_core.libobjects.EosObjectType):
 	def __new__(meta, name, bases, attrs):
 		#cls = super().__new__(meta, name, bases, attrs)
-		cls = eos_core.objects.EosObjectType.__new__(meta, name, bases, attrs)
+		cls = eos_core.libobjects.EosObjectType.__new__(meta, name, bases, attrs)
 		
 		if not getattr(cls._eosmeta, 'abstract', False):
-			workflow_tasks[eos_core.objects.get_full_name(cls)] = cls
+			workflow_tasks[eos_core.libobjects.get_full_name(cls)] = cls
 		
 		return cls
 
-class WorkflowTask(eos_core.objects.EosObject, metaclass=WorkflowTaskType):
+class WorkflowTask(eos_core.libobjects.EosObject, metaclass=WorkflowTaskType):
 	workflow_provides = []
 	workflow_depends = []
 	#workflow_conflicts = []
