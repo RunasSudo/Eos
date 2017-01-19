@@ -1,0 +1,52 @@
+{#
+    Copyright © 2017  RunasSudo (Yingtong Li)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+<h1 class="ui header">{{ election.election_name }}</h1>
+
+<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash() }}</span></small></p>
+
+{# Convert the template name to a numerical index for comparison #}
+{% if template == 'landing' %}
+	{% set menuindex = 1 %}
+{% elif template == 'selections' %}
+	{% set menuindex = 2 %}
+{% elif template == 'review' %}
+	{% set menuindex = 3 %}
+{% elif template == 'audit' %}
+	{% set menuindex = 4 %}
+{% elif template == 'complete' %}
+	{% set menuindex = 5 %}
+{% endif %}
+
+<div class="ui secondary pointing menu" id="election-tab-menu">
+	{# oh dear god #}
+	<a href="#" class="ui{% if menuindex >= 1 %} active{% endif %} item"{% if menuindex != 1 %} style="color: #767676;{% if menuindex > 1 %} font-weight: 400;{% endif %}"{% endif %}>1. Welcome</a>
+	<a href="#" class="ui{% if menuindex >= 2 %} active{% endif %} item"{% if menuindex != 2 %} style="color: #767676;{% if menuindex > 2 %} font-weight: 400;{% endif %}"{% endif %}>2. Make selections</a>
+	<a href="#" class="ui{% if menuindex >= 3 %} active{% endif %} item"{% if menuindex != 3 %} style="color: #767676;{% if menuindex > 3 %} font-weight: 400;{% endif %}"{% endif %}>3. Review selections</a>
+	<a href="#" class="ui{% if menuindex >= 4 %} active{% endif %} item"{% if menuindex != 4 %} style="color: #767676;{% if menuindex > 4 %} font-weight: 400;{% endif %}"{% endif %}>4. Audit ballot</a>
+	<a href="#" class="ui{% if menuindex >= 5 %} active{% endif %} item"{% if menuindex != 5 %} style="color: #767676;{% if menuindex > 5 %} font-weight: 400;{% endif %}"{% endif %}>5. Cast ballot</a>
+</div>
+
+<div class="ui container">
+	{% block content %}{% endblock %}
+</div>
+
+<div class="ui container" style="margin-top: 1em;">
+	{% block buttons %}{% endblock %}
+</div>
+
+{% block after %}{% endblock %}

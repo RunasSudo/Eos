@@ -39,6 +39,7 @@
 	<script src="{% static 'eos_basic/js/build/eos_js.js' %}"></script>
 	<script>
 		var templates = {
+			"base": null,
 			"landing": null,
 			"selections": null,
 			"question": null,
@@ -82,11 +83,16 @@
 				(function(templateUrl) {
 					$.ajax({ url: "{% static 'eos_basic/templates' %}/" + templateUrl + ".html", dataType: "text" })
 						.done(function(data) {
-							templates[templateUrl] = data;
-							numTemplatesLoaded += 1;
-							if (numTemplatesLoaded == templateUrls.length) {
-								// All templates loaded. Show voting booth
-								showTemplate("landing");
+							try {
+								templates[templateUrl] = nunjucks.compile(data);
+								numTemplatesLoaded += 1;
+								if (numTemplatesLoaded == templateUrls.length) {
+									// All templates loaded. Show voting booth
+									showTemplate("landing");
+								}
+							} catch (err) {
+								loadError();
+								throw err;
 							}
 						})
 						.fail(loadError);
@@ -112,12 +118,14 @@
 					opts = {};
 				}
 				opts = $.extend({
+					"templates": templates,
+					"template": template,
 					"election_base_url": "{% url 'election_json' election.id %}",
 					"static_base_url": "{% static '' %}",
 					"election": election,
 					"booth": booth,
 				}, opts);
-				$(destination).html(nunjucks.renderString(templates[template], opts));
+				$(destination).html(templates[template].render(opts));
 			} catch (err) {
 				boothError();
 				throw err;

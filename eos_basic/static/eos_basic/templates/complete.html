@@ -1,51 +1,60 @@
-<h1 class="ui header">{{ election.election_name }}</h1>
+{% extends templates['base'] %}
 
-<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash() }}</span></small></p>
+{#
+    Copyright © 2017  RunasSudo (Yingtong Li)
 
-<div class="ui secondary pointing menu" id="election-tab-menu">
-	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">1. Welcome</a>
-	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">2. Make selections</a>
-	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">3. Review selections</a>
-	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">4. Audit ballot</a>
-	<a href="#" class="ui active item">5. Cast ballot</a>
-</div>
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-<div class="ui container" style="margin-bottom: 1em;">
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% block content %}
 	<p><b>Your ballot has been successfully cast!</b></p>
 	<p>Your smart ballot tracker is <b class="hash">{{ booth.encryptedVote.hash() }}</b>.</p>
 	<p>We recommend that you make a note of your smart ballot tracker, as shown above, and verify that it appears correctly in the ballot tracking centre. If you wish, you may print this page as a receipt. <a href="#" onclick="window.print(); return false;">Click here to print a copy of this page.</a></p>
-</div>
+{% endblock %}
 
-<div class="ui container">
+{% block buttons %}
 	<a href="{{ election_base_url }}/view" class="ui right floated primary button">Return to election page</a>
-</div>
+{% endblock %}
 
-<script>
-	function prepareBallotThenAudit() {
-		$("#booth-content").html('<div class="ui active text loader">Preparing your ballot. Please wait.</div>');
-		boothWorker.onmessage = function(msg) {
+{% block after %}
+	<script>
+		function prepareBallotThenAudit() {
+			$("#booth-content").html('<div class="ui active text loader">Preparing your ballot. Please wait.</div>');
+			boothWorker.onmessage = function(msg) {
+				try {
+					booth.encryptedVote = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(msg.data, null);
+					showTemplate('audit');
+				} catch (err) {
+					boothError();
+					throw err;
+				}
+			}
+			boothWorker.onerror = function(err) {
+				boothError();
+				throw err;
+			}
 			try {
-				booth.encryptedVote = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(msg.data, null);
-				showTemplate('audit');
+				boothWorker.postMessage({
+					"action": "generateEncryptedVote",
+					"static_base_url": {{ static_base_url }},
+					"election": eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(election, null),
+					"selections": booth.selections,
+				});
 			} catch (err) {
 				boothError();
 				throw err;
 			}
 		}
-		boothWorker.onerror = function(err) {
-			boothError();
-			throw err;
-		}
-		try {
-			boothWorker.postMessage({
-				"action": "generateEncryptedVote",
-				"static_base_url": {{ static_base_url }},
-				"election": eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(election, null),
-				"selections": booth.selections,
-			});
-		} catch (err) {
-			boothError();
-			throw err;
-		}
-	}
-</script>
+	</script>
+{% endblock %}

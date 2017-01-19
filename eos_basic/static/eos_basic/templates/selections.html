@@ -1,51 +1,62 @@
-<h1 class="ui header">{{ election.election_name }}</h1>
+{% extends templates['base'] %}
 
-<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash() }}</span></small></p>
+{#
+    Copyright © 2017  RunasSudo (Yingtong Li)
 
-<div class="ui secondary pointing menu" id="election-tab-menu">
-	<a href="#" class="ui active item" style="color: #767676; font-weight: 400;">1. Welcome</a>
-	<a href="#" class="ui active item">2. Make selections</a>
-	<a href="#" class="ui item" style="color: #767676;">3. Review selections</a>
-	<a href="#" class="ui item" style="color: #767676;">4. Audit ballot</a>
-	<a href="#" class="ui item" style="color: #767676;">5. Cast ballot</a>
-</div>
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-<div id="question-box" class="ui container"></div>
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
 
-<div class="ui container">
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% block content %}
+	<div id="question-box" class="ui container"></div>
+{% endblock %}
+
+{% block buttons %}
 	<button class="ui left floated button" onclick="previousQuestion();">Back</a>
 	<button class="ui right floated primary button" onclick="nextQuestion();">Continue</button>
-</div>
+{% endblock %}
 
-<script>
-	booth.questionNum = {{ questionNum }};
-	showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
-	
-	function saveSelections() {
-		selections = [];
-		$("#question-choices input:checked").each(function(i, el) {
-			selections.push(parseInt(el.id.substring(16)))
-		});
-		booth.selections[booth.questionNum] = selections;
-	}
-	
-	function previousQuestion() {
-		saveSelections();
-		if (booth.questionNum == 0) {
-			showTemplate("landing");
-		} else {
-			booth.questionNum--;
-			showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+{% block after %}
+	<script>
+		booth.questionNum = {{ questionNum }};
+		showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+		
+		function saveSelections() {
+			selections = [];
+			$("#question-choices input:checked").each(function(i, el) {
+				selections.push(parseInt(el.id.substring(16)))
+			});
+			booth.selections[booth.questionNum] = selections;
 		}
-	}
-	
-	function nextQuestion() {
-		saveSelections();
-		if (booth.questionNum == election.questions.length - 1) {
-			showTemplate("review");
-		} else {
-			booth.questionNum++;
-			showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+		
+		function previousQuestion() {
+			saveSelections();
+			if (booth.questionNum == 0) {
+				showTemplate("landing");
+			} else {
+				booth.questionNum--;
+				showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+			}
 		}
-	}
-</script>
+		
+		function nextQuestion() {
+			saveSelections();
+			if (booth.questionNum == election.questions.length - 1) {
+				showTemplate("review");
+			} else {
+				booth.questionNum++;
+				showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+			}
+		}
+	</script>
+{% endblock %}
