@@ -150,7 +150,7 @@ class EosObject(metaclass=EosObjectType):
 	
 	@staticmethod
 	def object_to_hash(value):
-		return base64.b64encode(hashlib.sha256(eos_core.libobjects.to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest())
+		return base64.b64encode(hashlib.sha256(eos_core.libobjects.to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest()).decode('utf-8')
 	
 	@classmethod
 	def deserialise(cls, value):

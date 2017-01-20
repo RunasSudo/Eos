@@ -141,7 +141,7 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	def get_readonly_fields(self, request, obj=None):
 		return (
 			('id', 'frozen_at', 'voting_opened_at', 'voting_closed_at') +
-			(('name', 'workflow', 'voting_opens_at', 'voting_closes_at', 'questions', 'voter_eligibility') if (obj is not None and obj.frozen_at) else ()) +
+			(('election_name', 'workflow', 'voting_opens_at', 'voting_closes_at', 'questions', 'voter_eligibility') if (obj is not None and obj.frozen_at) else ()) +
 			(('voting_extended_until',) if (obj is None or not obj.voting_closes_at or obj.voting_closed_at) else ())
 		)
 

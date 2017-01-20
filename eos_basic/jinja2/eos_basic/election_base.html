@@ -1,6 +1,6 @@
 {% extends 'eos_basic/base.html' %}
 
-{% comment %}
+{#
     Copyright © 2017  RunasSudo (Yingtong Li)
 
     This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-{% endcomment %}
+#}
 
 {% block title %}{{ election.election_name }}{% endblock %}
 
@@ -25,11 +25,11 @@
 	<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash }}</span></small></p>
 	
 	<div class="ui secondary pointing menu" id="election-tab-menu">
-		<a href="{% url 'election_view' election.id %}" class="item {% if request.resolver_match.url_name == 'election_view' %}active{% endif %}">Summary</a>
-		<a href="{% url 'election_questions' election.id %}" class="item {% if request.resolver_match.url_name == 'election_questions' %}active{% endif %}">Questions</a>
-		<a href="{% url 'election_ballots' election.id %}" class="item {% if request.resolver_match.url_name == 'election_ballots' %}active{% endif %}">Ballot tracking centre</a>
-		{% if user.is_staff %}
-			<a href="{% url 'admin:eos_core_election_change' election.id %}" class="item right"><i class="configure icon"></i> Administrate this election</a>
+		<a href="{{ url('election_view', election.id) }}" class="election-tab-ajax item {% if request.resolver_match.url_name == 'election_view' %}active{% endif %}">Summary</a>
+		<a href="{{ url('election_questions', election.id) }}" class="election-tab-ajax item {% if request.resolver_match.url_name == 'election_questions' %}active{% endif %}">Questions</a>
+		<a href="{{ url('election_ballots', election.id) }}" class="election-tab-ajax item {% if request.resolver_match.url_name == 'election_ballots' %}active{% endif %}">Ballot tracking centre</a>
+		{% if request.user.is_staff %}
+			<a href="{{ url('admin:eos_core_election_change', election.id) }}" class="item right"><i class="configure icon"></i> Administrate this election</a>
 		{% endif %}
 	</div>
 	<div class="ui container" id="election-tab-content">
@@ -39,10 +39,10 @@
 {% endblock %}
 
 {% block basecontent %}
-	{{ block.super }}
+	{{ super() }}
 	
 	<script>
-		$("#election-tab-menu .item").click(function() {
+		$(".election-tab-ajax").click(function() {
 			var linkEl = $(this);
 			history.pushState({}, "", linkEl.attr("href"));
 			

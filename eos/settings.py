@@ -70,6 +70,16 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'eos.urls'
 
 TEMPLATES = [
+    # For Eos
+    {
+        'BACKEND': 'django.template.backends.jinja2.Jinja2',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'environment': 'eos.jinja2.environment',
+        },
+    },
+    # For admin
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],

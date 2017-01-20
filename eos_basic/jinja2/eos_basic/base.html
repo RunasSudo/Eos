@@ -1,6 +1,6 @@
 {% extends 'eos_basic/semantic_base.html' %}
 
-{% comment %}
+{#
     Copyright © 2017  RunasSudo (Yingtong Li)
 
     This program is free software: you can redistribute it and/or modify
@@ -15,30 +15,29 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-{% endcomment %}
+#}
 
-{% load static %}
 {% block head %}
-	<link rel="stylesheet" href="{% static 'eos_basic/css/main.css' %}" type="text/css">
+	<link rel="stylesheet" href="{{ static('eos_basic/css/main.css') }}" type="text/css">
 {% endblock %}
 
 {% block basecontent %}
 	<div class="ui fixed inverted menu" style="margin-right: 1.5em;">
 		<div class="ui container">
 			<a href="#" class="header item">Eos Voting</a>
-			{% if user.is_authenticated %}
+			{% if request.user.is_authenticated %}
 				<div class="ui simple dropdown item right">
-					{{ user.username }} <i class="dropdown icon"></i>
+					{{ request.user.username }} <i class="dropdown icon"></i>
 					<div class="menu">
-						{% if user.is_staff %}
-							<a href="{% url 'admin:index' %}" class="item">Eos Administration</a>
+						{% if request.user.is_staff %}
+							<a href="{{ url('admin:index') }}" class="item">Eos Administration</a>
 							<div class="divider"></div>
 						{% endif %}
-						<a href="{% url 'logout' %}?next={{ request.get_full_path | urlencode }}" class="item">Log out</a>
+						<a href="{{ url('logout') }}?next={{ request.get_full_path | urlencode }}" class="item">Log out</a>
 					</div>
 				</div>
 			{% else %}
-				<a href="{% url 'login' %}?next={{ request.get_full_path | urlencode }}" class="item right">Log in</a>
+				<a href="{{ url('login') }}?next={{ request.get_full_path | urlencode }}" class="item right">Log in</a>
 			{% endif %}
 		</div>
 	</div>

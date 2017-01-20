@@ -1,6 +1,6 @@
 {% extends 'eos_basic/election_base.html' %}
 
-{% comment %}
+{#
     Copyright © 2017  RunasSudo (Yingtong Li)
 
     This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-{% endcomment %}
+#}
 
 {% block electioncontent %}
 	<table class="ui celled table">
@@ -26,7 +26,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{% for cast_vote in election.get_valid_votes %}
+			{% for cast_vote in election.get_valid_votes() %}
 				<tr>
 					<td>{{ cast_vote.voter.name }}</td>
 					<td class="hash">{{ cast_vote.encrypted_vote.hash }}</td>

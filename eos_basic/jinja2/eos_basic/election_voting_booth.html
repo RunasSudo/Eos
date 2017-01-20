@@ -1,6 +1,6 @@
 {% extends 'eos_basic/base.html' %}
 
-{% comment %}
+{#
     Copyright © 2017  RunasSudo (Yingtong Li)
 
     This program is free software: you can redistribute it and/or modify
@@ -15,9 +15,7 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-{% endcomment %}
-
-{% load static %}
+#}
 
 {% block title %}{{ election.election_name }}{% endblock %}
 
@@ -28,15 +26,15 @@
 {% endblock %}
 
 {% block head %}
-	{{ block.super }}
-	<script src="{% static 'eos_basic/bower_components/nunjucks/browser/nunjucks.min.js' %}"></script>
+	{{ super() }}
+	<script src="{{ static('eos_basic/bower_components/nunjucks/browser/nunjucks.min.js') }}"></script>
 {% endblock %}
 
 {% block basecontent %}
-	{{ block.super }}
-	<script src="{% static 'eos_basic/js/eos_json.js' %}"></script>
-	<script src="{% static 'eos_basic/js/jssha-sha256.js' %}"></script>
-	<script src="{% static 'eos_basic/js/build/eos_js.js' %}"></script>
+	{{ super() }}
+	<script src="{{ static('eos_basic/js/eos_json.js') }}"></script>
+	<script src="{{ static('eos_basic/js/jssha-sha256.js') }}"></script>
+	<script src="{{ static('eos_basic/js/build/eos_js.js') }}"></script>
 	<script>
 		var templates = {
 			"base": null,
@@ -59,12 +57,12 @@
 		resetBooth();
 		
 		function loadElection() {
-			$.ajax({ url: "{% url 'election_json' election.id %}", dataType: "text" })
+			$.ajax({ url: "{{ url('election_json', election.id) }}", dataType: "text" })
 				.done(function(data) {
 					try {
 						election = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(eos_js.eos_core.libobjects.__all__.from_json(data), null);
 						
-						boothWorker = new Worker("{% static 'eos_basic/js/booth_worker.js' %}");
+						boothWorker = new Worker("{{ static('eos_basic/js/booth_worker.js') }}");
 						
 						loadTemplates();
 					} catch (err) {
@@ -81,7 +79,7 @@
 			var numTemplatesLoaded = 0;
 			for (var templateUrl of templateUrls) {
 				(function(templateUrl) {
-					$.ajax({ url: "{% static 'eos_basic/templates' %}/" + templateUrl + ".html", dataType: "text" })
+					$.ajax({ url: "{{ static('eos_basic/templates') }}/" + templateUrl + ".html", dataType: "text" })
 						.done(function(data) {
 							try {
 								templates[templateUrl] = nunjucks.compile(data);
@@ -120,8 +118,8 @@
 				opts = $.extend({
 					"templates": templates,
 					"template": template,
-					"election_base_url": "{% url 'election_json' election.id %}",
-					"static_base_url": "{% static '' %}",
+					"election_base_url": "{{ url('election_json', election.id) }}",
+					"static_base_url": "{{ static('') }}",
 					"election": election,
 					"booth": booth,
 				}, opts);
