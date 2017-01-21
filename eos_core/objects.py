@@ -40,3 +40,6 @@ class PlaintextVote(eos_core.libobjects.EosDictObject, EncryptedVote):
 			eos_core.libobjects.EosField(eos_core.libobjects.uuid, 'election_uuid'),
 			eos_core.libobjects.EosField(str, 'election_hash'),
 		]
+	
+	def to_plaintext_vote(self):
+		return self

@@ -20,6 +20,7 @@ import eos_core.workflow
 import eos_basic.objects # TODO: UH OH!
 
 import django.core.exceptions
+import django.core.urlresolvers
 import django.http
 import django.shortcuts
 import django.utils.timezone
@@ -52,4 +53,15 @@ def election_cast_vote(request, election_id):
 	return django.http.HttpResponse(status=204)
 
 def election_compute_result(request, election_id):
-	pass
+	if not request.user.is_staff:
+		raise django.core.exceptions.PermissionDenied('Only an election administrator may calculate the election result')
+	
+	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	
+	if not election.workflow.get_task('eos_core.workflow.TaskComputeResult').is_pending(election.workflow, election):
+		# There's a time and place for everything, but not now!
+		raise django.core.exceptions.PermissionDenied('This result for this election has already been computed, or is not yet ready to be computed')
+	
+	election.workflow.get_task('eos_core.workflow.TaskComputeResult').compute_result(election.workflow, election)
+	
+	return django.shortcuts.redirect(django.core.urlresolvers.reverse('election_view', args=[election.id]))

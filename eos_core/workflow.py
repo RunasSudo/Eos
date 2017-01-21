@@ -147,17 +147,13 @@ class TaskComputeResult(NullWorkflowTask):
 	workflow_depends = ['eos_core.workflow.TaskCloseVoting']
 	
 	class EosMeta:
-		eos_name = 'eos_core.workflow.TaskComputeResult'
+		abstract = True
 	
 	def task_name(self, workflow, election):
 		return 'Compute result'
 	
 	def task_url(self, workflow, election):
 		return django.core.urlresolvers.reverse('election_compute_result', args=[election.id])
-	
-	def is_complete(self, workflow, election):
-		# TODO
-		return False
 
 class TaskReleaseResult(NullAdminWorkflowTask):
 	workflow_depends = ['eos_core.workflow.TaskComputeResult']
@@ -167,3 +163,6 @@ class TaskReleaseResult(NullAdminWorkflowTask):
 	
 	def task_name(self, workflow, election):
 		return 'Release result'
+	
+	def is_complete(self, workflow, election):
+		return election.result_released_at is not None

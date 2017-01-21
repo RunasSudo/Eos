@@ -33,7 +33,9 @@
 	{% endif %}
 	
 	{% if election.workflow.get_task('eos_core.workflow.TaskSetElectionDetails').is_complete(election.workflow, election) %}
-		{% if election.workflow.get_task('eos_core.workflow.TaskCloseVoting').is_complete(election.workflow, election) %}
+		{% if election.workflow.get_task('eos_core.workflow.TaskReleaseResult').is_complete(election.workflow, election) %}
+			<p><button class="ui huge button">This election is complete</button></p>
+		{% elif election.workflow.get_task('eos_core.workflow.TaskCloseVoting').is_complete(election.workflow, election) %}
 			<p><button class="ui huge button">Voting in this election has closed</button></p>
 		{% elif election.workflow.get_task('eos_core.workflow.TaskReceiveVotes').is_pending(election.workflow, election) %}
 			<p><a href="{{ url('election_voting_booth', election.id) }}" class="ui huge primary button">Click here to vote in this election</a></p>
@@ -94,4 +96,29 @@
 			{% endif %}
 		{% endif %}
 	</p>
+	
+	{% if election.workflow.get_task('eos_core.workflow.TaskReleaseResult').is_complete(election.workflow, election) %}
+		<h2>Result</h2>
+		
+		{% for question in election.questions %}
+			{% set questionNo = loop.index0 %}
+			<h3>{{ loop.index }}. {{ question.title }}</h3>
+			<table class="ui celled table">
+				<thead>
+					<tr>
+						<th>Preference</th>
+						<th style="text-align: right;">Votes</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for choice in question.choices %}
+						<tr>
+							<td>{{ choice }}</td>
+							<td style="text-align: right;">{{ election.result[questionNo].tally[loop.index0] }}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		{% endfor %}
+	{% endif %}
 {% endblock %}

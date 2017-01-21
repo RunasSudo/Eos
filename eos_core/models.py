@@ -103,11 +103,24 @@ class Election(EosDictObjectModel):
 			eos_core.libobjects.EosField(eos_core.libobjects.datetime, 'voting_extended_until', nullable=True, hashed=False),
 			eos_core.libobjects.EosField(eos_core.libobjects.datetime, 'voting_opened_at', nullable=True, hashed=False),
 			eos_core.libobjects.EosField(eos_core.libobjects.datetime, 'voting_closed_at', nullable=True, hashed=False),
+			
+			eos_core.libobjects.EosField(list, 'result', nullable=True, hashed=False),
 			eos_core.libobjects.EosField(eos_core.libobjects.datetime, 'result_released_at', nullable=True, hashed=False),
 		]
 	
 	def __str__(self):
 		return self.election_name
+	
+	def serialise(self, hashed=False):
+		if hashed or self.result_released_at:
+			return eos_core.libobjects.EosDictObject.serialise(self, hashed)
+		
+		# Hide the result until it's released
+		result = self.result
+		self.result = None
+		serialised = eos_core.libobjects.EosDictObject.serialise(self, hashed)
+		self.result = result
+		return serialised
 	
 	@property
 	def voting_has_opened(self):

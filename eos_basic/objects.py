@@ -30,6 +30,13 @@ class ApprovalQuestion(eos_core.libobjects.EosDictObject, eos_core.objects.Quest
 			eos_core.libobjects.EosField(int, 'min_choices')
 		]
 
+class ApprovalQuestionResult(eos_core.libobjects.EosDictObject):
+	class EosMeta:
+		eos_name = 'eos_basic.objects.ApprovalQuestionResult'
+		eos_fields = [
+			eos_core.libobjects.EosField(list, 'tally', element_type=eos_core.libobjects.EosField(int))
+		]
+
 # All registered users are eligible to vote in this election
 class UnconditionalVoterEligibility(eos_core.objects.VoterEligibility, eos_core.libobjects.EosObject):
 	class EosMeta:

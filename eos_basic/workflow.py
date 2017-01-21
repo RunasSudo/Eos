@@ -13,6 +13,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import eos_basic.objects
 import eos_core.libobjects
 import eos_core.workflow
 
@@ -61,6 +62,40 @@ class TaskReceiveVotes(EosDictObjectWorkflowTask):
 		if not EosDictObjectWorkflowTask.are_restrictions_met(self, workflow, election):
 			return False
 		return election.voting_has_opened and not election.voting_has_closed
+
+class TaskComputeResult(eos_core.workflow.TaskComputeResult):
+	workflow_provides = 'eos_core.workflow.TaskComputeResult'
+	workflow_depends = ['eos_core.workflow.TaskCloseVoting']
+	
+	class EosMeta:
+		eos_name = 'eos_basic.workflow.TaskComputeResult'
+	
+	def compute_result(self, workflow, election):
+		#import pdb; pdb.set_trace()
+		
+		# Collect the plaintexts
+		question_plaintexts = [[] for _ in range(len(election.questions))]
+		
+		for cast_vote in election.get_valid_votes():
+			plaintext_vote = cast_vote.encrypted_vote.to_plaintext_vote()
+			for question_num, question_choices in enumerate(plaintext_vote.choices):
+				question_plaintexts[question_num].append(question_choices)
+		
+		# Compute the results
+		results = []
+		for question_num, question in enumerate(election.questions):
+			question_result = eos_basic.objects.ApprovalQuestionResult(tally=[0 for _ in range(len(question.choices))])
+			for ballot in question_plaintexts[question_num]:
+				for choice in ballot:
+					question_result.tally[choice] += 1
+			results.append(question_result)
+		
+		election.result = results
+		election.save()
+	
+	def is_complete(self, workflow, election):
+		return election.result is not None
+
 
 booth_tasks = {}
 

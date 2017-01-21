@@ -99,6 +99,7 @@ class ElectionAdminForm(django.forms.ModelForm):
 	freeze = SubmitAndActionButtonField(required=False, label='', button_label='Save and freeze')
 	open_voting = SubmitAndActionButtonField(required=False, label='', button_label='Save and open voting')
 	close_voting = SubmitAndActionButtonField(required=False, label='', button_label='Save and close voting')
+	release_result = SubmitAndActionButtonField(required=False, label='', button_label='Save and release result')
 	
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -120,6 +121,12 @@ class ElectionAdminForm(django.forms.ModelForm):
 			if self.instance.voting_has_closed:
 				raise django.core.exceptions.ValidationError('Attempted to close an already-closed election')
 			self.instance.voting_closed_at = django.utils.timezone.now()
+	
+	def clean_release_result(self):
+		if self.cleaned_data['release_result']:
+			if self.instance.result_released_at:
+				raise django.core.exceptions.ValidationError('Attempted to release an already-released result')
+			self.instance.result_released_at = django.utils.timezone.now()
 
 class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	form = ElectionAdminForm
@@ -135,7 +142,8 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 			('Schedule', {'fields':
 				['voting_opens_at', 'voting_closes_at', 'voting_extended_until'] +
 				(['voting_opened_at', 'open_voting'] if (obj is not None and obj.frozen_at and not obj.voting_has_opened) else ['voting_opened_at']) +
-				(['voting_closed_at', 'close_voting'] if (obj is not None and obj.voting_has_opened and not obj.voting_has_closed) else ['voting_closed_at'])
+				(['voting_closed_at', 'close_voting'] if (obj is not None and obj.voting_has_opened and not obj.voting_has_closed) else ['voting_closed_at']) +
+				(['result_released_at', 'release_result'] if (obj is not None and obj.result and not obj.result_released_at) else ['result_released_at'])
 			}),
 			('Questions', {'fields': ['questions']}),
 			('Voters', {'fields': ['voter_eligibility']}),
@@ -144,7 +152,7 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	
 	def get_readonly_fields(self, request, obj=None):
 		return (
-			('id', 'election_url', 'frozen_at', 'voting_opened_at', 'voting_closed_at') +
+			('id', 'election_url', 'frozen_at', 'voting_opened_at', 'voting_closed_at', 'result_released_at') +
 			(('election_name', 'workflow', 'voting_opens_at', 'voting_closes_at', 'questions', 'voter_eligibility') if (obj is not None and obj.frozen_at) else ()) +
 			(('voting_extended_until',) if (obj is None or not obj.voting_closes_at or obj.voting_closed_at) else ())
 		)
