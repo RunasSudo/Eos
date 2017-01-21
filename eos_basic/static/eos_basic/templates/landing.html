@@ -1,4 +1,4 @@
-{% extends templates['base'] %}
+{% extends templates['eos_basic/templates/base.html'] %}
 
 {#
     Copyright © 2017  RunasSudo (Yingtong Li)
@@ -27,5 +27,5 @@
 
 {% block buttons %}
 	<a href="{{ election_base_url }}/view" class="ui left floated button">Back</a>
-	<button class="ui right floated primary button" onclick="showTemplate('selections', '#booth-content', { 'questionNum': 0 });">Continue</button>
+	<button class="ui right floated primary button" onclick="nextTemplate();">Continue</button>
 {% endblock %}

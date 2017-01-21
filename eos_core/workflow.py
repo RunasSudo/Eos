@@ -126,7 +126,7 @@ class TaskExtendVoting(NullAdminWorkflowTask):
 		return False
 	
 	def are_restrictions_met(self, workflow, election):
-		if not super().are_restrictions_met(workflow, election):
+		if not NullAdminWorkflowTask.are_restrictions_met(self, workflow, election):
 			return False
 		# We cannot extend voting if we manually closed it
 		return election.voting_closed_at is None

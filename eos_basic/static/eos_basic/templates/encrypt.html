@@ -1,5 +1,3 @@
-{% extends templates['eos_basic/templates/base.html'] %}
-
 {#
     Copyright © 2017  RunasSudo (Yingtong Li)
 
@@ -17,12 +15,31 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-{% block content %}
-	<p><b>Your ballot has been successfully cast!</b></p>
-	<p>Your smart ballot tracker is <b class="hash">{{ booth.encryptedVote.hash() }}</b>.</p>
-	<p>We recommend that you make a note of your smart ballot tracker, as shown above, and verify that it appears correctly in the ballot tracking centre. If you wish, you may print this page as a receipt. <a href="#" onclick="window.print(); return false;">Click here to print a copy of this page.</a></p>
-{% endblock %}
+<div class="ui active text loader">Preparing your ballot. Please wait.</div>
 
-{% block buttons %}
-	<a href="{{ election_base_url }}/view" class="ui right floated primary button">Return to election page</a>
-{% endblock %}
+<script>
+	boothWorker.onmessage = function(msg) {
+		try {
+			booth.encryptedVote = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(msg.data, null);
+			nextTemplate();
+		} catch (err) {
+			boothError(err);
+			throw err;
+		}
+	}
+	boothWorker.onerror = function(err) {
+		boothError(err);
+		throw err;
+	}
+	try {
+		boothWorker.postMessage({
+			"action": "generateEncryptedVote",
+			"static_base_url": {{ static_base_url }},
+			"election": eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(election, null),
+			"selections": booth.selections,
+		});
+	} catch (err) {
+		boothError(err);
+		throw err;
+	}
+</script>

@@ -1,4 +1,4 @@
-{% extends templates['base'] %}
+{% extends templates['eos_basic/templates/base.html'] %}
 
 {#
     Copyright © 2017  RunasSudo (Yingtong Li)
@@ -25,48 +25,6 @@
 {% endblock %}
 
 {% block buttons %}
-	<button class="ui left floated button" onclick="showTemplate('review');">Back</a>
-	<button class="ui right floated primary button" onclick="castBallot();">Cast ballot</button>
+	<button class="ui left floated button" onclick="prevTemplate();">Back</a>
+	<button class="ui right floated primary button" onclick="nextTemplate();">Cast ballot</button>
 {% endblock buttons %}
-
-{% block after %}
-	<script>
-		function getCookie(name) {
-			if (document.cookie) {
-				var cookies = document.cookie.split(";");
-				for (var cookie of cookies) {
-					cookie = cookie.trim();
-					if (cookie.startsWith(name + "=")) {
-						return decodeURIComponent(cookie.substring(name.length + 1));
-					}
-				}
-			}
-			return null;
-		}
-		
-		function castBallot() {
-			try {
-				$("#booth-content").html('<div class="ui active text loader">Casting your ballot. Please wait.</div>');
-				
-				encryptedVoteJson = eos_js.eos_core.libobjects.__all__.to_json(eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(booth.encryptedVote, null));
-				$.ajax({
-					url: "{{ election_base_url }}/cast_vote",
-					type: "POST",
-					data: { "encrypted_vote": encryptedVoteJson },
-					dataType: "text",
-					beforeSend: function(xhr) { xhr.setRequestHeader("X-CSRFToken", getCookie("csrftoken")); }
-				})
-					.done(function(data) {
-						showTemplate("complete");
-					})
-					.fail(function(xhr, status, err) {
-						boothError(err);
-						throw err;
-					});
-			} catch (err) {
-				boothError(err);
-				throw err;
-			}
-		}
-	</script>
-{% endblock after %}

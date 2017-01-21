@@ -20,15 +20,15 @@
 <p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash() }}</span></small></p>
 
 {# Convert the template name to a numerical index for comparison #}
-{% if template == 'landing' %}
+{% if template == 'eos_basic/templates/landing.html' %}
 	{% set menuindex = 1 %}
-{% elif template == 'selections' %}
+{% elif template == 'eos_basic/templates/selections.html' %}
 	{% set menuindex = 2 %}
-{% elif template == 'review' %}
+{% elif template == 'eos_basic/templates/review.html' %}
 	{% set menuindex = 3 %}
-{% elif template == 'audit' %}
+{% elif template == 'eos_basic/templates/audit.html' %}
 	{% set menuindex = 4 %}
-{% elif template == 'complete' %}
+{% elif template == 'eos_basic/templates/complete.html' %}
 	{% set menuindex = 5 %}
 {% endif %}
 

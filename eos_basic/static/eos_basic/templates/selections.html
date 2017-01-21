@@ -1,4 +1,4 @@
-{% extends templates['base'] %}
+{% extends templates['eos_basic/templates/base.html'] %}
 
 {#
     Copyright © 2017  RunasSudo (Yingtong Li)
@@ -29,7 +29,7 @@
 {% block after %}
 	<script>
 		booth.questionNum = {{ questionNum }};
-		showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+		showTemplate("eos_basic/templates/question.html", "#question-box", { "questionNum": booth.questionNum });
 		
 		function saveSelections() {
 			selections = [];
@@ -42,20 +42,20 @@
 		function previousQuestion() {
 			saveSelections();
 			if (booth.questionNum == 0) {
-				showTemplate("landing");
+				prevTemplate();
 			} else {
 				booth.questionNum--;
-				showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+				showTemplate("eos_basic/templates/question.html", "#question-box", { "questionNum": booth.questionNum });
 			}
 		}
 		
 		function nextQuestion() {
 			saveSelections();
 			if (booth.questionNum == election.questions.length - 1) {
-				showTemplate("review");
+				nextTemplate();
 			} else {
 				booth.questionNum++;
-				showTemplate("question", "#question-box", { "questionNum": booth.questionNum });
+				showTemplate("eos_basic/templates/question.html", "#question-box", { "questionNum": booth.questionNum });
 			}
 		}
 	</script>

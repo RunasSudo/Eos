@@ -58,7 +58,7 @@ class TaskReceiveVotes(EosDictObjectWorkflowTask):
 		return False
 	
 	def are_restrictions_met(self, workflow, election):
-		if not super().are_restrictions_met(workflow, election):
+		if not EosDictObjectWorkflowTask.are_restrictions_met(self, workflow, election):
 			return False
 		return election.voting_has_opened and not election.voting_has_closed
 
@@ -110,26 +110,69 @@ class NullBoothTask(BoothTask):
 	def _deserialise(cls, value):
 		return cls()
 
-class BoothTaskWelcome(NullBoothTask):
+class NullTemplateBoothTask(NullBoothTask):
+	class EosMeta:
+		abstract = True
+	
+	def get_main_template(self):
+		return self.get_templates()[0]
+	
+	def activate(self, fromFront):
+		# Hand over to JavaScript
+		showTemplate(self.get_main_template())
+
+class BoothTaskWelcome(NullTemplateBoothTask):
 	class EosMeta:
 		eos_name = 'eos_basic.workflow.BoothTaskWelcome'
+	
+	def get_templates(self):
+		return ['eos_basic/templates/landing.html', 'eos_basic/templates/base.html']
 
 class BoothTaskMakeSelections(NullBoothTask):
 	class EosMeta:
 		eos_name = 'eos_basic.workflow.BoothTaskMakeSelections'
+	
+	def get_templates(self):
+		return ['eos_basic/templates/selections.html', 'eos_basic/templates/question.html']
+	
+	def activate(self, fromFront):
+		# Hand over to JavaScript
+		if fromFront:
+			showTemplate(self.get_templates()[0], '#booth-content', { 'questionNum': 0 })
+		else:
+			showTemplate(self.get_templates()[0], '#booth-content', { 'questionNum': election.questions.length - 1 })
 
-class BoothTaskReviewSelections(NullBoothTask):
+class BoothTaskReviewSelections(NullTemplateBoothTask):
 	class EosMeta:
 		eos_name = 'eos_basic.workflow.BoothTaskReviewSelections'
+	
+	def get_templates(self):
+		return ['eos_basic/templates/review.html']
 
-class BoothTaskEncryptBallot(NullBoothTask):
+class BoothTaskEncryptBallot(NullTemplateBoothTask):
 	class EosMeta:
 		eos_name = 'eos_basic.workflow.BoothTaskEncryptBallot'
+	
+	def get_templates(self):
+		return ['eos_basic/templates/encrypt.html']
+	
+	def activate(self, fromFront):
+		if fromFront:
+			NullTemplateBoothTask.activate(self, fromFront)
+		else:
+			# If going back, skip straight to the review page
+			prevTemplate()
 
-class BoothTaskAuditBallot(NullBoothTask):
+class BoothTaskAuditBallot(NullTemplateBoothTask):
 	class EosMeta:
 		eos_name = 'eos_basic.workflow.BoothTaskAuditBallot'
+	
+	def get_templates(self):
+		return ['eos_basic/templates/audit.html']
 
-class BoothTaskCastVote(NullBoothTask):
+class BoothTaskCastVote(NullTemplateBoothTask):
 	class EosMeta:
 		eos_name = 'eos_basic.workflow.BoothTaskCastVote'
+	
+	def get_templates(self):
+		return ['eos_basic/templates/cast.html', 'eos_basic/templates/complete.html']

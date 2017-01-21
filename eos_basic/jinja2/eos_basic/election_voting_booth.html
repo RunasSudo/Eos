@@ -36,18 +36,12 @@
 	<script src="{{ static('eos_basic/js/jssha-sha256.js') }}"></script>
 	<script src="{{ static('eos_basic/js/build/eos_js.js') }}"></script>
 	<script>
-		var templates = {
-			"base": null,
-			"landing": null,
-			"selections": null,
-			"question": null,
-			"review": null,
-			"audit": null,
-			"complete": null,
-		};
+		var templates = {};
 		var election = null;
 		var booth = null;
 		var boothWorker = null;
+		var boothTasks = null;
+		var currentBoothTask = 0;
 		
 		function resetBooth() {
 			booth = {
@@ -64,7 +58,7 @@
 						
 						boothWorker = new Worker("{{ static('eos_basic/js/booth_worker.js') }}");
 						
-						loadTemplates();
+						electionLoaded();
 					} catch (err) {
 						loadError(err);
 						throw err;
@@ -76,20 +70,30 @@
 				});
 		}
 		
+		function electionLoaded() {
+			boothTasks = election.workflow.get_task("eos_core.workflow.TaskReceiveVotes").booth_tasks;
+			for (var boothTask of boothTasks) {
+				for (var template of boothTask.get_templates()) {
+					templates[template] = null;
+				}
+			}
+			loadTemplates();
+		}
+		
 		function loadTemplates() {
 			// Load all the templates
 			var templateUrls = Object.keys(templates);
 			var numTemplatesLoaded = 0;
 			for (var templateUrl of templateUrls) {
 				(function(templateUrl) {
-					$.ajax({ url: "{{ static('eos_basic/templates') }}/" + templateUrl + ".html", dataType: "text" })
+					$.ajax({ url: "{{ static('') }}/" + templateUrl, dataType: "text" })
 						.done(function(data) {
 							try {
 								templates[templateUrl] = nunjucks.compile(data);
 								numTemplatesLoaded += 1;
 								if (numTemplatesLoaded == templateUrls.length) {
 									// All templates loaded. Show voting booth
-									showTemplate("landing");
+									boothTasks[0].activate(true);
 								}
 							} catch (err) {
 								loadError(err);
@@ -142,6 +146,16 @@
 				boothError(err);
 				throw err;
 			}
+		}
+		
+		function nextTemplate() {
+			currentBoothTask++;
+			boothTasks[currentBoothTask].activate(true);
+		}
+		
+		function prevTemplate() {
+			currentBoothTask--;
+			boothTasks[currentBoothTask].activate(false);
 		}
 		
 		loadElection();

@@ -1,0 +1,54 @@
+{#
+    Copyright © 2017  RunasSudo (Yingtong Li)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+<div class="ui active text loader">Casting your ballot. Please wait.</div>
+
+<script>
+	function getCookie(name) {
+		if (document.cookie) {
+			var cookies = document.cookie.split(";");
+			for (var cookie of cookies) {
+				cookie = cookie.trim();
+				if (cookie.startsWith(name + "=")) {
+					return decodeURIComponent(cookie.substring(name.length + 1));
+				}
+			}
+		}
+		return null;
+	}
+	
+	try {
+		encryptedVoteJson = eos_js.eos_core.libobjects.__all__.to_json(eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(booth.encryptedVote, null));
+		$.ajax({
+			url: "{{ election_base_url }}/cast_vote",
+			type: "POST",
+			data: { "encrypted_vote": encryptedVoteJson },
+			dataType: "text",
+			beforeSend: function(xhr) { xhr.setRequestHeader("X-CSRFToken", getCookie("csrftoken")); }
+		})
+			.done(function(data) {
+				showTemplate("eos_basic/templates/complete.html");
+			})
+			.fail(function(xhr, status, err) {
+				boothError(err);
+				throw err;
+			});
+	} catch (err) {
+		boothError(err);
+		throw err;
+	}
+</script>
