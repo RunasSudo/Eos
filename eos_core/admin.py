@@ -18,8 +18,10 @@ import eos_core.libobjects
 
 import django.contrib.admin
 import django.core.exceptions
+import django.core.urlresolvers
 import django.forms
 import django.utils.html
+import django.utils.safestring
 import django.utils.timezone
 
 import datetime
@@ -62,7 +64,9 @@ class WorkflowAdminForm(django.forms.ModelForm):
 	
 	def clean_tasks(self):
 		data = self.cleaned_data['tasks']
-		if not isinstance(eos_core.libobjects.EosObject.deserialise_list(eos_core.libobjects.from_json(data), None), list):
+		#import pdb; pdb.set_trace()
+		#if not isinstance(eos_core.libobjects.EosObject.deserialise_list(eos_core.libobjects.from_json(data), None), list):
+		if not isinstance(data, list):
 			raise django.forms.ValidationError('This field must be a list.')
 		return data
 
@@ -127,7 +131,7 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	
 	def get_fieldsets(self, request, obj=None):
 		return (
-			(None, {'fields': ['id', 'election_name', 'workflow']}),
+			(None, {'fields': ['id', 'election_name', 'election_url', 'workflow']}),
 			('Schedule', {'fields':
 				['voting_opens_at', 'voting_closes_at', 'voting_extended_until'] +
 				(['voting_opened_at', 'open_voting'] if (obj is not None and obj.frozen_at and not obj.voting_has_opened) else ['voting_opened_at']) +
@@ -140,10 +144,14 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	
 	def get_readonly_fields(self, request, obj=None):
 		return (
-			('id', 'frozen_at', 'voting_opened_at', 'voting_closed_at') +
+			('id', 'election_url', 'frozen_at', 'voting_opened_at', 'voting_closed_at') +
 			(('election_name', 'workflow', 'voting_opens_at', 'voting_closes_at', 'questions', 'voter_eligibility') if (obj is not None and obj.frozen_at) else ()) +
 			(('voting_extended_until',) if (obj is None or not obj.voting_closes_at or obj.voting_closed_at) else ())
 		)
+	
+	def election_url(self, obj):
+		url = django.core.urlresolvers.reverse('election_view', args=[obj.id])
+		return django.utils.safestring.mark_safe('<a href="' + url + '">' + url + '</a>')
 
 django.contrib.admin.site.register(eos_core.models.Workflow, WorkflowAdmin)
 django.contrib.admin.site.register(eos_core.models.Election, ElectionAdmin)

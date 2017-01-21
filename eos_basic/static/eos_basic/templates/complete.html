@@ -36,12 +36,12 @@
 					booth.encryptedVote = eos_js.eos_core.libobjects.__all__.EosObject.deserialise_and_unwrap(msg.data, null);
 					showTemplate('audit');
 				} catch (err) {
-					boothError();
+					boothError(err);
 					throw err;
 				}
 			}
 			boothWorker.onerror = function(err) {
-				boothError();
+				boothError(err);
 				throw err;
 			}
 			try {
@@ -52,7 +52,7 @@
 					"selections": booth.selections,
 				});
 			} catch (err) {
-				boothError();
+				boothError(err);
 				throw err;
 			}
 		}

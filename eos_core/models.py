@@ -80,6 +80,9 @@ class Workflow(EosDictObjectModel):
 			if name in task.workflow_provides:
 				return task
 		return None
+	
+	def get_pending_tasks(self, election):
+		return [task for task in self.tasks if task.is_pending(self, election)]
 
 class Election(EosDictObjectModel):
 	class EosMeta:

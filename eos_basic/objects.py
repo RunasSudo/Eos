@@ -13,11 +13,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import eos_core
 import eos_core.libobjects
 import eos_core.objects
 import eos_core.models
-
-import django.contrib.auth.models
 
 # A type of question which permits voters to place check marks against the names of a specified number of candidates
 class ApprovalQuestion(eos_core.libobjects.EosDictObject, eos_core.objects.Question):
@@ -59,4 +58,11 @@ class DjangoAuthVoter(eos_core.objects.Voter):
 	
 	@property
 	def name(self):
-		return django.contrib.auth.models.User.objects.get(id=self.auth_user_id).username
+		if eos_core.is_python:
+			__pragma__ = lambda x: None
+			__pragma__('skip')
+			import django.contrib.auth.models
+			return django.contrib.auth.models.User.objects.get(id=self.auth_user_id).username
+			__pragma__('noskip')
+		else:
+			return None

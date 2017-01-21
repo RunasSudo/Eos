@@ -21,4 +21,5 @@ urlpatterns = [
 	url(r'^$', views.index, name='index'),
 	url(r'^(?P<election_id>[0-9a-f-]+)$$', views.election_json, name='election_json'),
 	url(r'^(?P<election_id>[0-9a-f-]+)/cast_vote$$', views.election_cast_vote, name='election_cast_vote'),
+	url(r'^(?P<election_id>[0-9a-f-]+)/compute_result$$', views.election_compute_result, name='election_compute_result'),
 ]

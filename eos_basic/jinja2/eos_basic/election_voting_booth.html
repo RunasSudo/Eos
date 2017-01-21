@@ -66,11 +66,14 @@
 						
 						loadTemplates();
 					} catch (err) {
-						loadError();
+						loadError(err);
 						throw err;
 					}
 				})
-				.fail(loadError);
+				.fail(function(xhr, status, err) {
+					loadError(err);
+					throw err;
+				});
 		}
 		
 		function loadTemplates() {
@@ -89,22 +92,33 @@
 									showTemplate("landing");
 								}
 							} catch (err) {
-								loadError();
+								loadError(err);
 								throw err;
 							}
 						})
-						.fail(loadError);
+						.fail(function(xhr, status, err) {
+							loadError(err);
+							throw err;
+						});
 				})(templateUrl);
 			}
 		}
 		
-		function loadError() {
-			$("#booth-content").html('<div class="ui error message"><p>We were unable to load the voting booth for this election. Please try again. If this problem persists, contact the election administrator.</p>');
+		function loadError(err) {
+			var techDetails = '';
+			if (err) {
+				techDetails = '<p>Technical details: ' + err + '</p>';
+			}
+			$("#booth-content").html('<div class="ui error message"><p>We were unable to load the voting booth for this election. Please try again. If this problem persists, contact the election administrator.</p>' + techDetails + '</div>');
 		}
 		
-		function boothError() {
+		function boothError(err) {
 			resetBooth();
-			$("#booth-content").html('<div class="ui error message"><p>We were unable to display the next page of the voting booth. For your security, your ballot selections have been cleared. Please try again. If this problem persists, contact the election administrator.</p>');
+			var techDetails = '';
+			if (err) {
+				techDetails = '<p>Technical details: ' + err + '</p>';
+			}
+			$("#booth-content").html('<div class="ui error message"><p>We were unable to display the next page of the voting booth. For your security, your ballot selections have been cleared. Please try again. If this problem persists, contact the election administrator.</p>' + techDetails + '</div>');
 		}
 		
 		function showTemplate(template, destination, opts) {
@@ -125,7 +139,7 @@
 				}, opts);
 				$(destination).html(templates[template].render(opts));
 			} catch (err) {
-				boothError();
+				boothError(err);
 				throw err;
 			}
 		}

@@ -16,6 +16,12 @@
 import eos_core
 import eos_core.libobjects
 
+if eos_core.is_python:
+	__pragma__ = lambda x: None
+	__pragma__('skip')
+	import django.core.urlresolvers
+	__pragma__('noskip')
+
 workflow_tasks = {}
 
 class WorkflowTaskType(eos_core.libobjects.EosObjectType):
@@ -33,36 +39,131 @@ class WorkflowTask(eos_core.libobjects.EosObject, metaclass=WorkflowTaskType):
 	workflow_depends = []
 	#workflow_conflicts = []
 	#workflow_after = []
-	#workflow_before = []
+	workflow_before = []
 	
 	class EosMeta:
 		abstract = True
 	
 	@staticmethod
 	def get_all():
-		#import eos.settings
-		#import importlib
-		#for app in eos.settings.INSTALLED_APPS:
-		#	try:
-		#		importlib.import_module(app + '.workflow')
-		#	except ImportError:
-		#		pass
+		if eos_core.is_python:
+			__pragma__ = lambda x: None
+			__pragma__('skip')
+			import eos.settings
+			import importlib
+			for app in eos.settings.INSTALLED_APPS:
+				try:
+					importlib.import_module(app + '.workflow')
+				except ImportError:
+					pass
+			__pragma__('noskip')
 		return workflow_tasks
+	
+	def are_restrictions_met(self, workflow, election):
+		for task in self.workflow_depends:
+			if not workflow.get_task(task):
+				return False
+			if not workflow.get_task(task).is_complete(workflow, election):
+				return False
+		return True
+	
+	def is_pending(self, workflow, election):
+		return self.are_restrictions_met(workflow, election) and not self.is_complete(workflow, election)
 
-class CoreWorkflowTask(WorkflowTask):
+# A workflow task with no value
+class NullWorkflowTask(WorkflowTask):
 	class EosMeta:
-		eos_name = 'eos_core.workflow.CoreWorkflowTask'
-	
-	def __init__(self, name=None):
-		self.name = name
-	
-	@property
-	def workflow_depends(self):
-		return ['eos_basic.workflow.TaskSetElectionDetails']
+		abstract = True
 	
 	def serialise(self, hashed=False):
-		return self.name
+		return None
 	
 	@staticmethod
 	def _deserialise(cls, value):
-		return cls(name=value)
+		return cls()
+
+# A workflow task whose associated URL is the election admin URL
+class NullAdminWorkflowTask(NullWorkflowTask):
+	class EosMeta:
+		abstract = True
+	
+	def task_url(self, workflow, election):
+		return django.core.urlresolvers.reverse('admin:eos_core_election_change', args=[election.id])
+
+class TaskSetElectionDetails(NullAdminWorkflowTask):
+	class EosMeta:
+		eos_name = 'eos_core.workflow.TaskSetElectionDetails'
+	
+	def task_name(self, workflow, election):
+		return 'Set election details and freeze election'
+	
+	def is_complete(self, workflow, election):
+		return election.frozen_at is not None
+
+class TaskOpenVoting(NullAdminWorkflowTask):
+	workflow_depends = ['eos_core.workflow.TaskSetElectionDetails']
+	
+	class EosMeta:
+		eos_name = 'eos_core.workflow.TaskOpenVoting'
+	
+	def task_name(self, workflow, election):
+		return 'Open voting'
+	
+	def is_complete(self, workflow, election):
+		return election.voting_has_opened
+
+class TaskExtendVoting(NullAdminWorkflowTask):
+	workflow_depends = ['eos_core.workflow.TaskSetElectionDetails']
+	
+	class EosMeta:
+		eos_name = 'eos_core.workflow.TaskExtendVoting'
+	
+	def task_name(self, workflow, election):
+		return 'Extend voting'
+	
+	def is_complete(self, workflow, election):
+		# We can always keep extending voting
+		return False
+	
+	def are_restrictions_met(self, workflow, election):
+		if not super().are_restrictions_met(workflow, election):
+			return False
+		# We cannot extend voting if we manually closed it
+		return election.voting_closed_at is None
+
+class TaskCloseVoting(NullAdminWorkflowTask):
+	workflow_depends = ['eos_core.workflow.TaskOpenVoting']
+	
+	class EosMeta:
+		eos_name = 'eos_core.workflow.TaskCloseVoting'
+	
+	def task_name(self, workflow, election):
+		return 'Close voting'
+	
+	def is_complete(self, workflow, election):
+		return election.voting_has_closed
+
+class TaskComputeResult(NullWorkflowTask):
+	workflow_depends = ['eos_core.workflow.TaskCloseVoting']
+	
+	class EosMeta:
+		eos_name = 'eos_core.workflow.TaskComputeResult'
+	
+	def task_name(self, workflow, election):
+		return 'Compute result'
+	
+	def task_url(self, workflow, election):
+		return django.core.urlresolvers.reverse('election_compute_result', args=[election.id])
+	
+	def is_complete(self, workflow, election):
+		# TODO
+		return False
+
+class TaskReleaseResult(NullAdminWorkflowTask):
+	workflow_depends = ['eos_core.workflow.TaskComputeResult']
+	
+	class EosMeta:
+		eos_name = 'eos_core.workflow.TaskReleaseResult'
+	
+	def task_name(self, workflow, election):
+		return 'Release result'

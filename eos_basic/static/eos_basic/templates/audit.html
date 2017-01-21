@@ -59,9 +59,12 @@
 					.done(function(data) {
 						showTemplate("complete");
 					})
-					.fail(boothError);
+					.fail(function(xhr, status, err) {
+						boothError(err);
+						throw err;
+					});
 			} catch (err) {
-				boothError();
+				boothError(err);
 				throw err;
 			}
 		}

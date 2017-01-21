@@ -19,6 +19,7 @@ import eos_core.workflow
 
 import eos_basic.objects # TODO: UH OH!
 
+import django.core.exceptions
 import django.http
 import django.shortcuts
 import django.utils.timezone
@@ -33,6 +34,9 @@ def election_json(request, election_id):
 def election_cast_vote(request, election_id):
 	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
 	
+	if election.voting_has_closed or not election.voting_has_opened:
+		raise django.core.exceptions.PermissionDenied('Voting in this election is not yet open or has closed')
+	
 	encrypted_vote = eos_core.libobjects.EosObject.deserialise_and_unwrap(eos_core.libobjects.from_json(request.POST['encrypted_vote']), None)
 	
 	voter = eos_basic.objects.DjangoAuthVoter(request.user.id)
@@ -46,3 +50,6 @@ def election_cast_vote(request, election_id):
 	cast_vote.save()
 	
 	return django.http.HttpResponse(status=204)
+
+def election_compute_result(request, election_id):
+	pass
