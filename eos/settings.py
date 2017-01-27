@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     #'eos_test',
     'eos_core',
     'eos_basic',
+    'eos_stjjr',
 ]
 
 MIDDLEWARE = [

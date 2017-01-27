@@ -137,24 +137,24 @@ class ElectionAdmin(django.contrib.admin.ModelAdmin):
 	#	}
 	
 	def get_fieldsets(self, request, obj=None):
-		return (
-			(None, {'fields': ['id', 'election_name', 'election_url', 'workflow']}),
-			('Schedule', {'fields':
+		return [
+			[None, {'fields': ['id', 'election_name', 'election_url', 'workflow']}],
+			['Schedule', {'fields':
 				['voting_opens_at', 'voting_closes_at', 'voting_extended_until'] +
 				(['voting_opened_at', 'open_voting'] if (obj is not None and obj.frozen_at and not obj.voting_has_opened) else ['voting_opened_at']) +
 				(['voting_closed_at', 'close_voting'] if (obj is not None and obj.voting_has_opened and not obj.voting_has_closed) else ['voting_closed_at']) +
 				(['result_released_at', 'release_result'] if (obj is not None and obj.result and not obj.result_released_at) else ['result_released_at'])
-			}),
-			('Questions', {'fields': ['questions']}),
-			('Voters', {'fields': ['voter_eligibility']}),
-			('Freeze Election', {'fields': ['frozen_at', 'freeze'] if (obj is None or not obj.frozen_at) else ['frozen_at']}),
-		)
+			}],
+			['Questions', {'fields': ['questions']}],
+			['Voters', {'fields': ['voter_eligibility']}],
+			['Freeze Election', {'fields': ['frozen_at', 'freeze'] if (obj is None or not obj.frozen_at) else ['frozen_at']}],
+		]
 	
 	def get_readonly_fields(self, request, obj=None):
 		return (
-			('id', 'election_url', 'frozen_at', 'voting_opened_at', 'voting_closed_at', 'result_released_at') +
-			(('election_name', 'workflow', 'voting_opens_at', 'voting_closes_at', 'questions', 'voter_eligibility') if (obj is not None and obj.frozen_at) else ()) +
-			(('voting_extended_until',) if (obj is None or not obj.voting_closes_at or obj.voting_closed_at) else ())
+			['id', 'election_url', 'frozen_at', 'voting_opened_at', 'voting_closed_at', 'result_released_at'] +
+			(['election_name', 'workflow', 'voting_opens_at', 'voting_closes_at', 'questions', 'voter_eligibility'] if (obj is not None and obj.frozen_at) else []) +
+			(['voting_extended_until',] if (obj is None or not obj.voting_closes_at or obj.voting_closed_at) else [])
 		)
 	
 	def election_url(self, obj):

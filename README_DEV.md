@@ -8,7 +8,9 @@ This Eos repository is split into a number of apps: `eos_core` and `eos_basic`.
 
 `eos_basic` implements basic (read: bad) implementations of these: an `ApprovalQuestion` for approval (or FPTP) elections, and various `WorkflowTasks` which implement a basic voting booth with *no* encryption (or ballot secrecy, or verifiability, etc).
 
-Ideally, `eos_core` should contain no references to parts of `eos_basic`, and make no assumptions about implementation details. Of course, this means that the module is littered with them, and really should be cleaned up.
+`eos_stjjr` extends `eos_basic` to provide Helios-like mixnet/threshold decryption workflow tasks based on CPS-EG from **S**eurin and **T**reger (2013) and randomised partial checking from **J**akobsson, **J**uels and **R**ivest (2002).
+
+Ideally, `eos_core` should contain no references to parts of the other modules, and make no assumptions about implementation details. Of course, this means that the module is littered with them, and really should be cleaned up.
 
 ### EosObject
 
@@ -26,11 +28,35 @@ The `eos_js` module loads all definitions of `EosObject`s relevant for use in Ja
 
 ### Workflows
 
-The logic of conducting an election is contained in a `Workflow`, which contains a JSON list of `WorkflowTask`s. A basic workflow is:
+The logic of conducting an election is contained in a `Workflow`, which contains a JSON list of `WorkflowTask`s. A basic minimal workflow is:
 
 ```
 [
 	{"type": "eos_core.workflow.TaskSetElectionDetails", "value": null},
+	{"type": "eos_core.workflow.TaskOpenVoting", "value": null},
+	{"type": "eos_basic.workflow.TaskReceiveVotes", "value": {
+		"booth_tasks": [
+			{"type": "eos_basic.workflow.BoothTaskWelcome", "value": null},
+			{"type": "eos_basic.workflow.BoothTaskMakeSelections", "value": null},
+			{"type": "eos_basic.workflow.BoothTaskReviewSelections", "value": null},
+			{"type": "eos_basic.workflow.BoothTaskEncryptBallot", "value": null},
+			{"type": "eos_basic.workflow.BoothTaskAuditBallot", "value": null},
+			{"type": "eos_basic.workflow.BoothTaskCastVote", "value": null}
+		]
+	}},
+	{"type": "eos_core.workflow.TaskExtendVoting", "value": null},
+	{"type": "eos_core.workflow.TaskCloseVoting", "value": null},
+	{"type": "eos_basic.workflow.TaskComputeResult", "value": null},
+	{"type": "eos_core.workflow.TaskReleaseResult", "value": null}
+]
+```
+
+An example workflow using `eos_stjjr` is:
+
+```
+[
+	{"type": "eos_core.workflow.TaskSetElectionDetails", "value": null},
+	{"type": "eos_stjjr.workflow.TaskSetTrustees", "value": null},
 	{"type": "eos_core.workflow.TaskOpenVoting", "value": null},
 	{"type": "eos_basic.workflow.TaskReceiveVotes", "value": {
 		"booth_tasks": [

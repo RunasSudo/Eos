@@ -22,6 +22,8 @@ if eos_core.is_python:
 	__pragma__ = lambda x: None
 	__pragma__('skip')
 	
+	from model_utils.managers import InheritanceManager
+	
 	import django.core.exceptions
 	import django.db.models
 	import django.utils.timezone
@@ -48,6 +50,8 @@ if eos_core.is_python:
 	
 	__pragma__('noskip')
 else:
+	InheritanceManager = object
+	
 	EosDictObjectModelType = eos_core.libobjects.EosDictObjectType
 	EosDictObjectModel = eos_core.libobjects.EosDictObject
 
@@ -107,6 +111,8 @@ class Election(EosDictObjectModel):
 			eos_core.libobjects.EosField(list, 'result', nullable=True, hashed=False),
 			eos_core.libobjects.EosField(eos_core.libobjects.datetime, 'result_released_at', nullable=True, hashed=False),
 		]
+	
+	objects = InheritanceManager()
 	
 	def __str__(self):
 		return self.election_name

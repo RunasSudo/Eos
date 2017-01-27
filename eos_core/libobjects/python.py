@@ -158,10 +158,11 @@ class EosObject(metaclass=EosObjectType):
 
 # Stores information about a field of an EosObject for easy conversion to/from a Model
 class EosField():
-	def __init__(self, py_type, name=None, *, hashed=True, max_length=None, element_type=None, primary_key=False, editable=True, nullable=False, on_delete=None):
+	def __init__(self, py_type, name=None, *, hashed=True, linked_property=None, max_length=None, element_type=None, primary_key=False, editable=True, nullable=False, on_delete=None):
 		self.name = name
 		self.py_type = py_type
 		self.hashed = hashed
+		self.linked_property = linked_property
 		
 		self.max_length = max_length
 		self.element_type = element_type
@@ -170,8 +171,22 @@ class EosField():
 		self.null = nullable # 'null' is a JS keyword
 		self.on_delete = on_delete
 	
+	def __repr__(self):
+		return self.name
+	
 	def create_django_field(self):
 		general_keys = {x: getattr(self, x) for x in ['primary_key', 'editable', 'null']}
+		
+		if self.linked_property:
+			# This is not actually a field!
+			def get_that_property(obj):
+				val = getattr(obj, self.linked_property)
+				if val.__class__.__name__ == 'RelatedManager':
+					if hasattr(val, 'select_subclasses'):
+						return val.select_subclasses()
+					return val.all()
+				return val
+			return property(get_that_property)
 		
 		if isinstance(self.py_type, type):
 			if issubclass(self.py_type, EosObject):
@@ -181,7 +196,7 @@ class EosField():
 				elif self.py_type is EosObject:
 					return eos_core.fields.EosObjectField(**general_keys)
 				else:
-					return eos_core.fields.EosObjectField(contained_type=self.py_type, **general_keys)
+					return eos_core.fields.EosObjectField(field_type=self.py_type, **general_keys)
 			if issubclass(self.py_type, int):
 				return django.db.models.IntegerField(**general_keys)
 			if issubclass(self.py_type, str):
@@ -208,20 +223,28 @@ class EosDictObjectType(EosObjectType):
 	
 	def _before_new(meta, name, bases, attrs):
 		if eos_core.is_python and any(issubclass(base, django.db.models.Model) for base in bases):
-			if 'EosMeta' in attrs and hasattr(attrs['EosMeta'], 'eos_fields'):
-				eos_fields = attrs['EosMeta'].eos_fields
-			else:
-				#TODO: Implement inheritance of EosMeta things
-				eos_fields = []
-			for field in eos_fields:
-				attrs[field.name] = field.create_django_field()
+			# Set up some defaults
+			if 'EosMeta' not in attrs:
+				class EosMeta:
+					eos_fields = []
+				attrs['EosMeta'] = EosMeta
+			if not hasattr(attrs['EosMeta'], 'eos_fields'):
+				# Try to inherit fields
+				try:
+					attrs['EosMeta'].eos_fields = next(base for base in bases if issubclass(base, EosDictObject))._eosmeta.eos_fields
+				except StopIteration:
+					pass
+			
+			for field in attrs['EosMeta'].eos_fields:
+				if not any(hasattr(base, field.name) for base in bases):
+					attrs[field.name] = field.create_django_field()
 		
 		return meta, name, bases, attrs
 
-# Must declare eos_fields field
 class EosDictObject(EosObject, metaclass=EosDictObjectType):
 	class EosMeta:
 		abstract = True
+		eos_fields = []
 	
 	def __init__(self, *args, **kwargs):
 		if isinstance(self, django.db.models.Model):

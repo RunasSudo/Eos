@@ -25,11 +25,18 @@ import django.http
 import django.shortcuts
 import django.utils.timezone
 
+# Like get_object_or_404 but uses select_subclasses from django-model-utils
+def get_subclass_or_404(cls, *args, **kwargs):
+	try:
+		return cls.objects.filter(*args, **kwargs).select_subclasses()[0]
+	except cls.DoesNotExist:
+		raise django.http.Http404('No %s matches the given query.' % queryset.model._meta.object_name)
+
 def index(request):
 	return django.shortcuts.render(request, 'eos_core/index.html', {'workflow_tasks': eos_core.workflow.WorkflowTask.get_all() })
 
 def election_json(request, election_id):
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	election = get_subclass_or_404(eos_core.models.Election, id=election_id)
 	return django.http.HttpResponse(eos_core.libobjects.to_json(eos_core.libobjects.EosObject.serialise_and_wrap(election, None, request.GET.get('hashed', 'false') == 'true')), content_type='application/json')
 
 def election_cast_vote(request, election_id):
