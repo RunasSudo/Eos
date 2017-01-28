@@ -21,3 +21,7 @@ import eos_core.workflow
 import eos_basic.objects
 import eos_basic.models
 import eos_basic.workflow
+
+import eos_stjjr.models
+import eos_stjjr.workflow
+import eos_stjjr.crypto

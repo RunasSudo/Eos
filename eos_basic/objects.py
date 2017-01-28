@@ -17,6 +17,7 @@ import eos_core
 import eos_core.libobjects
 import eos_core.objects
 import eos_core.models
+import eos_basic.workflow
 
 # A type of question which permits voters to place check marks against the names of a specified number of candidates
 class ApprovalQuestion(eos_core.libobjects.EosDictObject, eos_core.objects.Question):

@@ -13,10 +13,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from django.db import models
-
-from .eos_crypto.elgamal import *
-
-from .eos_crypto.bigint import BigInt
-class Message(BaseModelClass, metaclass=BaseModelType):
-	__fields__ = [('m', BigInt)]
+import eos_stjjr.bigint
+import eos_stjjr.crypto
+import eos_stjjr.models
+import eos_stjjr.workflow

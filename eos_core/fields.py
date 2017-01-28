@@ -19,13 +19,16 @@ import django.db.models
 
 # Django field which stores a serialised object
 class EosObjectField(django.db.models.Field):
-	def __init__(self, field_type=None, *args, **kwargs):
-		self.field_type = field_type
+	def __init__(self, py_type=None, *args, **kwargs):
+		if py_type is None:
+			self.field_type = None
+		else:
+			self.field_type = eos_core.libobjects.EosField(py_type)
 		super().__init__(*args, **kwargs)
 	
 	def deconstruct(self):
 		name, path, args, kwargs = super().deconstruct()
-		kwargs['field_type'] = self.field_type
+		kwargs['py_type'] = self.field_type.py_type
 		return name, path, args, kwargs
 	
 	def from_db_value(self, value, expression, connection, context):
@@ -36,9 +39,15 @@ class EosObjectField(django.db.models.Field):
 			return value
 		if value is None:
 			return value
+		if value == 'null':
+			return None
 		return eos_core.libobjects.EosObject.deserialise_and_unwrap(eos_core.libobjects.from_json(value), self.field_type)
 	
 	def get_prep_value(self, value):
+		if isinstance(value, str):
+		#	if value == '':
+		#		return 'null'
+			return value
 		return eos_core.libobjects.to_json(eos_core.libobjects.EosObject.serialise_and_wrap(value, self.field_type))
 	
 	def get_internal_type(self):

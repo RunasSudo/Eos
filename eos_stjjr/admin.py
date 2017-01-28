@@ -29,6 +29,12 @@ import datetime
 
 class STJJRTrusteeInline(django.contrib.admin.TabularInline):
 	model = eos_stjjr.models.STJJRTrustee
+	
+	readonly_fields = ['trustee_url']
+	
+	def trustee_url(self, obj):
+		url = django.core.urlresolvers.reverse('trustee_home', args=[obj.id])
+		return django.utils.safestring.mark_safe('<a href="' + url + '">Trustee URL</a>')
 
 class ElectionWithTrusteesAdminForm(eos_core.admin.ElectionAdminForm):
 	pass

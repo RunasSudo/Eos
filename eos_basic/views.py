@@ -14,6 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import eos_core.models
+import eos_core.views
 
 import django.shortcuts
 
@@ -29,17 +30,17 @@ class LoginForm(django.contrib.auth.forms.AuthenticationForm):
 # Eos views
 
 def election_view(request, election_id):
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	election = eos_core.views.get_subclass_or_404(eos_core.models.Election, id=election_id)
 	return django.shortcuts.render(request, 'eos_basic/election_view.html', {'election': election})
 
 def election_questions(request, election_id):
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	election = eos_core.views.get_subclass_or_404(eos_core.models.Election, id=election_id)
 	return django.shortcuts.render(request, 'eos_basic/election_questions.html', {'election': election})
 
 def election_ballots(request, election_id):
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	election = eos_core.views.get_subclass_or_404(eos_core.models.Election, id=election_id)
 	return django.shortcuts.render(request, 'eos_basic/election_ballots.html', {'election': election})
 
 def election_voting_booth(request, election_id):
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	election = eos_core.views.get_subclass_or_404(eos_core.models.Election, id=election_id)
 	return django.shortcuts.render(request, 'eos_basic/election_voting_booth.html', {'election': election})

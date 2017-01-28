@@ -14,6 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import eos_core
+import eos_core.hashing
 
 datetime = str
 uuid = str
@@ -146,9 +147,7 @@ class EosObject(metaclass=EosObjectType):
 	
 	@staticmethod
 	def object_to_hash(value):
-		sha = __new__(jsSHA('SHA-256', 'TEXT'))
-		getattr(sha, 'update')(to_json(EosObject.serialise_and_wrap(value, None, True)))
-		return sha.getHash('B64')
+		return eos_core.hashing.hash_as_b64(to_json(EosObject.serialise_and_wrap(value, None, True)))
 	
 	# TNYI: Transcrypt's handling of class methods is strange
 	@classmethod

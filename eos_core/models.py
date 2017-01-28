@@ -16,7 +16,6 @@
 import eos_core
 import eos_core.libobjects
 import eos_core.objects
-import eos_basic.workflow
 
 if eos_core.is_python:
 	__pragma__ = lambda x: None
@@ -50,7 +49,8 @@ if eos_core.is_python:
 	
 	__pragma__('noskip')
 else:
-	InheritanceManager = object
+	class InheritanceManager:
+		pass
 	
 	EosDictObjectModelType = eos_core.libobjects.EosDictObjectType
 	EosDictObjectModel = eos_core.libobjects.EosDictObject

@@ -40,7 +40,7 @@ def election_json(request, election_id):
 	return django.http.HttpResponse(eos_core.libobjects.to_json(eos_core.libobjects.EosObject.serialise_and_wrap(election, None, request.GET.get('hashed', 'false') == 'true')), content_type='application/json')
 
 def election_cast_vote(request, election_id):
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	election = get_subclass_or_404(eos_core.models.Election, id=election_id)
 	
 	if election.voting_has_closed or not election.voting_has_opened:
 		raise django.core.exceptions.PermissionDenied('Voting in this election is not yet open or has closed')
@@ -63,7 +63,7 @@ def election_compute_result(request, election_id):
 	if not request.user.is_staff:
 		raise django.core.exceptions.PermissionDenied('Only an election administrator may calculate the election result')
 	
-	election = django.shortcuts.get_object_or_404(eos_core.models.Election, id=election_id)
+	election = get_subclass_or_404(eos_core.models.Election, id=election_id)
 	
 	if not election.workflow.get_task('eos_core.workflow.TaskComputeResult').is_pending(election.workflow, election):
 		# There's a time and place for everything, but not now!

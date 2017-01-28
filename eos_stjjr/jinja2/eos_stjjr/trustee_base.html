@@ -1,3 +1,5 @@
+{% extends 'eos_basic/base.html' %}
+
 {#
     Copyright © 2017  RunasSudo (Yingtong Li)
 
@@ -15,20 +17,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="utf-8">
-		<title>{% block title %}{% endblock %} – Eos Voting</title>
-		
-		<link rel="stylesheet" type="text/css" href="{{ static('eos_basic/bower_components/semantic/dist/semantic.min.css') }}">
-		
-		<script src="{{ static('eos_basic/bower_components/jquery/dist/jquery.min.js') }}"></script>
-		<script src="{{ static('eos_basic/bower_components/semantic/dist/semantic.min.js') }}"></script>
-		{% block head %}{% endblock %}
-	</head>
-	<body>
-		{% block basecontent %}
+{% block title %}{{ election.election_name }} – Trustee {{ trustee.name }}{% endblock %}
+
+{% block content %}
+	<h1 class="ui header">{{ election.election_name }} – Trustee {{ trustee.name }}</h1>
+	
+	<p><small><b>Election fingerprint:</b> <span class="hash">{{ election.hash }}</span></small></p>
+	
+	<div class="ui container" id="election-tab-content">
+		{% block electioncontent %}
 		{% endblock %}
-	</body>
-</html>
+	</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'eos_stjjr/trustee_base.html' %}
+
+{#
+    Copyright © 2017  RunasSudo (Yingtong Li)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% block electioncontent %}
+	<div><input type="button" value="Generate key" onclick="sk = eos_js.eos_stjjr.crypto.__all__.CPSEGPrivateKey.generate(); document.getElementById('sk').innerText = eos_js.eos_core.libobjects.__all__.to_json(eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(sk, null));"></div>
+    <div id="sk" class="hash" style="font-size: small;"></div>
+    <div><input type="button" value="Encrypt message" onclick="m = eos_js.eos_stjjr.bigint.__all__.BigInt(prompt('What message to encrypt?', '1337')); ct = sk.public_key.encrypt(m); document.getElementById('ct').innerText = eos_js.eos_core.libobjects.__all__.to_json(eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(ct, null));"></div>
+    <div id="ct" class="hash" style="font-size: small;"></div>
+    <div><input type="button" value="Decrypt message" onclick="pt = sk.decrypt(ct); document.getElementById('pt').innerText = pt.__str__();"></div>
+    <div id="pt" class="hash" style="font-size: small;"></div>
+{% endblock %}
+
+{% block basecontent %}
+    {{ super() }}
+    
+    <script src="{{ static('eos_basic/js/jssha-sha256.js') }}"></script>
+    <script src="{{ static('eos_basic/js/jsbn.js') }}"></script>
+    <script src="{{ static('eos_basic/js/jsbn2.js') }}"></script>
+    <script src="{{ static('eos_basic/js/eos_json.js') }}"></script>
+    <script src="{{ static('eos_basic/js/build/eos_js.js') }}"></script>
+{% endblock %}

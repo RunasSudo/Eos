@@ -13,10 +13,18 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+__pragma__ = lambda x: None
+__pragma__('opov')
+
+import eos_core
+if not eos_core.is_python:
+	# TNYI: No pow() support
+	def pow(a, b, c=None):
+		return a.__pow__(b, c)
+
+import eos_core.hashing
 import eos_core.libobjects
 import eos_stjjr.bigint
-
-import hashlib
 
 class CyclicGroup(eos_core.libobjects.EosDictObject):
 	class EosMeta:
@@ -59,13 +67,7 @@ class CPSEGPublicKey(eos_core.libobjects.EosDictObject):
 		# Calculate signature challenge
 		A = pow(self.group.g, a, self.group.p)
 		Ap = pow(self.X, a, self.group.p)
-		Hc = hashlib.sha256() # TODO: For JS too
-		Hc.update(str(Y).encode('ascii'))
-		Hc.update(str(R).encode('ascii'))
-		Hc.update(str(Rp).encode('ascii'))
-		Hc.update(str(A).encode('ascii'))
-		Hc.update(str(Ap).encode('ascii'))
-		c = eos_stjjr.bigint.BigInt(Hc.hexdigest(), 16) % self.group.p
+		c = eos_stjjr.bigint.BigInt(eos_core.hashing.hash_as_hex(str(Y), str(R), str(Rp), str(A), str(Ap)), 16) % self.group.p
 		# Calculate signature
 		# Confusingly, this is not mod p!!!
 		s = a + c*r
@@ -96,13 +98,7 @@ class CPSEGPrivateKey(eos_core.libobjects.EosDictObject):
 		# Calculate signature challenge
 		Rp = pow(ciphertext.R, self.x, self.public_key.group.p)
 		Ap = pow(ciphertext.A, self.x, self.public_key.group.p)
-		Hc = hashlib.sha256() # TODO: For JS too
-		Hc.update(str(ciphertext.Y).encode('ascii'))
-		Hc.update(str(ciphertext.R).encode('ascii'))
-		Hc.update(str(Rp).encode('ascii'))
-		Hc.update(str(ciphertext.A).encode('ascii'))
-		Hc.update(str(Ap).encode('ascii'))
-		c = eos_stjjr.bigint.BigInt(Hc.hexdigest(), 16) % self.public_key.group.p
+		c = eos_stjjr.bigint.BigInt(eos_core.hashing.hash_as_hex(str(ciphertext.Y), str(ciphertext.R), str(Rp), str(ciphertext.A), str(Ap)), 16) % self.public_key.group.p
 		# Verify signature
 		if pow(self.public_key.group.g, ciphertext.s, self.public_key.group.p) != (ciphertext.A * pow(ciphertext.R, c, self.public_key.group.p)) % self.public_key.group.p:
 			raise Exception('Signature is incorrect')
@@ -126,7 +122,7 @@ class EGCiphertext(eos_core.libobjects.EosDictObject):
 class CPSEGCiphertext(EGCiphertext):
 	class EosMeta:
 		eos_name = 'eos_stjjr.crypto.CPSEGCiphertext'
-		eos_fields = EGCiphertext._eosmeta.eos_fields + [
+		eos_fields = EGCiphertext._eosmeta.eos_fields.__add__([
 			eos_core.libobjects.EosField(eos_stjjr.bigint.BigInt, 'A'),
 			eos_core.libobjects.EosField(eos_stjjr.bigint.BigInt, 's'),
-		]
+		])

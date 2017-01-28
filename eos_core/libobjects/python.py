@@ -14,13 +14,12 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import eos_core.libobjects
+import eos_core.hashing
 
 import django.db.models
 import django.utils.timezone
 
-import base64
 import datetime as datetime_module
-import hashlib
 import json
 import uuid as uuid_module
 
@@ -150,7 +149,7 @@ class EosObject(metaclass=EosObjectType):
 	
 	@staticmethod
 	def object_to_hash(value):
-		return base64.b64encode(hashlib.sha256(eos_core.libobjects.to_json(EosObject.serialise_and_wrap(value, None, True)).encode('utf-8')).digest()).decode('utf-8')
+		return eos_core.hashing.hash_as_b64(eos_core.libobjects.to_json(EosObject.serialise_and_wrap(value, None, True)))
 	
 	@classmethod
 	def deserialise(cls, value):
@@ -158,9 +157,10 @@ class EosObject(metaclass=EosObjectType):
 
 # Stores information about a field of an EosObject for easy conversion to/from a Model
 class EosField():
-	def __init__(self, py_type, name=None, *, hashed=True, linked_property=None, max_length=None, element_type=None, primary_key=False, editable=True, nullable=False, on_delete=None):
+	def __init__(self, py_type, name=None, *, serialised=True, hashed=True, linked_property=None, max_length=None, element_type=None, primary_key=False, editable=True, nullable=False, on_delete=None):
 		self.name = name
 		self.py_type = py_type
+		self.serialised = serialised
 		self.hashed = hashed
 		self.linked_property = linked_property
 		
@@ -196,7 +196,7 @@ class EosField():
 				elif self.py_type is EosObject:
 					return eos_core.fields.EosObjectField(**general_keys)
 				else:
-					return eos_core.fields.EosObjectField(field_type=self.py_type, **general_keys)
+					return eos_core.fields.EosObjectField(py_type=self.py_type, **general_keys)
 			if issubclass(self.py_type, int):
 				return django.db.models.IntegerField(**general_keys)
 			if issubclass(self.py_type, str):
@@ -262,7 +262,7 @@ class EosDictObject(EosObject, metaclass=EosDictObjectType):
 	def serialise(self, hashed=False):
 		result = {}
 		for field in self._eosmeta.eos_fields:
-			if not hashed or field.hashed:
+			if field.serialised and (not hashed or field.hashed):
 				result[field.name] = EosObject.serialise_and_wrap(getattr(self, field.name), field, hashed)
 		return result
 	
