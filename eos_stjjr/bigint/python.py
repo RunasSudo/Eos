@@ -40,6 +40,22 @@ class BigInt(eos_core.libobjects.EosObject):
 		if isinstance(other, BigInt):
 			other = other.impl
 		return self.impl == other
+	def __lt__(self, other):
+		if isinstance(other, BigInt):
+			other = other.impl
+		return self.impl < other
+	def __gt__(self, other):
+		if isinstance(other, BigInt):
+			other = other.impl
+		return self.impl > other
+	def __le__(self, other):
+		if isinstance(other, BigInt):
+			other = other.impl
+		return self.impl <= other
+	def __ge__(self, other):
+		if isinstance(other, BigInt):
+			other = other.impl
+		return self.impl >= other
 	
 	def __pow__(self, other, modulo=None):
 		if isinstance(other, BigInt):

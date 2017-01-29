@@ -37,7 +37,11 @@ class CyclicGroup(eos_core.libobjects.EosDictObject):
 	@property
 	def q(self):
 		# p = 2q + 1
-		return (p - eos_stjjr.bigint.ONE) / eos_stjjr.bigint.TWO
+		return (self.p - eos_stjjr.bigint.ONE) // eos_stjjr.bigint.TWO
+	
+	def random_element(self, crypto_random=True):
+		crypto_method = eos_stjjr.bigint.crypto_random if crypto_random else eos_stjjr.bigint.noncrypto_random
+		return crypto_method(eos_stjjr.bigint.ONE, self.p - eos_stjjr.bigint.ONE)
 
 # RFC 3526
 DEFAULT_GROUP = CyclicGroup(
@@ -58,8 +62,8 @@ class CPSEGPublicKey(eos_core.libobjects.EosDictObject):
 	
 	def encrypt(self, message):
 		# Choose two elements from Z*p
-		r = eos_stjjr.bigint.crypto_random(eos_stjjr.bigint.ONE, self.group.p - eos_stjjr.bigint.ONE)
-		a = eos_stjjr.bigint.crypto_random(eos_stjjr.bigint.ONE, self.group.p - eos_stjjr.bigint.ONE)
+		r = self.group.random_element()
+		a = self.group.random_element()
 		# Calculate encryption
 		R = pow(self.group.g, r, self.group.p)
 		Rp = pow(self.X, r, self.group.p)
@@ -86,7 +90,7 @@ class CPSEGPrivateKey(eos_core.libobjects.EosDictObject):
 	def generate():
 		# Choose an element from Z*p
 		# Z*p = {1, 2, ..., p-1}
-		x = eos_stjjr.bigint.crypto_random(eos_stjjr.bigint.ONE, DEFAULT_GROUP.p - eos_stjjr.bigint.ONE)
+		x = DEFAULT_GROUP.random_element()
 		# Calculate the public key as G^x
 		X = pow(DEFAULT_GROUP.g, x, DEFAULT_GROUP.p)
 		
@@ -95,6 +99,13 @@ class CPSEGPrivateKey(eos_core.libobjects.EosDictObject):
 		return sk
 	
 	def decrypt(self, ciphertext):
+		if (
+			ciphertext.R <= eos_stjjr.bigint.ZERO or ciphertext.R >= DEFAULT_GROUP.p or
+			ciphertext.Y <= eos_stjjr.bigint.ZERO or ciphertext.Y >= DEFAULT_GROUP.p or
+			ciphertext.A <= eos_stjjr.bigint.ZERO or ciphertext.A >= DEFAULT_GROUP.p
+			):
+			raise Exception('Ciphertext is malformed')
+		
 		# Calculate signature challenge
 		Rp = pow(ciphertext.R, self.x, self.public_key.group.p)
 		Ap = pow(ciphertext.A, self.x, self.public_key.group.p)

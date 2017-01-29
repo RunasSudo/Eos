@@ -13,13 +13,12 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core
-#import eos_stjjr
+import unittest
 
-if eos_core.is_python:
-	__pragma__ = lambda x: None
-	__pragma__('skip')
-	from eos_stjjr.bigint.python import *
-	__pragma__('noskip')
-else:
-	from eos_stjjr.bigint.js import *
+import os
+
+class CryptoTest(unittest.TestCase):
+	def test_django(self):
+		os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eos.settings")
+		from django.core.management import execute_from_command_line
+		execute_from_command_line(["./manage.py", "test", "--verbosity", "3", "--failfast", "--noinput", "--keepdb", "eos_stjjr"])

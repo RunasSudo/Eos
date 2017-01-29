@@ -20,15 +20,12 @@ import django.db.models
 # Django field which stores a serialised object
 class EosObjectField(django.db.models.Field):
 	def __init__(self, py_type=None, *args, **kwargs):
-		if py_type is None:
-			self.field_type = None
-		else:
-			self.field_type = eos_core.libobjects.EosField(py_type)
+		self.field_type = None if py_type is None else eos_core.libobjects.EosField(py_type)
 		super().__init__(*args, **kwargs)
 	
 	def deconstruct(self):
 		name, path, args, kwargs = super().deconstruct()
-		kwargs['py_type'] = self.field_type.py_type
+		kwargs['py_type'] = None if self.field_type is None else self.field_type.py_type
 		return name, path, args, kwargs
 	
 	def from_db_value(self, value, expression, connection, context):

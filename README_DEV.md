@@ -74,3 +74,22 @@ An example workflow using `eos_stjjr` is:
 	{"type": "eos_core.workflow.TaskReleaseResult", "value": null}
 ]
 ```
+
+## Mutation testing for unit tests
+
+Install [cosmic-ray](https://github.com/sixty-north/cosmic-ray) from source:
+
+```
+virtualenv venv_test
+. venv_test/bin/activate
+pip install -r requirements.txt
+cd /path/to/cosmic_ray
+python setup.py install
+```
+
+Run the tests:
+
+```
+cosmic-ray init --baseline=10 crypto eos_stjjr.crypto -- cosmic_ray_tests
+cosmic-ray exec crypto
+```
