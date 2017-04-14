@@ -13,20 +13,25 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_stjjr.crypto
+import eos_sgjjr.crypto
 
 import eos_core.models
 import eos_core.libobjects
 
 class ElectionWithTrustees(eos_core.models.Election):
 	class EosMeta:
-		eos_name = 'eos_stjjr.models.ElectionWithTrustees'
+		eos_name = 'eos_sgjjr.models.ElectionWithTrustees'
 		eos_fields = eos_core.models.Election._eosmeta.eos_fields.__add__([
 			eos_core.libobjects.EosField(list, 'trustees', linked_property='trustee_set'),
 		])
 	
 	class Meta:
 		verbose_name_plural = 'elections with trustees'
+	
+	def get_tabs(self):
+		tabs = super().get_tabs()
+		tabs.insert(next(i for i, v in enumerate(tabs) if v[1] == 'Questions') + 1, ('election_trustees', 'Trustees'))
+		return tabs
 
 class Trustee(eos_core.models.EosDictObjectModel):
 	class EosMeta:
@@ -65,9 +70,9 @@ class DjangoAuthTrustee(Trustee):
 		else:
 			return None
 
-class STJJRTrustee(DjangoAuthTrustee):
+class SGJJRTrustee(DjangoAuthTrustee):
 	class EosMeta:
-		eos_name = 'eos_stjjr.models.STJJRTrustee'
+		eos_name = 'eos_sgjjr.models.SGJJRTrustee'
 		eos_fields = DjangoAuthTrustee._eosmeta.eos_fields.__add__([
-			eos_core.libobjects.EosField(eos_stjjr.crypto.CPSEGPublicKey, 'public_key', nullable=True, editable=False),
+			eos_core.libobjects.EosField(eos_sgjjr.crypto.TDH1PublicKey, 'public_key', nullable=True, editable=False),
 		])

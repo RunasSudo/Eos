@@ -8,7 +8,7 @@ This Eos repository is split into a number of apps: `eos_core` and `eos_basic`.
 
 `eos_basic` implements basic (read: bad) implementations of these: an `ApprovalQuestion` for approval (or FPTP) elections, and various `WorkflowTasks` which implement a basic voting booth with *no* encryption (or ballot secrecy, or verifiability, etc).
 
-`eos_stjjr` extends `eos_basic` to provide Helios-like mixnet/threshold decryption workflow tasks based on CPS-EG from **S**eurin and **T**reger (2013) and randomised partial checking from **J**akobsson, **J**uels and **R**ivest (2002).
+`eos_sgjjr` extends `eos_basic` to provide Helios-like mixnet/threshold decryption workflow tasks based on TDH1 from **S**houp and **G**ennaro (2002) and randomised partial checking from **J**akobsson, **J**uels and **R**ivest (2002).
 
 Ideally, `eos_core` should contain no references to parts of the other modules, and make no assumptions about implementation details. Of course, this means that the module is littered with them, and really should be cleaned up.
 
@@ -30,7 +30,7 @@ The `eos_js` module loads all definitions of `EosObject`s relevant for use in Ja
 
 The logic of conducting an election is contained in a `Workflow`, which contains a JSON list of `WorkflowTask`s. A basic minimal workflow is:
 
-```
+```json
 [
 	{"type": "eos_core.workflow.TaskSetElectionDetails", "value": null},
 	{"type": "eos_core.workflow.TaskOpenVoting", "value": null},
@@ -51,12 +51,11 @@ The logic of conducting an election is contained in a `Workflow`, which contains
 ]
 ```
 
-An example workflow using `eos_stjjr` is:
+An example workflow using `eos_sgjjr` is:
 
-```
+```json
 [
-	{"type": "eos_core.workflow.TaskSetElectionDetails", "value": null},
-	{"type": "eos_stjjr.workflow.TaskSetTrustees", "value": null},
+	{"type": "eos_sgjjr.workflow.TaskSetElectionDetailsAndTrustees", "value": null},
 	{"type": "eos_core.workflow.TaskOpenVoting", "value": null},
 	{"type": "eos_basic.workflow.TaskReceiveVotes", "value": {
 		"booth_tasks": [
@@ -73,6 +72,14 @@ An example workflow using `eos_stjjr` is:
 	{"type": "eos_basic.workflow.TaskComputeResult", "value": null},
 	{"type": "eos_core.workflow.TaskReleaseResult", "value": null}
 ]
+```
+
+```json
+"[{"type": "eos_basic.objects.ApprovalQuestion", "value": {"choices": ["John Smith", "Joe Bloggs", "John Q Public"], "description": "Vote now", "max_choices": 1, "min_choices": 0, "title": "President"}}]"
+```
+
+```json
+"{"type": "eos_basic.objects.UnconditionalVoterEligibility", "value": null}"
 ```
 
 ## Mutation testing for unit tests
@@ -90,6 +97,6 @@ python setup.py install
 Run the tests:
 
 ```
-cosmic-ray init --baseline=10 crypto eos_stjjr.crypto -- cosmic_ray_tests
+cosmic-ray init --baseline=10 crypto eos_sgjjr.crypto -- cosmic_ray_tests
 cosmic-ray exec crypto
 ```

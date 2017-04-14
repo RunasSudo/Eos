@@ -20,7 +20,7 @@ system_random = random.SystemRandom()
 
 class BigInt(eos_core.libobjects.EosObject):
 	class EosMeta:
-		eos_name = 'eos_stjjr.bigint.BigInt'
+		eos_name = 'eos_sgjjr.bigint.BigInt'
 	
 	def __init__(self, a, b=10):
 		if isinstance(a, str):
@@ -65,6 +65,11 @@ class BigInt(eos_core.libobjects.EosObject):
 		if isinstance(modulo, BigInt):
 			modulo = modulo.impl
 		return BigInt(self.impl.__pow__(other, modulo))
+	
+	def __xor__(self, other):
+		if isinstance(other, BigInt):
+			other = other.impl
+		return BigInt(self.impl ^ other)
 	
 	def serialise(self, hashed=False):
 		return str(self.impl)

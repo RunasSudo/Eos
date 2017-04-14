@@ -13,23 +13,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core.workflow
-import eos_core.libobjects
-
-if eos_core.is_python:
-	__pragma__ = lambda x: None
-	__pragma__('skip')
-	import django.core.urlresolvers
-	__pragma__('noskip')
-
-class TaskSetElectionDetailsAndTrustees(eos_core.workflow.NullAdminWorkflowTask):
-	workflow_provides = ['eos_core.workflow.TaskSetElectionDetails']
-	
-	class EosMeta:
-		eos_name = 'eos_stjjr.workflow.TaskSetElectionDetailsAndTrustees'
-	
-	def task_name(self, workflow, election):
-		return 'Set election details, direct election trustees to submit their details, and freeze election'
-	
-	def is_complete(self, workflow, election):
-		return election.frozen_at is not None
+import eos_sgjjr.bigint
+import eos_sgjjr.crypto
+import eos_sgjjr.models
+import eos_sgjjr.workflow

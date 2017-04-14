@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_stjjr.models
+import eos_sgjjr.models
 import eos_core.admin
 import eos_core.libobjects
 
@@ -27,8 +27,8 @@ import django.utils.timezone
 
 import datetime
 
-class STJJRTrusteeInline(django.contrib.admin.TabularInline):
-	model = eos_stjjr.models.STJJRTrustee
+class SGJJRTrusteeInline(django.contrib.admin.TabularInline):
+	model = eos_sgjjr.models.SGJJRTrustee
 	
 	readonly_fields = ['trustee_url']
 	
@@ -43,7 +43,7 @@ class ElectionWithTrusteesAdmin(eos_core.admin.ElectionAdmin):
 	form = ElectionWithTrusteesAdminForm
 	
 	inlines = [
-		STJJRTrusteeInline
+		SGJJRTrusteeInline
 	]
 
-django.contrib.admin.site.register(eos_stjjr.models.ElectionWithTrustees, ElectionWithTrusteesAdmin)
+django.contrib.admin.site.register(eos_sgjjr.models.ElectionWithTrustees, ElectionWithTrusteesAdmin)

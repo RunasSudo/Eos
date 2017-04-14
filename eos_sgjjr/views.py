@@ -13,13 +13,16 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_core
-#import eos_stjjr
+import eos_core.models
+import eos_core.views
+import eos_sgjjr.models
 
-if eos_core.is_python:
-	__pragma__ = lambda x: None
-	__pragma__('skip')
-	from eos_stjjr.bigint.python import *
-	__pragma__('noskip')
-else:
-	from eos_stjjr.bigint.js import *
+import django.shortcuts
+
+def election_trustees(request, election_id):
+	election = eos_core.views.get_subclass_or_404(eos_core.models.Election, id=election_id)
+	return django.shortcuts.render(request, 'eos_sgjjr/election_trustees.html', {'election': election})
+
+def trustee_home(request, trustee_id):
+	trustee = eos_core.views.get_subclass_or_404(eos_sgjjr.models.Trustee, id=trustee_id)
+	return django.shortcuts.render(request, 'eos_sgjjr/trustee_home.html', {'trustee': trustee, 'election': trustee.election})

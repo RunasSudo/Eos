@@ -19,7 +19,7 @@ import eos_core.libobjects
 
 class BigInt(eos_core.libobjects.EosObject):
 	class EosMeta:
-		eos_name = 'eos_stjjr.bigint.BigInt'
+		eos_name = 'eos_sgjjr.bigint.BigInt'
 	
 	def __init__(self, a, b=None):
 		if isinstance(a, str):
@@ -62,6 +62,18 @@ class BigInt(eos_core.libobjects.EosObject):
 		if not isinstance(other, BigInt):
 			other = BigInt(other)
 		return self.impl.compareTo(other.impl) < 0
+	def __gt__(self, other):
+		if not isinstance(other, BigInt):
+			other = BigInt(other)
+		return self.impl.compareTo(other.impl) > 0
+	def __le__(self, other):
+		if not isinstance(other, BigInt):
+			other = BigInt(other)
+		return self.impl.compareTo(other.impl) <= 0
+	def __ge__(self, other):
+		if not isinstance(other, BigInt):
+			other = BigInt(other)
+		return self.impl.compareTo(other.impl) >= 0
 	
 	def __pow__(self, other, modulo=None):
 		if not isinstance(other, BigInt):
@@ -75,6 +87,11 @@ class BigInt(eos_core.libobjects.EosObject):
 		if isinstance(other, BigInt):
 			other = other.impl
 		return BigInt(self.impl.shiftLeft(other))
+	
+	def __xor__(self, other):
+		if isinstance(other, BigInt):
+			other = other.impl
+		return BigInt(self.impl.xor(other))
 	
 	def serialise(self, hashed=False):
 		return str(self)

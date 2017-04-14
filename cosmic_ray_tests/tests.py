@@ -21,4 +21,4 @@ class CryptoTest(unittest.TestCase):
 	def test_django(self):
 		os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eos.settings")
 		from django.core.management import execute_from_command_line
-		execute_from_command_line(["./manage.py", "test", "--verbosity", "3", "--failfast", "--noinput", "--keepdb", "eos_stjjr"])
+		execute_from_command_line(["./manage.py", "test", "--verbosity", "3", "--failfast", "--noinput", "--keepdb", "eos_sgjjr"])

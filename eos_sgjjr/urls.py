@@ -13,7 +13,11 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos_stjjr.bigint
-import eos_stjjr.crypto
-import eos_stjjr.models
-import eos_stjjr.workflow
+from django.conf.urls import include, url
+
+from . import views
+
+urlpatterns = [
+	url(r'^(?P<election_id>[0-9a-f-]+)/trustees$$', views.election_trustees, name='election_trustees'),
+	url(r'^trustee/(?P<trustee_id>[0-9a-f-]+)/$$', views.trustee_home, name='trustee_home'),
+]

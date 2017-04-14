@@ -36,5 +36,5 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^', include('eos_core.urls')),
     url(r'^', include('eos_basic.urls')),
-    url(r'^', include('eos_stjjr.urls')),
+    url(r'^', include('eos_sgjjr.urls')),
 ]

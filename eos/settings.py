@@ -55,7 +55,7 @@ INSTALLED_APPS = [
     #'eos_test',
     'eos_core',
     'eos_basic',
-    'eos_stjjr',
+    'eos_sgjjr',
 ]
 
 MIDDLEWARE = [
@@ -134,7 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-au'
 
-TIME_ZONE = 'Australia/Adelaide'
+TIME_ZONE = 'Australia/Melbourne'
 
 USE_I18N = True
 

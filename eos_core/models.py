@@ -158,6 +158,13 @@ class Election(EosDictObjectModel):
 		for voter in self.castvote_set.values('voter').distinct():
 			cast_votes.append(self.castvote_set.filter(voter=voter['voter']).latest('vote_received_at'))
 		return cast_votes
+	
+	def get_tabs(self):
+		return [
+			('election_view', 'Summary'),
+			('election_questions', 'Questions'),
+			('election_ballots', 'Ballot tracking centre'),
+		]
 
 class CastVote(EosDictObjectModel):
 	class EosMeta:

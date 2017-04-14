@@ -18,10 +18,16 @@ transcrypt -bnakv eos_js.py
 cp __javascript__/eos_js.js eos_basic/static/eos_basic/js/build/eos_js.js
 
 # Patch the files
+
 # Javascript identifiers cannot contain dots
 #perl -pi -e 's/eos_core.objects \(\)/eos_core_objects ()/g' eos_basic/static/eos_basic/js/build/eos_core.objects.js
+
 # Transcrypt attempts to initialise circularly-imported modules before they are ready
 #perl -pi -e 's/\(!module.__inited__\)/(!module.__inited__ \&\& module.__all__)/g' eos_basic/static/eos_basic/js/build/eos_core.objects.js
 perl -0777 -pi -e 's/module.__all__.__init__ \(module.__all__\);\s*?module.__inited__ = true;/module.__inited__ = true; module.__all__.__init__ (module.__all__);/gs' eos_basic/static/eos_basic/js/build/eos_js.js
+
 # __pragma__ sometimes stops working???
 perl -0777 -pi -e "s/__pragma__ \('.*?'\)//gs" eos_basic/static/eos_basic/js/build/eos_js.js
+
+# Transcrypt by default suppresses stack traces for some reason??
+perl -0777 -pi -e "s/__except0__.__cause__ = null;//g" eos_basic/static/eos_basic/js/build/eos_js.js
