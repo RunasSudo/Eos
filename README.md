@@ -2,7 +2,7 @@
 
 ## Comparison with competitors
 
- | Helios | Eos
+| | Helios | Eos
 --- | --- | ---
 Good | Yes | No
 Eye Candy | No | Yes
