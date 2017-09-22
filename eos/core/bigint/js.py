@@ -75,7 +75,6 @@ class BigInt(EosObject):
 			('__ge__', lambda x: x >= 0)
 		]:
 			def make_operator_func(func_):
-				# Create a closure
 				def operator_func(other):
 					if not isinstance(other, BigInt):
 						other = BigInt(other)

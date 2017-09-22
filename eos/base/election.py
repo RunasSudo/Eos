@@ -14,25 +14,32 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest import TestCase
-
 from eos.core.objects import *
+from eos.base.workflow import *
 
-class PyTestCase(TestCase):
-	def setUp(self):
-		class Person(TopLevelObject):
-			name = StringField()
-			address = StringField(default=None)
-			def say_hi(self):
-				return 'Hello! My name is ' + self.name
-		
-		self.Person = Person
-	
-	def test_basic_py(self):
-		person1 = self.Person(name='John', address='Address 1')
-		person2 = self.Person(name='James', address='Address 2')
-		
-		self.assertEqual(person1.address, 'Address 1')
-		self.assertEqual(person2.address, 'Address 2')
-		self.assertEqual(person1.say_hi(), 'Hello! My name is John')
-		self.assertEqual(person2.say_hi(), 'Hello! My name is James')
+class BallotQuestion(EmbeddedObject):
+	pass
+
+class PlaintextBallotQuestion(BallotQuestion):
+	choices = ListField(IntField())
+
+class Ballot(EmbeddedObject):
+	_id = UUIDField()
+	questions = EmbeddedObjectListField(BallotQuestion)
+
+class Voter(EmbeddedObject):
+	_id = UUIDField()
+	ballots = EmbeddedObjectListField(Ballot)
+
+class Question(EmbeddedObject):
+	prompt = StringField()
+
+class ApprovalQuestion(Question):
+	choices = ListField(StringField())
+
+class Election(TopLevelObject):
+	_id = UUIDField()
+	workflow = EmbeddedObjectField(Workflow)
+	name = StringField()
+	voters = EmbeddedObjectListField(Voter, hashed=False)
+	questions = EmbeddedObjectListField(Question)

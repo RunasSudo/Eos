@@ -1,0 +1,4 @@
+mypy==0.521
+pymongo==3.5.1
+Transcrypt==3.6.50
+typed-ast==1.0.4
