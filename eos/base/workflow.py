@@ -74,7 +74,7 @@ class WorkflowTask(EmbeddedObject):
 		self.fire_event('exit')
 
 class Workflow(EmbeddedObject):
-	tasks = EmbeddedObjectListField(WorkflowTask)
+	tasks = EmbeddedObjectListField()
 	meta = {
 		'abstract': True
 	}

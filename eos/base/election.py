@@ -25,11 +25,11 @@ class PlaintextBallotQuestion(BallotQuestion):
 
 class Ballot(EmbeddedObject):
 	_id = UUIDField()
-	questions = EmbeddedObjectListField(BallotQuestion)
+	questions = EmbeddedObjectListField()
 
 class Voter(EmbeddedObject):
 	_id = UUIDField()
-	ballots = EmbeddedObjectListField(Ballot)
+	ballots = EmbeddedObjectListField()
 
 class Question(EmbeddedObject):
 	prompt = StringField()
@@ -39,7 +39,7 @@ class ApprovalQuestion(Question):
 
 class Election(TopLevelObject):
 	_id = UUIDField()
-	workflow = EmbeddedObjectField(Workflow)
+	workflow = EmbeddedObjectField(Workflow) # Once saved, we don't care what kind of workflow it is
 	name = StringField()
-	voters = EmbeddedObjectListField(Voter, hashed=False)
-	questions = EmbeddedObjectListField(Question)
+	voters = EmbeddedObjectListField(hashed=False)
+	questions = EmbeddedObjectListField()

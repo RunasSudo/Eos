@@ -50,15 +50,10 @@ class ElectionTestCase(TestCase):
 		question.choices.append('Andrew Citizen')
 		election.questions.append(question)
 		
-		#election.save()
+		election.save()
 		
 		# Check that it saved
-		#self.assertEqual(Election.objects.get(0)._id, election._id) # TODO: Compare JSON
-		
-		# Retrieve from scratch, too
-		#self.db.close()
-		#self.db = mongoengine.connect('test')
-		#self.assertEqual(Election.objects.get(0)._id, election._id)
+		self.assertEqual(db[Election._name].find_one(), election.serialise())
 		
 		# Freeze election
 		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status, WorkflowTask.Status.READY)

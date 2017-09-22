@@ -19,14 +19,15 @@ from unittest import TestCase
 from eos.core.objects import *
 
 class PyTestCase(TestCase):
-	def setUp(self):
+	@classmethod
+	def setUpClass(cls):
 		class Person(TopLevelObject):
 			name = StringField()
 			address = StringField(default=None)
 			def say_hi(self):
 				return 'Hello! My name is ' + self.name
 		
-		self.Person = Person
+		cls.Person = Person
 	
 	def test_basic_py(self):
 		person1 = self.Person(name='John', address='Address 1')
@@ -36,3 +37,11 @@ class PyTestCase(TestCase):
 		self.assertEqual(person2.address, 'Address 2')
 		self.assertEqual(person1.say_hi(), 'Hello! My name is John')
 		self.assertEqual(person2.say_hi(), 'Hello! My name is James')
+	
+	def test_serialise_py(self):
+		person1 = self.Person(name='John', address='Address 1')
+		expect1 = {'name': 'John', 'address': 'Address 1'}
+		
+		self.assertEqual(person1.serialise(), expect1)
+		self.assertEqual(EosObject.serialise_and_wrap(person1, self.Person), expect1)
+		self.assertEqual(EosObject.serialise_and_wrap(person1), {'type': 'eos.core.tests.PyTestCase.setUpClass.<locals>.Person', 'value': expect1})

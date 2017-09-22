@@ -15,6 +15,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pymongo
+from bson.binary import UUIDLegacy
 
 import uuid
 
@@ -50,7 +51,7 @@ class EmbeddedObjectField(Field):
 		self.object_type = object_type
 	
 	def serialise(self, value):
-		return value.serialise_and_wrap(self.object_type)
+		return EosObject.serialise_and_wrap(value, self.object_type)
 	
 	def deserialise(self, value):
 		return EosObject.deserialise_and_unwrap(value, self.object_type)
@@ -66,28 +67,59 @@ class ListField(Field):
 	def deserialise(self, value):
 		return [self.element_field.deserialise(x) for x in value]
 
-EmbeddedObjectListField = ListField
+class EmbeddedObjectListField(Field):
+	def __init__(self, object_type=None, *args, **kwargs):
+		super().__init__(default=[], *args, **kwargs)
+		self.object_type = object_type
+	
+	def serialise(self, value):
+		return [EosObject.serialise_and_wrap(x, self.object_type) for x in value]
+	
+	def deserialise(self, value):
+		return [EosObject.deserialise_and_unwrap(x, self.object_type) for x in value]
 
 class UUIDField(Field):
 	def __init__(self, *args, **kwargs):
 		super().__init__(default=uuid.uuid4, *args, **kwargs)
 	
 	def serialise(self, value):
-		return str(uuid.uuid4)
+		return str(value)
 	
 	def unserialise(self, value):
-		return uuid.uuid4(value)
+		return uuid.UUID(value)
 
 # Objects
 # =======
 
 class EosObjectType(type):
 	def __new__(meta, name, bases, attrs):
-		#meta, name, bases, attrs = meta.before_new(meta, name, bases, attrs)
 		cls = type.__new__(meta, name, bases, attrs)
+		cls._name = cls.__module__ + '.' + cls.__qualname__
+		if name != 'EosObject':
+			EosObject.objects[cls._name] = cls
+		return cls
+
+class EosObject(metaclass=EosObjectType):
+	objects = {}
+	
+	@staticmethod
+	def serialise_and_wrap(value, object_type=None):
+		if object_type:
+			return value.serialise()
+		return {'type': value._name, 'value': value.serialise()}
+	
+	@staticmethod
+	def deserialise_and_unwrap(value, object_type=None):
+		if object_type:
+			return object_type.deserialise(value)
+		return EosObject.objects[value['type']].deserialise(value['value'])
+
+class DocumentObjectType(EosObjectType):
+	def __new__(meta, name, bases, attrs):
+		cls = EosObjectType.__new__(meta, name, bases, attrs)
 		
 		# Process fields
-		fields = cls._fields if hasattr(cls, '_fields') else {}
+		fields = cls._fields.copy() if hasattr(cls, '_fields') else {} # remember to .copy() XD
 		for attr in list(dir(cls)):
 			val = getattr(cls, attr)
 			if isinstance(val, Field):
@@ -95,14 +127,29 @@ class EosObjectType(type):
 				delattr(cls, attr)
 		cls._fields = fields
 		
-		cls._name = cls.__module__ + '.' + cls.__qualname__
-		
 		return cls
 
-class EosObject(metaclass=EosObjectType):
+class DocumentObject(metaclass=DocumentObjectType):
 	def __init__(self, *args, **kwargs):
 		for attr, val in self._fields.items():
-			setattr(self, attr, kwargs.get(attr, val.default))
+			if attr in kwargs:
+				setattr(self, attr, kwargs[attr])
+			else:
+				default = val.default
+				if callable(default):
+					default = default()
+				setattr(self, attr, default)
+	
+	def serialise(self):
+		return {attr: val.serialise(getattr(self, attr)) for attr, val in self._fields.items()}
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls(**value) # wew
 
-TopLevelObject = EosObject
-EmbeddedObject = EosObject
+class TopLevelObject(DocumentObject):
+	def save(self):
+		res = db[self._name].replace_one({'_id': self.serialise()['_id']}, self.serialise(), upsert=True)
+
+class EmbeddedObject(DocumentObject):
+	pass
