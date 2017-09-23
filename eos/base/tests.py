@@ -37,17 +37,10 @@ class ElectionTestCase(TestCase):
 		for i in range(3):
 			election.voters.append(Voter())
 		
-		question = ApprovalQuestion()
-		question.prompt = 'President'
-		question.choices.append('John Smith')
-		question.choices.append('Joe Bloggs')
-		question.choices.append('John Q. Public')
+		question = ApprovalQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'])
 		election.questions.append(question)
 		
-		question = ApprovalQuestion()
-		question.prompt = 'Chairman'
-		question.choices.append('John Doe')
-		question.choices.append('Andrew Citizen')
+		question = ApprovalQuestion(prompt='Chairman', choices=['John Doe', 'Andrew Citizen'])
 		election.questions.append(question)
 		
 		election.save()
@@ -61,3 +54,18 @@ class ElectionTestCase(TestCase):
 		election.workflow.get_task('eos.base.workflow.TaskConfigureElection').exit()
 		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status, WorkflowTask.Status.EXITED)
 		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status, WorkflowTask.Status.READY)
+		
+		election.save()
+		
+		# Cast ballots
+		VOTES = [[[0], [0]], [[0, 1], [1]], [[2], [0]]]
+		
+		for i in range(3):
+			ballot = Ballot()
+			for j in range(2):
+				answer = ApprovalAnswer(choices=VOTES[i][j])
+				encrypted_answer = NullEncryptedAnswer(answer=answer)
+				ballot.encrypted_answers.append(encrypted_answer)
+			election.voters[i].ballots.append(ballot)
+		
+		election.save()

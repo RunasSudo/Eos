@@ -17,15 +17,18 @@
 from eos.core.objects import *
 from eos.base.workflow import *
 
-class BallotQuestion(EmbeddedObject):
+class Answer(EmbeddedObject):
 	pass
 
-class PlaintextBallotQuestion(BallotQuestion):
-	choices = ListField(IntField())
+class EncryptedAnswer(EmbeddedObject):
+	pass
+
+class NullEncryptedAnswer(EncryptedAnswer):
+	answer = EmbeddedObjectField()
 
 class Ballot(EmbeddedObject):
 	_id = UUIDField()
-	questions = EmbeddedObjectListField()
+	encrypted_answers = EmbeddedObjectListField()
 
 class Voter(EmbeddedObject):
 	_id = UUIDField()
@@ -36,6 +39,9 @@ class Question(EmbeddedObject):
 
 class ApprovalQuestion(Question):
 	choices = ListField(StringField())
+
+class ApprovalAnswer(Answer):
+	choices = ListField(IntField())
 
 class Election(TopLevelObject):
 	_id = UUIDField()
