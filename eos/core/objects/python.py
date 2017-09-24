@@ -85,7 +85,7 @@ class UUIDField(Field):
 	def serialise(self, value):
 		return str(value)
 	
-	def unserialise(self, value):
+	def deserialise(self, value):
 		return uuid.UUID(value)
 
 # Objects
@@ -169,6 +169,8 @@ class DocumentObjectType(EosObjectType):
 		return cls
 
 class DocumentObject(EosObject, metaclass=DocumentObjectType):
+	_ver = StringField(default='0.1')
+	
 	def __init__(self, *args, **kwargs):
 		super().__init__()
 		
@@ -188,11 +190,12 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 	
 	@classmethod
 	def deserialise(cls, value):
-		return cls(**value) # wew
+		return cls(**{attr: val.deserialise(value[attr]) for attr, val in cls._fields.items()})
 
 class TopLevelObject(DocumentObject):
 	def save(self):
-		res = db[self._name].replace_one({'_id': self.serialise()['_id']}, self.serialise(), upsert=True)
+		#res = db[self._name].replace_one({'_id': self.serialise()['_id']}, self.serialise(), upsert=True)
+		res = db[self._name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
 
 class EmbeddedObject(DocumentObject):
 	pass

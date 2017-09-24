@@ -20,7 +20,7 @@ from eos.base.election import *
 from eos.base.workflow import *
 from eos.core.objects import *
 
-class ElectionTestCase(TestCase):
+class ElectionPyTestCase(TestCase):
 	@classmethod
 	def setUpClass(cls):
 		client.drop_database('test')
@@ -40,8 +40,11 @@ class ElectionTestCase(TestCase):
 		# Check _instance
 		self.assertEqual(election.workflow._instance, (election, 'workflow'))
 		
+		# Check workflow behaviour
 		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status, WorkflowTask.Status.READY)
+		self.assertEqual(election.workflow.get_task('does.not.exist'), None)
 		
+		# Set election details
 		election.name = 'Test Election'
 		
 		for i in range(3):
@@ -59,11 +62,19 @@ class ElectionTestCase(TestCase):
 		election.save()
 		
 		# Check that it saved
-		self.assertEqual(db[Election._name].find_one(), election.serialise())
+		self.assertEqual(db[Election._name].find_one()['value'], election.serialise())
+		self.assertEqual(EosObject.deserialise_and_unwrap(db[Election._name].find_one()).serialise(), election.serialise())
 		
 		# Freeze election
 		self.exit_task_assert(election, 'eos.base.workflow.TaskConfigureElection', 'eos.base.workflow.TaskOpenVoting')
 		election.save()
+		
+		# Try to freeze it again
+		try:
+			election.workflow.get_task('eos.base.workflow.TaskConfigureElection').exit()
+			self.fail()
+		except Exception:
+			pass
 		
 		# Cast ballots
 		VOTES = [[[0], [0]], [[0, 1], [1]], [[2], [0]]]

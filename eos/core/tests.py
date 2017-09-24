@@ -16,9 +16,11 @@
 
 from unittest import TestCase
 
+from eos.core.bigint import *
+from eos.core.bitstring import *
 from eos.core.objects import *
 
-class PyTestCase(TestCase):
+class ObjectPyTestCase(TestCase):
 	@classmethod
 	def setUpClass(cls):
 		class Person(TopLevelObject):
@@ -29,7 +31,7 @@ class PyTestCase(TestCase):
 		
 		cls.Person = Person
 	
-	def test_basic_py(self):
+	def test_basic(self):
 		person1 = self.Person(name='John', address='Address 1')
 		person2 = self.Person(name='James', address='Address 2')
 		
@@ -38,10 +40,30 @@ class PyTestCase(TestCase):
 		self.assertEqual(person1.say_hi(), 'Hello! My name is John')
 		self.assertEqual(person2.say_hi(), 'Hello! My name is James')
 	
-	def test_serialise_py(self):
+	def test_serialise(self):
 		person1 = self.Person(name='John', address='Address 1')
-		expect1 = {'name': 'John', 'address': 'Address 1'}
+		expect1 = {'_ver': '0.1', 'name': 'John', 'address': 'Address 1'}
+		expect1a = {'type': 'eos.core.tests.ObjectPyTestCase.setUpClass.<locals>.Person', 'value': expect1}
 		
 		self.assertEqual(person1.serialise(), expect1)
 		self.assertEqual(EosObject.serialise_and_wrap(person1, self.Person), expect1)
-		self.assertEqual(EosObject.serialise_and_wrap(person1), {'type': 'eos.core.tests.PyTestCase.setUpClass.<locals>.Person', 'value': expect1})
+		self.assertEqual(EosObject.serialise_and_wrap(person1), expect1a)
+		
+		#self.assertEqual(EosObject.deserialise_and_unwrap(expect1a), person1)
+		self.assertEqual(EosObject.deserialise_and_unwrap(expect1a).serialise(), person1.serialise())
+
+class BigIntPyTestCase(TestCase):
+	def test_basic(self):
+		bigint1 = BigInt(5)
+		bigint2 = BigInt('A', 16)
+		bigint3 = BigInt('15')
+		
+		self.assertEqual(bigint1, 5)
+		self.assertEqual(bigint2, 10)
+		self.assertEqual(bigint3, 15)
+		
+		self.assertEqual(bigint1 + bigint2, 15)
+		self.assertEqual(bigint3 - bigint2, bigint1)
+		self.assertEqual(pow(bigint1, bigint2), pow(5, 10))
+		self.assertEqual(pow(bigint1, bigint2, bigint3), pow(5, 10, 15))
+		self.assertEqual(pow(bigint1, 10, 15), pow(5, 10, 15))

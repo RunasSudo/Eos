@@ -1,3 +1,5 @@
+/.coverage
 /.python-version
+/htmlcov
 __javascript__
 __pycache__
