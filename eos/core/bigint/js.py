@@ -33,7 +33,7 @@ lib = __pragma__('js', '''
 }})()''', __include__('eos/core/bigint/jsbn.js'), __include__('eos/core/bigint/jsbn2.js'))
 
 class BigInt(EosObject):
-	def __init__(self, a, b=None):
+	def __init__(self, a, b=10):
 		if isinstance(a, str):
 			self.impl = lib.nbi()
 			self.impl.fromString(a, b)
