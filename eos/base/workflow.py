@@ -29,13 +29,13 @@ class WorkflowTask(EmbeddedObject):
 	
 	status = IntField()
 	
-	def __init__(self, workflow=None, *args, **kwargs):
+	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+	
+	def post_init(self):
+		super().post_init()
 		
-		self.workflow = workflow
-		
-		if self.workflow is None:
-			self.workflow = self._instance
+		self.workflow = self.recurse_parents(Workflow)
 		
 		self.status = WorkflowTask.Status.READY if self.are_dependencies_met() else WorkflowTask.Status.NOT_READY
 		
@@ -79,9 +79,8 @@ class Workflow(EmbeddedObject):
 		'abstract': True
 	}
 	
-	def __init__(self, election=None, *args, **kwargs):
+	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.election = election if election else self._instance
 	
 	def get_tasks(self, descriptor):
 		yield from (task for task in self.tasks if task.satisfies(descriptor))
@@ -103,12 +102,16 @@ class TaskConfigureElection(WorkflowTask):
 class TaskOpenVoting(WorkflowTask):
 	depends_on = ['eos.base.workflow.TaskConfigureElection']
 
+class TaskCloseVoting(WorkflowTask):
+	depends_on = ['eos.base.workflow.TaskOpenVoting']
+
 # Concrete workflows
 # ==================
 
 class WorkflowBase(Workflow):
-	def __init__(self, election=None, *args, **kwargs):
-		super().__init__(election, *args, **kwargs)
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 		
-		self.tasks.append(TaskConfigureElection(self))
-		self.tasks.append(TaskOpenVoting(self))
+		self.tasks.append(TaskConfigureElection())
+		self.tasks.append(TaskOpenVoting())
+		self.tasks.append(TaskCloseVoting())

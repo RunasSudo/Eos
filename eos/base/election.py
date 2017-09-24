@@ -36,11 +36,20 @@ class Voter(EmbeddedObject):
 
 class Question(EmbeddedObject):
 	prompt = StringField()
+	
+	def compute_result(self):
+		...
+
+class Result(EmbeddedObject):
+	pass
 
 class ApprovalQuestion(Question):
 	choices = ListField(StringField())
 
 class ApprovalAnswer(Answer):
+	choices = ListField(IntField())
+
+class ApprovalResult(Result):
 	choices = ListField(IntField())
 
 class Election(TopLevelObject):
@@ -49,3 +58,4 @@ class Election(TopLevelObject):
 	name = StringField()
 	voters = EmbeddedObjectListField(hashed=False)
 	questions = EmbeddedObjectListField()
+	results = EmbeddedObjectListField(hashed=False)

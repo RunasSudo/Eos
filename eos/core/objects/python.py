@@ -58,7 +58,7 @@ class EmbeddedObjectField(Field):
 
 class ListField(Field):
 	def __init__(self, element_field=None, *args, **kwargs):
-		super().__init__(default=[], *args, **kwargs)
+		super().__init__(default=EosList, *args, **kwargs)
 		self.element_field = element_field
 	
 	def serialise(self, value):
@@ -69,7 +69,7 @@ class ListField(Field):
 
 class EmbeddedObjectListField(Field):
 	def __init__(self, object_type=None, *args, **kwargs):
-		super().__init__(default=[], *args, **kwargs)
+		super().__init__(default=EosList, *args, **kwargs)
 		self.object_type = object_type
 	
 	def serialise(self, value):
@@ -102,6 +102,20 @@ class EosObjectType(type):
 class EosObject(metaclass=EosObjectType):
 	objects = {}
 	
+	def __init__(self):
+		self._instance = (None, None)
+		self._inited = False
+	
+	def post_init(self):
+		self._inited = True
+	
+	def recurse_parents(self, cls):
+		if isinstance(self, cls):
+			return self
+		if self._instance[0]:
+			return self._instance[0].recurse_parents(cls)
+		return None
+	
 	@staticmethod
 	def serialise_and_wrap(value, object_type=None):
 		if object_type:
@@ -114,6 +128,14 @@ class EosObject(metaclass=EosObjectType):
 			return object_type.deserialise(value)
 		return EosObject.objects[value['type']].deserialise(value['value'])
 
+class EosList(EosObject, list):
+	def append(self, value):
+		if isinstance(value, EosObject):
+			value._instance = (self, None)
+			if not value._inited:
+				value.post_init()
+		return super().append(value)
+
 class DocumentObjectType(EosObjectType):
 	def __new__(meta, name, bases, attrs):
 		cls = EosObjectType.__new__(meta, name, bases, attrs)
@@ -123,14 +145,35 @@ class DocumentObjectType(EosObjectType):
 		for attr in list(dir(cls)):
 			val = getattr(cls, attr)
 			if isinstance(val, Field):
+				val._instance = (cls, name)
 				fields[attr] = val
 				delattr(cls, attr)
 		cls._fields = fields
 		
+		# Make properties
+		def make_property(name, field):
+			def field_getter(self):
+				return self._field_values[name]
+			def field_setter(self, value):
+				if isinstance(value, EosObject):
+					value._instance = (self, name)
+					if not value._inited:
+						value.post_init()
+				
+				self._field_values[name] = value
+			return property(field_getter, field_setter)
+		
+		for attr, val in fields.items():
+			setattr(cls, attr, make_property(attr, val))
+		
 		return cls
 
-class DocumentObject(metaclass=DocumentObjectType):
+class DocumentObject(EosObject, metaclass=DocumentObjectType):
 	def __init__(self, *args, **kwargs):
+		super().__init__()
+		
+		self._field_values = {}
+		
 		for attr, val in self._fields.items():
 			if attr in kwargs:
 				setattr(self, attr, kwargs[attr])

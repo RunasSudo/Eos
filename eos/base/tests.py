@@ -25,17 +25,30 @@ class ElectionTestCase(TestCase):
 	def setUpClass(cls):
 		client.drop_database('test')
 	
+	def exit_task_assert(self, election, task, next_task):
+		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)
+		self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.NOT_READY)
+		election.workflow.get_task(task).exit()
+		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.EXITED)
+		self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.READY)
+	
 	def test_run_election(self):
 		# Set up election
 		election = Election()
-		election.workflow = WorkflowBase(election)
+		election.workflow = WorkflowBase()
+		
+		# Check _instance
+		self.assertEqual(election.workflow._instance, (election, 'workflow'))
 		
 		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status, WorkflowTask.Status.READY)
 		
 		election.name = 'Test Election'
 		
 		for i in range(3):
-			election.voters.append(Voter())
+			voter = Voter()
+			election.voters.append(voter)
+			# Check _instance
+			self.assertEqual(voter._instance, (election.voters, None))
 		
 		question = ApprovalQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'])
 		election.questions.append(question)
@@ -49,12 +62,7 @@ class ElectionTestCase(TestCase):
 		self.assertEqual(db[Election._name].find_one(), election.serialise())
 		
 		# Freeze election
-		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status, WorkflowTask.Status.READY)
-		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status, WorkflowTask.Status.NOT_READY)
-		election.workflow.get_task('eos.base.workflow.TaskConfigureElection').exit()
-		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status, WorkflowTask.Status.EXITED)
-		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status, WorkflowTask.Status.READY)
-		
+		self.exit_task_assert(election, 'eos.base.workflow.TaskConfigureElection', 'eos.base.workflow.TaskOpenVoting')
 		election.save()
 		
 		# Cast ballots
@@ -69,3 +77,11 @@ class ElectionTestCase(TestCase):
 			election.voters[i].ballots.append(ballot)
 		
 		election.save()
+		
+		# Close voting
+		self.exit_task_assert(election, 'eos.base.workflow.TaskOpenVoting', 'eos.base.workflow.TaskCloseVoting')
+		election.save()
+		
+		# Compute result
+		for i in range(2):
+			result = election.questions[i].compute_result()
