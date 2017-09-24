@@ -131,7 +131,7 @@ class EosObject(metaclass=EosObjectType):
 class EosList(EosObject, list):
 	def append(self, value):
 		if isinstance(value, EosObject):
-			value._instance = (self, None)
+			value._instance = (self, len(self))
 			if not value._inited:
 				value.post_init()
 		return super().append(value)

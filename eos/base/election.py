@@ -25,6 +25,9 @@ class EncryptedAnswer(EmbeddedObject):
 
 class NullEncryptedAnswer(EncryptedAnswer):
 	answer = EmbeddedObjectField()
+	
+	def decrypt(self):
+		return self.answer
 
 class Ballot(EmbeddedObject):
 	_id = UUIDField()
@@ -36,15 +39,23 @@ class Voter(EmbeddedObject):
 
 class Question(EmbeddedObject):
 	prompt = StringField()
-	
-	def compute_result(self):
-		...
 
 class Result(EmbeddedObject):
 	pass
 
 class ApprovalQuestion(Question):
 	choices = ListField(StringField())
+	
+	def compute_result(self):
+		result = ApprovalResult(choices=([0] * len(self.choices)))
+		for voter in self.recurse_parents(Election).voters:
+			for ballot in voter.ballots:
+				# TODO: Separate decryption phase
+				encrypted_answer = ballot.encrypted_answers[self._instance[1]] # _instance[1] is the question number
+				answer = encrypted_answer.decrypt()
+				for choice in answer.choices:
+					result.choices[choice] += 1
+		return result
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())

@@ -48,7 +48,7 @@ class ElectionTestCase(TestCase):
 			voter = Voter()
 			election.voters.append(voter)
 			# Check _instance
-			self.assertEqual(voter._instance, (election.voters, None))
+			self.assertEqual(voter._instance, (election.voters, i))
 		
 		question = ApprovalQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'])
 		election.questions.append(question)
@@ -83,5 +83,12 @@ class ElectionTestCase(TestCase):
 		election.save()
 		
 		# Compute result
+		election.results = [None, None]
 		for i in range(2):
 			result = election.questions[i].compute_result()
+			election.results[i] = result
+		
+		election.save()
+		
+		self.assertEqual(election.results[0].choices, [2, 1, 1])
+		self.assertEqual(election.results[1].choices, [2, 1])
