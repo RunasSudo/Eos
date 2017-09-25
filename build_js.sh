@@ -15,13 +15,19 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-transcrypt -b -n eos.js.py
+set +e
 
-# Javascript identifiers cannot contain dots
-perl -0777 -pi -e 's/eos.js/eosjs/g' eos/__javascript__/eos.js.js
+FLAGS=-k
 
-# __pragma__ sometimes stops working???
-perl -0777 -pi -e "s/__pragma__ \('.*?'\)//gs" eos/__javascript__/eos.js.js
-
-# Transcrypt by default suppresses stack traces for some reason??
-perl -0777 -pi -e "s/__except0__.__cause__ = null;//g" eos/__javascript__/eos.js.js
+for f in eos.js eos.js_tests; do
+	transcrypt -b -n $FLAGS $f.py
+	
+	# Javascript identifiers cannot contain dots
+	perl -0777 -pi -e 's/eos.js/eosjs/g' eos/__javascript__/$f.js
+	
+	# __pragma__ sometimes stops working???
+	perl -0777 -pi -e "s/__pragma__ \('.*?'\)//gs" eos/__javascript__/$f.js
+	
+	# Transcrypt by default suppresses stack traces for some reason??
+	perl -0777 -pi -e "s/__except0__.__cause__ = null;//g" eos/__javascript__/$f.js
+done

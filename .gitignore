@@ -1,5 +1,6 @@
 /.coverage
 /.python-version
 /htmlcov
+/venv
 __javascript__
 __pycache__
