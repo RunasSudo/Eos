@@ -38,6 +38,10 @@ class EosTestCase:
 					raise Error('Assertion failed: ' + str(a) + ' != ' + str(b))
 	
 	def assertEqualJSON(self, a, b):
+		if isinstance(a, EosObject):
+			a = EosObject.serialise_and_wrap(a)
+		if isinstance(b, EosObject):
+			b = EosObject.serialise_and_wrap(b)
 		self.assertEqual(EosObject.to_json(a), EosObject.to_json(b))
 
 def py_only(func):

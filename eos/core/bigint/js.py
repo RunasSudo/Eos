@@ -16,6 +16,8 @@
 
 from eos.core.objects import EosObject
 
+import random
+
 # Load jsbn{,2}.js
 lib = __pragma__('js', '''
 (function() {{
@@ -34,6 +36,8 @@ lib = __pragma__('js', '''
 
 class BigInt(EosObject):
 	def __init__(self, a, b=10):
+		super().__init__()
+		
 		if isinstance(a, str):
 			self.impl = lib.nbi()
 			self.impl.fromString(a, b)
@@ -93,6 +97,41 @@ class BigInt(EosObject):
 		if not isinstance(modulo, BigInt):
 			modulo = BigInt(modulo)
 		return BigInt(self.impl.modPow(other.impl, modulo.impl))
+	
+	def serialise(self):
+		return str(self)
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls(value)
+	
+	# Returns a random BigInt from lower_bound to upper_bound, both inclusive
+	@classmethod
+	def noncrypto_random(cls, lower_bound, upper_bound):
+		if not isinstance(lower_bound, cls):
+			lower_bound = cls(lower_bound)
+		if not isinstance(upper_bound, cls):
+			upper_bound = cls(upper_bound)
+		
+		bound_range = upper_bound - lower_bound + 1
+		bound_range_bits = bound_range.impl.bitLength()
+		
+		# Generate a sufficiently large number; work 32 bits at a time
+		current_range = 0 # bits
+		max_int = 2 ** 32 - 1
+		big_number = cls(0)
+		while current_range < bound_range_bits:
+			random_number = cls(random.randint(0, max_int))
+			big_number = (big_number << 32) | random_number
+			current_range = current_range + 32
+		
+		# Since this is the non-crypto version, just do it modulo
+		return lower_bound + (big_number % bound_range)
+	
+	@classmethod
+	def crypto_random(cls, lower_bound, upper_bound):
+		# TODO
+		return cls.noncrypto_random(lower_bound, upper_bound)
 
 # TNYI: No native pow() support
 def pow(a, b, c=None):

@@ -14,8 +14,15 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos.js
+from eos.core.tests import *
 
-import eos.core.tests
-import eos.base.tests
-import eos.psgjjr.tests
+from eos.core.bigint import *
+from eos.psgjjr.crypto import *
+
+class EGTestCase(EosTestCase):
+	def test_eg(self):
+		pt = BigInt.noncrypto_random(ONE, DEFAULT_GROUP.p - ONE)
+		sk = EGPrivateKey.generate()
+		ct = sk.public_key.encrypt(pt)
+		m = sk.decrypt(ct)
+		self.assertEqualJSON(pt, m)

@@ -16,8 +16,13 @@
 
 from eos.core.objects import EosObject
 
+import random
+system_random = random.SystemRandom()
+
 class BigInt(EosObject):
 	def __init__(self, a, b=10):
+		super().__init__()
+		
 		self.impl = int(a, b) if isinstance(a, str) else int(a)
 	
 	def __pow__(self, other, modulo=None):
@@ -28,17 +33,47 @@ class BigInt(EosObject):
 		if not isinstance(modulo, BigInt):
 			modulo = BigInt(modulo)
 		return BigInt(self.impl.__pow__(other.impl, modulo.impl))
+	
+	def serialise(self):
+		return str(self)
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls(value)
+	
+	# Returns a random BigInt from lower_bound to upper_bound, both inclusive
+	@classmethod
+	def noncrypto_random(cls, lower_bound, upper_bound):
+		return cls(random.randint(int(lower_bound), int(upper_bound)))
+	
+	@classmethod
+	def crypto_random(cls, lower_bound, upper_bound):
+		return cls(system_random.randint(int(lower_bound), int(upper_bound)))
 
-for func in [
-	'__add__', '__sub__', '__mul__', '__mod__', '__or__', '__lshift__', '__xor__',
-	'__eq__', '__ne__', '__lt__', '__gt__', '__le__', '__ge__',
-	'__str__'
-]:
+for func in ['__add__', '__sub__', '__mul__', '__mod__', '__or__', '__lshift__', '__xor__']:
 	def make_operator_func(func_):
 		# Create a closure
 		def operator_func(self, other):
 			if not isinstance(other, BigInt):
 				other = BigInt(other)
 			return BigInt(getattr(self.impl, func_)(other.impl))
+		return operator_func
+	setattr(BigInt, func, make_operator_func(func))
+
+for func in ['__eq__', '__ne__', '__lt__', '__gt__', '__le__', '__ge__']:
+	def make_operator_func(func_):
+		# Create a closure
+		def operator_func(self, other):
+			if not isinstance(other, BigInt):
+				other = BigInt(other)
+			return getattr(self.impl, func_)(other.impl)
+		return operator_func
+	setattr(BigInt, func, make_operator_func(func))
+
+for func in ['__str__', '__int__']:
+	def make_operator_func(func_):
+		# Create a closure
+		def operator_func(self):
+			return getattr(self.impl, func_)()
 		return operator_func
 	setattr(BigInt, func, make_operator_func(func))

@@ -28,11 +28,11 @@ for f in eos.js_tests; do
 	perl -0777 -pi -e "s/__pragma__ \('.*?'\)//gs" eos/__javascript__/$f.js
 	
 	# Transcrypt by default suppresses stack traces for some reason??
-	perl -0777 -pi -e "s/__except0__.__cause__ = null;//g" eos/__javascript__/$f.js
+	perl -0777 -pi -e 's/__except0__.__cause__ = null;//g' eos/__javascript__/$f.js
 	
 	# Disable handling of special attributes
-	perl -0777 -pi -e "s/var __specialattrib__ = function \(attrib\) \{/var __specialattrib__ = function (attrib) { return false;/g" eos/__javascript__/$f.js
+	perl -0777 -pi -e 's/var __specialattrib__ = function \(attrib\) \{/var __specialattrib__ = function (attrib) { return false;/g' eos/__javascript__/$f.js
 	
 	# Transcrypt bug
-	perl -0777 -pi -e "s/EosObject.EosObject/EosObject/g" eos/__javascript__/$f.js
+	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__impl__(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
 done
