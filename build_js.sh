@@ -32,4 +32,7 @@ for f in eos.js_tests; do
 	
 	# Disable handling of special attributes
 	perl -0777 -pi -e "s/var __specialattrib__ = function \(attrib\) \{/var __specialattrib__ = function (attrib) { return false;/g" eos/__javascript__/$f.js
+	
+	# Transcrypt bug
+	perl -0777 -pi -e "s/EosObject.EosObject/EosObject/g" eos/__javascript__/$f.js
 done
