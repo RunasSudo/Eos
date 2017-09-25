@@ -16,4 +16,5 @@
 
 import eos.js
 
-import eos.core.test_code
+import eos.core.tests
+import eos.base.tests

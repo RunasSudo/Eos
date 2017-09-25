@@ -68,7 +68,7 @@ class WorkflowTask(EmbeddedObject):
 	
 	def exit(self):
 		if self.status is not WorkflowTask.Status.READY:
-			raise Exception()
+			raise Exception('Attempted to exit a task when not ready')
 		
 		self.status = WorkflowTask.Status.EXITED
 		self.fire_event('exit')
@@ -83,7 +83,11 @@ class Workflow(EmbeddedObject):
 		super().__init__(*args, **kwargs)
 	
 	def get_tasks(self, descriptor):
-		yield from (task for task in self.tasks if task.satisfies(descriptor))
+		#yield from (task for task in self.tasks if task.satisfies(descriptor))
+		for i in range(len(self.tasks)):
+			task = self.tasks[i]
+			if task.satisfies(descriptor):
+				yield task
 	
 	def get_task(self, descriptor):
 		try:

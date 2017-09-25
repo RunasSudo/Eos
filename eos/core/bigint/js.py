@@ -93,3 +93,9 @@ class BigInt(EosObject):
 		if not isinstance(modulo, BigInt):
 			modulo = BigInt(modulo)
 		return BigInt(self.impl.modPow(other.impl, modulo.impl))
+
+# TNYI: No native pow() support
+def pow(a, b, c=None):
+	if not isinstance(a, BigInt):
+		a = BigInt(a)
+	return a.__pow__(b, c)

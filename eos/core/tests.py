@@ -18,13 +18,35 @@ from eos.core.bigint import *
 from eos.core.bitstring import *
 from eos.core.objects import *
 
+# Common library things
+# ===================
+
 class EosTestCase:
 	@classmethod
 	def setUpClass(cls):
 		pass
 	
 	def assertEqual(self, a, b):
-		self.impl.assertEqual(a, b)
+		if is_python:
+			self.impl.assertEqual(a, b)
+		else:
+			if a is None:
+				if b is not None:
+					raise Error('Assertion failed: ' + str(a) + ' != ' + str(b))
+			else:
+				if a != b:
+					raise Error('Assertion failed: ' + str(a) + ' != ' + str(b))
+	
+	def assertEqualJSON(self, a, b):
+		self.assertEqual(EosObject.to_json(a), EosObject.to_json(b))
+
+def py_only(func):
+	func._py_only = True
+def js_only(func):
+	func._js_only = True
+
+# eos.core tests
+# ==============
 
 class ObjectTestCase(EosTestCase):
 	@classmethod
@@ -49,14 +71,15 @@ class ObjectTestCase(EosTestCase):
 	def test_serialise(self):
 		person1 = self.Person(name='John', address='Address 1')
 		expect1 = {'_ver': '0.1', 'name': 'John', 'address': 'Address 1'}
-		expect1a = {'type': 'eos.core.tests.ObjectTestCase.setUpClass.<locals>.Person', 'value': expect1}
+		#expect1a = {'type': 'eos.core.tests.ObjectTestCase.setUpClass.<locals>.Person', 'value': expect1}
+		expect1a = {'type': 'eos.core.tests.Person', 'value': expect1}
 		
-		self.assertEqual(person1.serialise(), expect1)
-		self.assertEqual(EosObject.serialise_and_wrap(person1, self.Person), expect1)
-		self.assertEqual(EosObject.serialise_and_wrap(person1), expect1a)
+		self.assertEqualJSON(person1.serialise(), expect1)
+		self.assertEqualJSON(EosObject.serialise_and_wrap(person1, self.Person), expect1)
+		self.assertEqualJSON(EosObject.serialise_and_wrap(person1), expect1a)
 		
 		#self.assertEqual(EosObject.deserialise_and_unwrap(expect1a), person1)
-		self.assertEqual(EosObject.deserialise_and_unwrap(expect1a).serialise(), person1.serialise())
+		self.assertEqualJSON(EosObject.deserialise_and_unwrap(expect1a).serialise(), person1.serialise())
 
 class BigIntTestCase(EosTestCase):
 	def test_basic(self):

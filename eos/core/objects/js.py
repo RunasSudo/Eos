@@ -14,12 +14,22 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Load json.js
+lib = __pragma__('js', '''
+(function() {{
+	var exports = {{}};
+	{}
+	exports.stringify = stringify_main;
+	return exports;
+}})()''', __include__('eos/core/objects/json.js'))
+
 # Fields
 # ======
 
 class Field:
 	def __init__(self, *args, **kwargs):
-		self.default = kwargs.get('default', None)
+		#console.log(kwargs.get('hashed', None))
+		self.default = kwargs['py_default'] if kwargs.hasOwnProperty('py_default') else None
 		self.hashed = kwargs.get('hashed', True)
 
 class PrimitiveField(Field):
@@ -74,7 +84,7 @@ class EmbeddedObjectListField(Field):
 class EosObjectType(type):
 	def __new__(meta, name, bases, attrs):
 		cls = type.__new__(meta, name, bases, attrs)
-		cls._name = cls.__module__ + '.' + cls.__qualname__
+		cls._name = (meta.__next_class_module__ + '.' + cls.__name__).replace('.js.', '.') #TNYI: module and qualname
 		if name != 'EosObject':
 			EosObject.objects[cls._name] = cls
 		return cls
@@ -106,15 +116,39 @@ class EosObject(metaclass=EosObjectType):
 	def deserialise_and_unwrap(value, object_type=None):
 		if object_type:
 			return object_type.deserialise(value)
+		print(value['type'])
 		return EosObject.objects[value['type']].deserialise(value['value'])
+	
+	# Different to Python
+	@staticmethod
+	def to_json(value):
+		return lib.stringify(value)
+	
+	@staticmethod
+	def from_json(value):
+		return JSON.parse(value)
 
-class EosList(EosObject, list):
+class EosList(EosObject):
+	def __init__(self, *args):
+		self.impl = list(*args)
+	
+	# Diferent to Python
+	# Lists are implemented as native JS Arrays, so no cheating here :(
+	def __len__(self):
+		return len(self.impl)
+	def __getitem__(self, idx):
+		return self.impl[idx]
+	def __setitem__(self, idx, val):
+		self.impl[idx] = val
+	def __contains__(self, val):
+		return val in self.impl
+	
 	def append(self, value):
 		if isinstance(value, EosObject):
 			value._instance = (self, len(self))
 			if not value._inited:
 				value.post_init()
-		return super().append(value)
+		return self.impl.append(value)
 
 class DocumentObjectType(EosObjectType):
 	def __new__(meta, name, bases, attrs):
@@ -131,20 +165,7 @@ class DocumentObjectType(EosObjectType):
 		cls._fields = fields
 		
 		# Make properties
-		def make_property(name, field):
-			def field_getter(self):
-				return self._field_values[name]
-			def field_setter(self, value):
-				if isinstance(value, EosObject):
-					value._instance = (self, name)
-					if not value._inited:
-						value.post_init()
-				
-				self._field_values[name] = value
-			return property(field_getter, field_setter)
-		
-		for attr, val in fields.items():
-			setattr(cls, attr, make_property(attr, val))
+		# Different to Python: This is handled at the instance level
 		
 		return cls
 
@@ -156,21 +177,41 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 		
 		self._field_values = {}
 		
+		# Different to Python
 		for attr, val in self._fields.items():
+			def make_property(name, field):
+				def field_getter():
+					return self._field_values[name]
+				def field_setter(value):
+					if isinstance(value, EosObject):
+						value._instance = (self, name)
+						if not value._inited:
+							value.post_init()
+					
+					self._field_values[name] = value
+				return (field_getter, field_setter)
+			prop = make_property(attr, val)
+			Object.defineProperty(self, attr, {
+				'get': prop[0],
+				'set': prop[1]
+			})
+			
 			if attr in kwargs:
 				setattr(self, attr, kwargs[attr])
 			else:
 				default = val.default
-				if callable(default):
+				if default is not None and callable(default):
 					default = default()
 				setattr(self, attr, default)
 	
+	# Different to Python
+	# TNYI: Strange things happen with py_ attributes
 	def serialise(self):
-		return {attr: val.serialise(getattr(self, attr)) for attr, val in self._fields.items()}
+		return {(attr[3:] if attr.startswith('py_') else attr): val.serialise(getattr(self, attr)) for attr, val in self._fields.items()}
 	
 	@classmethod
 	def deserialise(cls, value):
-		return cls(**{attr: val.deserialise(value[attr]) for attr, val in cls._fields.items()})
+		return cls(**{attr: val.deserialise(value[attr[3:] if attr.startswith('py_') else attr]) for attr, val in cls._fields.items()})
 
 class TopLevelObject(DocumentObject):
 	pass

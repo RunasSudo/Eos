@@ -17,6 +17,7 @@
 import pymongo
 from bson.binary import UUIDLegacy
 
+import json
 import uuid
 
 # Database
@@ -94,7 +95,7 @@ class UUIDField(Field):
 class EosObjectType(type):
 	def __new__(meta, name, bases, attrs):
 		cls = type.__new__(meta, name, bases, attrs)
-		cls._name = cls.__module__ + '.' + cls.__qualname__
+		cls._name = (cls.__module__ + '.' + cls.__name__).replace('.js.', '.') #TNYI: qualname
 		if name != 'EosObject':
 			EosObject.objects[cls._name] = cls
 		return cls
@@ -127,6 +128,14 @@ class EosObject(metaclass=EosObjectType):
 		if object_type:
 			return object_type.deserialise(value)
 		return EosObject.objects[value['type']].deserialise(value['value'])
+	
+	@staticmethod
+	def to_json(value):
+		return json.dumps(value, sort_keys=True)
+	
+	@staticmethod
+	def from_json(value):
+		return json.loads(value)
 
 class EosList(EosObject, list):
 	def append(self, value):
@@ -181,7 +190,7 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 				setattr(self, attr, kwargs[attr])
 			else:
 				default = val.default
-				if callable(default):
+				if default is not None and callable(default):
 					default = default()
 				setattr(self, attr, default)
 	

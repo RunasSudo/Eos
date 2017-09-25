@@ -21,14 +21,16 @@ from eos.core.bigint import *
 from eos.core.bitstring import *
 from eos.core.objects import *
 
+import execjs
+
 import importlib
 import os
 import types
 
 test_suite = TestSuite()
 
-# All the TestCase's we dynamically generate inherit from this class
-class BaseTestCase(TestCase):
+# All the TestCase's we dynamically generate inherit from these classes
+class BasePyTestCase(TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.impl.setUpClass()
@@ -41,6 +43,20 @@ class BaseTestCase(TestCase):
 			return func(*args)
 		setattr(cls, method, call_method)
 
+class BaseJSTestCase(TestCase):
+	@classmethod
+	def setUpClass(cls):
+		with open('eos/__javascript__/eos.js_tests.js', 'r') as f:
+			code = f.read()
+		cls.ctx = execjs.get().compile('var window={},navigator={};' + code + 'var test=window.eosjs_tests.' + cls.module + '.__all__.' + cls.name + '();test.setUpClass();')
+	
+	@classmethod
+	def add_method(cls, method):
+		def call_method(self, *args):
+			# TODO: args
+			return cls.ctx.eval('test.' + method + '()')
+		setattr(cls, method, call_method)
+
 # Test discovery
 import eos.core.tests
 for dirpath, dirnames, filenames in os.walk('eos'):
@@ -48,17 +64,30 @@ for dirpath, dirnames, filenames in os.walk('eos'):
 		# Skip this file
 		continue
 	if 'tests.py' in filenames:
-		module = importlib.import_module(dirpath.replace('/', '.') + '.tests')
+		module_name = dirpath.replace('/', '.') + '.tests'
+		module = importlib.import_module(module_name)
 		for name in dir(module):
 			obj = getattr(module, name)
 			if isinstance(obj, type):
 				if issubclass(obj, eos.core.tests.EosTestCase):
-					cls = type(name + 'Impl', (BaseTestCase,), {'impl': obj()})
-					for method in dir(cls.impl):
-						if isinstance(getattr(cls.impl, method), types.MethodType) and not hasattr(cls, method):
-							cls.add_method(method)
-							if method.startswith('test_'):
-								test_case = cls(method)
-								test_suite.addTest(test_case)
+					impl = obj()
+					cls_py = type(name + 'ImplPy', (BasePyTestCase,), {'impl': impl})
+					cls_js = type(name + 'ImplJS', (BaseJSTestCase,), {'module': module_name, 'name': name})
+					for method in dir(impl):
+						method_val = getattr(impl, method)
+						if isinstance(method_val, types.MethodType) and not hasattr(cls_py, method):
+							# Python
+							if not getattr(method_val, '_js_only', False):
+								cls_py.add_method(method)
+								if method.startswith('test_'):
+									test_case = cls_py(method)
+									test_suite.addTest(test_case)
+							
+							# Javascript
+							if not getattr(method_val, '_py_only', False):
+								if method.startswith('test_'):
+									cls_js.add_method(method)
+									test_case = cls_js(method)
+									test_suite.addTest(test_case)
 
-TextTestRunner(verbosity=3).run(test_suite)
+TextTestRunner(verbosity=3, failfast=True).run(test_suite)
