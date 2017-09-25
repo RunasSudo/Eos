@@ -81,6 +81,10 @@ class ObjectTestCase(EosTestCase):
 		#self.assertEqual(EosObject.deserialise_and_unwrap(expect1a), person1)
 		self.assertEqualJSON(EosObject.deserialise_and_unwrap(expect1a).serialise(), person1.serialise())
 
+class HashTestCase(EosTestCase):
+	def test_hash(self):
+		self.assertEqual(EosObject.to_sha256('Hello World!'), 'f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=')
+
 class BigIntTestCase(EosTestCase):
 	def test_basic(self):
 		bigint1 = BigInt(5)

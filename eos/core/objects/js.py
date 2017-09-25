@@ -14,14 +14,16 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Load json.js
+# Load json.js, jssha-sha256.js
 lib = __pragma__('js', '''
 (function() {{
-	var exports = {{}};
 	{}
+	{}
+	var exports = {{}};
 	exports.stringify = stringify_main;
+	exports.jsSHA = window.jsSHA;
 	return exports;
-}})()''', __include__('eos/core/objects/json.js'))
+}})()''', __include__('eos/core/objects/json.js'), __include__('eos/core/objects/jssha-sha256.js'))
 
 # Fields
 # ======
@@ -106,6 +108,10 @@ class EosObject(metaclass=EosObjectType):
 			return self._instance[0].recurse_parents(cls)
 		return None
 	
+	#@property
+	def hash(self):
+		return EosObject.to_sha256(EosObject.serialise_and_wrap(self))
+	
 	@staticmethod
 	def serialise_and_wrap(value, object_type=None):
 		if object_type:
@@ -127,6 +133,13 @@ class EosObject(metaclass=EosObjectType):
 	@staticmethod
 	def from_json(value):
 		return JSON.parse(value)
+	
+	@staticmethod
+	def to_sha256(value):
+		# TNYI: This is completely borked
+		sha_obj = __pragma__('js', '{}', 'new lib.jsSHA("SHA-256", "TEXT")')
+		sha_obj.js_update(value)
+		return sha_obj.getHash('B64')
 
 class EosList(EosObject):
 	def __init__(self, *args):

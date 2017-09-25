@@ -17,6 +17,8 @@
 import pymongo
 from bson.binary import UUIDLegacy
 
+import base64
+import hashlib
 import json
 import uuid
 
@@ -117,6 +119,10 @@ class EosObject(metaclass=EosObjectType):
 			return self._instance[0].recurse_parents(cls)
 		return None
 	
+	#@property
+	def hash(self):
+		return EosObject.to_sha256(EosObject.serialise_and_wrap(self))
+	
 	@staticmethod
 	def serialise_and_wrap(value, object_type=None):
 		if object_type:
@@ -136,6 +142,12 @@ class EosObject(metaclass=EosObjectType):
 	@staticmethod
 	def from_json(value):
 		return json.loads(value)
+	
+	@staticmethod
+	def to_sha256(value):
+		sha_obj = hashlib.sha256()
+		sha_obj.update(value.encode('utf-8'))
+		return base64.b64encode(sha_obj.digest()).decode('utf-8')
 
 class EosList(EosObject, list):
 	def append(self, value):
