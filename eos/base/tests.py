@@ -14,13 +14,13 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest import TestCase
+from eos.core.tests import EosTestCase
 
 from eos.base.election import *
 from eos.base.workflow import *
 from eos.core.objects import *
 
-class ElectionPyTestCase(TestCase):
+class ElectionTestCase(EosTestCase):
 	@classmethod
 	def setUpClass(cls):
 		client.drop_database('test')

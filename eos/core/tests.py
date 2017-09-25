@@ -14,13 +14,19 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from unittest import TestCase
-
 from eos.core.bigint import *
 from eos.core.bitstring import *
 from eos.core.objects import *
 
-class ObjectPyTestCase(TestCase):
+class EosTestCase:
+	@classmethod
+	def setUpClass(cls):
+		pass
+	
+	def assertEqual(self, a, b):
+		self.impl.assertEqual(a, b)
+
+class ObjectTestCase(EosTestCase):
 	@classmethod
 	def setUpClass(cls):
 		class Person(TopLevelObject):
@@ -43,7 +49,7 @@ class ObjectPyTestCase(TestCase):
 	def test_serialise(self):
 		person1 = self.Person(name='John', address='Address 1')
 		expect1 = {'_ver': '0.1', 'name': 'John', 'address': 'Address 1'}
-		expect1a = {'type': 'eos.core.tests.ObjectPyTestCase.setUpClass.<locals>.Person', 'value': expect1}
+		expect1a = {'type': 'eos.core.tests.ObjectTestCase.setUpClass.<locals>.Person', 'value': expect1}
 		
 		self.assertEqual(person1.serialise(), expect1)
 		self.assertEqual(EosObject.serialise_and_wrap(person1, self.Person), expect1)
@@ -52,7 +58,7 @@ class ObjectPyTestCase(TestCase):
 		#self.assertEqual(EosObject.deserialise_and_unwrap(expect1a), person1)
 		self.assertEqual(EosObject.deserialise_and_unwrap(expect1a).serialise(), person1.serialise())
 
-class BigIntPyTestCase(TestCase):
+class BigIntTestCase(EosTestCase):
 	def test_basic(self):
 		bigint1 = BigInt(5)
 		bigint2 = BigInt('A', 16)
