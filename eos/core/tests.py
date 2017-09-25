@@ -42,8 +42,10 @@ class EosTestCase:
 
 def py_only(func):
 	func._py_only = True
+	return func
 def js_only(func):
 	func._js_only = True
+	return func
 
 # eos.core tests
 # ==============

@@ -192,6 +192,8 @@ class EosObject(metaclass=EosObjectType):
 
 class EosList(EosObject):
 	def __init__(self, *args):
+		super().__init__()
+		
 		self.impl = list(*args)
 	
 	# Lists in JS are implemented as native Arrays, so no cheating here :(
