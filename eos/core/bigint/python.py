@@ -37,7 +37,7 @@ class BigInt(EosObject):
 		return BigInt(self.impl.__pow__(other.impl, modulo.impl))
 	
 	def nbits(self):
-		return math.ceil(math.log2(self.impl))
+		return math.ceil(math.log2(self.impl)) if self.impl > 0 else 0
 	
 	def serialise(self):
 		return str(self)

@@ -27,17 +27,6 @@ class EGTestCase(EosTestCase):
 		ct = sk.public_key.encrypt(pt)
 		m = sk.decrypt(ct)
 		self.assertEqualJSON(pt, m)
-	
-	def test_eg_block(self):
-		test_group = CyclicGroup(p=BigInt('11'), g=BigInt('2'))
-		pt = BigInt('11010010011111010100101', 2)
-		sk = EGPrivateKey.generate(test_group)
-		ct = BitStream(pt).multiple_of(test_group.p.nbits() - 1).map(sk.public_key.encrypt, test_group.p.nbits() - 1)
-		for i in range(len(ct)):
-			self.assertTrue(ct[i].gamma < test_group.p)
-			self.assertTrue(ct[i].delta < test_group.p)
-		m = BitStream.unmap(ct, sk.decrypt, test_group.p.nbits() - 1).read()
-		self.assertEqualJSON(pt, m)
 
 class BitStreamTestCase(EosTestCase):
 	def test_bitstream(self):
@@ -65,3 +54,47 @@ class BitStreamTestCase(EosTestCase):
 		expect = [0b1001, 0b0101, 0b1011]
 		for i in range(len(expect)):
 			self.assertEqual(result[i], expect[i])
+	
+	def test_strings(self):
+		bs = BitStream()
+		bs.write_string('Hello World!')
+		bs.seek(0)
+		self.assertEqual(bs.read(32), len('Hello World!'))
+		bs.seek(0)
+		self.assertEqual(bs.read_string(), 'Hello World!')
+
+class BlockEGTestCase(EosTestCase):
+	@classmethod
+	def setUpClass(cls):
+		class Person(TopLevelObject):
+			name = StringField()
+			address = StringField(default=None)
+			def say_hi(self):
+				return 'Hello! My name is ' + self.name
+		
+		cls.Person = Person
+		
+		#cls.test_group = CyclicGroup(p=BigInt('11'), g=BigInt('2'))
+		cls.test_group = CyclicGroup(p=BigInt('283'), g=BigInt('60'))
+		cls.sk = EGPrivateKey.generate(cls.test_group)
+	
+	def test_basic(self):
+		pt = BigInt('11010010011111010100101', 2)
+		ct = BitStream(pt).multiple_of(self.test_group.p.nbits() - 1).map(self.sk.public_key.encrypt, self.test_group.p.nbits() - 1)
+		for i in range(len(ct)):
+			self.assertTrue(ct[i].gamma < self.test_group.p)
+			self.assertTrue(ct[i].delta < self.test_group.p)
+		m = BitStream.unmap(ct, self.sk.decrypt, self.test_group.p.nbits() - 1).read()
+		self.assertEqualJSON(pt, m)
+	
+	def test_object(self):
+		obj = self.Person(name='John Smith')
+		pt = EosObject.to_json(EosObject.serialise_and_wrap(obj))
+		bs = BitStream()
+		bs.write_string(pt)
+		bs.multiple_of(self.test_group.p.nbits() - 1, True)
+		ct = bs.map(self.sk.public_key.encrypt, self.test_group.p.nbits() - 1)
+		bs2 = BitStream.unmap(ct, self.sk.decrypt, self.test_group.p.nbits() - 1)
+		m = bs2.read_string()
+		obj2 = EosObject.deserialise_and_unwrap(EosObject.from_json(m))
+		self.assertEqualJSON(obj, obj2)

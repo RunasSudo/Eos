@@ -42,6 +42,13 @@ class EGPublicKey(EmbeddedObject):
 	
 	# HAC 8.18
 	def encrypt(self, message):
+		message += ONE # Dodgy hack to allow zeroes
+		
+		if message <= ZERO:
+			raise Exception('Invalid message')
+		if message >= self.group.p:
+			raise Exception('Invalid message')
+		
 		# Choose an element 1 <= k <= p - 2
 		k = BigInt.crypto_random(ONE, self.group.p - TWO)
 		
@@ -76,7 +83,8 @@ class EGPrivateKey(EmbeddedObject):
 		
 		gamma_inv = pow(ciphertext.gamma, self.public_key.group.p - ONE - self.x, self.public_key.group.p)
 		
-		return (gamma_inv * ciphertext.delta) % self.public_key.group.p
+		pt = (gamma_inv * ciphertext.delta) % self.public_key.group.p
+		return pt - ONE
 
 class EGCiphertext(EmbeddedObject):
 	public_key = EmbeddedObjectField(EGPublicKey)

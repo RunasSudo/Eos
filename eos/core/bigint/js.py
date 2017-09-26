@@ -91,6 +91,10 @@ class BigInt(EosObject):
 	def __str__(self):
 		return str(self.impl)
 	
+	def __int__(self):
+		# WARNING: This will yield unexpected results for large numbers
+		return int(str(self.impl))
+	
 	def __pow__(self, other, modulo=None):
 		if not isinstance(other, BigInt):
 			other = BigInt(other)

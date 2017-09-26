@@ -38,7 +38,7 @@ class BitStream(EosObject):
 		if nbits is None:
 			nbits = self.remaining
 		if nbits > self.remaining:
-			nbits = self.remaining
+			raise Exception('Not enough bits to read from BitString')
 		
 		val = (self.impl >> (self.remaining - nbits)) & ((ONE << nbits) - ONE)
 		self.ptr += nbits
@@ -51,15 +51,53 @@ class BitStream(EosObject):
 		#   ^----
 		if nbits is None:
 			nbits = bits.nbits()
+		if nbits < bits.nbits():
+			raise Exception('Too many bits to write to BitString')
 		
 		self.impl = ((self.impl >> self.remaining) << (self.remaining + nbits)) | (bits << self.remaining) | (self.impl & ((ONE << self.remaining) - 1))
 		self.ptr += nbits
 		self.nbits += nbits
 	
+	def read_string(self):
+		length = self.read(32)
+		length = length.__int__() # JS attempts to call this twice if we do it in one line
+		
+		if is_python:
+			ba = bytearray()
+			for i in range(length):
+				ba.append(int(self.read(7)))
+			return ba.decode('ascii')
+		else:
+			ba = []
+			for i in range(length):
+				val = self.read(7)
+				val = val.__int__()
+				ba.append(val)
+			return String.fromCharCode(*ba)
+	
+	def write_string(self, strg):
+		self.write(BigInt(len(strg)), 32) # TODO: Arbitrary lengths
+		
+		# TODO: Support non-ASCII encodings
+		if is_python:
+			ba = strg.encode('ascii')
+			for i in range(len(strg)):
+				self.write(BigInt(ba[i]), 7)
+		else:
+			for i in range(len(strg)):
+				self.write(BigInt(strg.charCodeAt(i)), 7)
+	
 	# Make the size of this BitStream a multiple of the block_size
-	def multiple_of(self, block_size):
+	def multiple_of(self, block_size, pad_at_end=False):
 		if self.nbits % block_size != 0:
-			self.nbits += (block_size - (self.nbits % block_size))
+			diff = block_size - (self.nbits % block_size)
+			if pad_at_end:
+				# Suitable for structured data
+				self.seek(self.nbits)
+				self.write(ZERO, diff)
+			else:
+				# Suitable for raw numbers
+				self.nbits += diff
 		return self # For convenient chaining
 	
 	def map(self, func, block_size):
