@@ -16,6 +16,8 @@
 
 from eos.core.objects import EosObject
 
+import math
+
 import random
 system_random = random.SystemRandom()
 
@@ -34,6 +36,9 @@ class BigInt(EosObject):
 			modulo = BigInt(modulo)
 		return BigInt(self.impl.__pow__(other.impl, modulo.impl))
 	
+	def nbits(self):
+		return math.ceil(math.log2(self.impl))
+	
 	def serialise(self):
 		return str(self)
 	
@@ -50,7 +55,7 @@ class BigInt(EosObject):
 	def crypto_random(cls, lower_bound, upper_bound):
 		return cls(system_random.randint(int(lower_bound), int(upper_bound)))
 
-for func in ['__add__', '__sub__', '__mul__', '__mod__', '__or__', '__lshift__', '__xor__']:
+for func in ['__add__', '__sub__', '__mul__', '__mod__', '__and__', '__or__', '__lshift__', '__rshift__', '__xor__']:
 	def make_operator_func(func_):
 		# Create a closure
 		def operator_func(self, other):

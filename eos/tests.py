@@ -17,14 +17,11 @@
 
 from unittest import *
 
-from eos.core.bigint import *
-from eos.core.bitstring import *
-from eos.core.objects import *
-
 import execjs
 
 import importlib
 import os
+import sys
 import types
 
 test_suite = TestSuite()
@@ -70,6 +67,11 @@ for dirpath, dirnames, filenames in os.walk('eos'):
 			obj = getattr(module, name)
 			if isinstance(obj, type):
 				if issubclass(obj, eos.core.tests.EosTestCase):
+					if obj.__module__ != module_name:
+						continue
+					if len(sys.argv) > 1 and not obj.__module__.startswith(sys.argv[1]):
+						continue
+					
 					impl = obj()
 					cls_py = type(name + 'ImplPy', (BasePyTestCase,), {'impl': impl})
 					cls_js = type(name + 'ImplJS', (BaseJSTestCase,), {'module': module_name, 'name': name})

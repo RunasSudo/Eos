@@ -56,8 +56,10 @@ class BigInt(EosObject):
 			('__sub__', 'subtract'),
 			('__mul__', 'multiply'),
 			('__mod__', 'mod'),
+			('__and__', 'and'),
 			('__or__', 'or'),
 			('__lshift__', 'shiftLeft'),
+			('__rshift__', 'shiftRight'),
 			('__xor__', 'xor')
 		]:
 			def make_operator_func(func_):
@@ -97,6 +99,9 @@ class BigInt(EosObject):
 		if not isinstance(modulo, BigInt):
 			modulo = BigInt(modulo)
 		return BigInt(self.impl.modPow(other.impl, modulo.impl))
+	
+	def nbits(self):
+		return self.impl.bitLength()
 	
 	def serialise(self):
 		return str(self)

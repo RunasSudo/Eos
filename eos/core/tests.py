@@ -15,7 +15,6 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from eos.core.bigint import *
-from eos.core.bitstring import *
 from eos.core.objects import *
 
 # Common library things
@@ -103,6 +102,6 @@ class BigIntTestCase(EosTestCase):
 		
 		self.assertEqual(bigint1 + bigint2, 15)
 		self.assertEqual(bigint3 - bigint2, bigint1)
-		self.assertEqual(pow(bigint1, bigint2), pow(5, 10))
-		self.assertEqual(pow(bigint1, bigint2, bigint3), pow(5, 10, 15))
-		self.assertEqual(pow(bigint1, 10, 15), pow(5, 10, 15))
+		self.assertEqual(pow(bigint1, bigint2), 5**10)
+		self.assertEqual(pow(bigint1, bigint2, bigint3), (5**10)%15)
+		self.assertEqual(pow(bigint1, 10, 15), (5**10)%15)

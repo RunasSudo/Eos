@@ -17,12 +17,33 @@
 from eos.core.tests import *
 
 from eos.core.bigint import *
+from eos.psgjjr.bitstream import *
 from eos.psgjjr.crypto import *
 
 class EGTestCase(EosTestCase):
 	def test_eg(self):
-		pt = BigInt.noncrypto_random(ONE, DEFAULT_GROUP.p - ONE)
+		pt = DEFAULT_GROUP.random_element()
 		sk = EGPrivateKey.generate()
 		ct = sk.public_key.encrypt(pt)
 		m = sk.decrypt(ct)
 		self.assertEqualJSON(pt, m)
+
+class BitStreamTestCase(EosTestCase):
+	def test_bitstream(self):
+		bs = BitStream(BigInt('100101011011', 2))
+		self.assertEqual(bs.read(4), 0b1001)
+		self.assertEqual(bs.read(4), 0b0101)
+		self.assertEqual(bs.read(4), 0b1011)
+		bs = BitStream()
+		bs.write(BigInt('100101011011', 2))
+		bs.seek(0)
+		self.assertEqual(bs.read(4), 0b1001)
+		self.assertEqual(bs.read(4), 0b0101)
+		self.assertEqual(bs.read(4), 0b1011)
+		bs.seek(4)
+		bs.write(BigInt('11', 2))
+		bs.seek(0)
+		self.assertEqual(bs.read(4), 0b1001)
+		self.assertEqual(bs.read(4), 0b1101)
+		self.assertEqual(bs.read(4), 0b0110)
+		self.assertEqual(bs.read(2), 0b11)
