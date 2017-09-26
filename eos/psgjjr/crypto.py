@@ -56,13 +56,13 @@ class EGPrivateKey(EmbeddedObject):
 	
 	# HAC 8.17
 	@staticmethod
-	def generate():
+	def generate(group=DEFAULT_GROUP):
 		# Choose an element 1 <= x <= p - 2
-		x = BigInt.crypto_random(ONE, DEFAULT_GROUP.p - TWO)
+		x = BigInt.crypto_random(ONE, group.p - TWO)
 		# Calculate the public key as G^x
-		X = pow(DEFAULT_GROUP.g, x, DEFAULT_GROUP.p)
+		X = pow(group.g, x, group.p)
 		
-		pk = EGPublicKey(group=DEFAULT_GROUP, X=X)
+		pk = EGPublicKey(group=group, X=X)
 		sk = EGPrivateKey(public_key=pk, x=x)
 		return sk
 	

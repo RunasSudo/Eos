@@ -25,6 +25,13 @@ class EosTestCase:
 	def setUpClass(cls):
 		pass
 	
+	def assertTrue(self, a):
+		if is_python:
+			self.impl.assertTrue(a)
+		else:
+			if not a:
+				raise Error('Assertion failed: ' + str(a) + ' not True')
+	
 	def assertEqual(self, a, b):
 		if is_python:
 			self.impl.assertEqual(a, b)

@@ -32,21 +32,53 @@ class BitStream(EosObject):
 		self.ptr = ptr
 		self.remaining = self.nbits - self.ptr
 	
-	def read(self, nbits):
+	def read(self, nbits=None):
 		# 11000110110
 		#    ^----
+		if nbits is None:
+			nbits = self.remaining
+		if nbits > self.remaining:
+			nbits = self.remaining
+		
 		val = (self.impl >> (self.remaining - nbits)) & ((ONE << nbits) - ONE)
 		self.ptr += nbits
 		self.remaining -= nbits
 		return val
 	
-	def write(self, bits):
+	def write(self, bits, nbits=None):
 		# 11     0100110
 		#   10010
 		#   ^----
-		self.impl = ((self.impl >> self.remaining) << (self.remaining + bits.nbits())) | (bits << self.remaining) | (self.impl & ((ONE << self.remaining) - 1))
-		self.ptr += bits.nbits()
-		self.nbits += bits.nbits()
+		if nbits is None:
+			nbits = bits.nbits()
+		
+		self.impl = ((self.impl >> self.remaining) << (self.remaining + nbits)) | (bits << self.remaining) | (self.impl & ((ONE << self.remaining) - 1))
+		self.ptr += nbits
+		self.nbits += nbits
+	
+	# Make the size of this BitStream a multiple of the block_size
+	def multiple_of(self, block_size):
+		if self.nbits % block_size != 0:
+			self.nbits += (block_size - (self.nbits % block_size))
+		return self # For convenient chaining
+	
+	def map(self, func, block_size):
+		if self.nbits % block_size != 0:
+			raise Exception('The size of the BitStream must be a multiple of block_size')
+		
+		self.seek(0)
+		result = []
+		while self.remaining > 0:
+			result.append(func(self.read(block_size)))
+		return result
+	
+	@classmethod
+	def unmap(cls, value, func, block_size):
+		bs = cls()
+		for x in value:
+			bs.write(func(x), block_size)
+		bs.seek(0)
+		return bs
 	
 	def serialise(self):
 		return self.impl

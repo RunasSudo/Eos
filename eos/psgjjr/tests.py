@@ -27,6 +27,17 @@ class EGTestCase(EosTestCase):
 		ct = sk.public_key.encrypt(pt)
 		m = sk.decrypt(ct)
 		self.assertEqualJSON(pt, m)
+	
+	def test_eg_block(self):
+		test_group = CyclicGroup(p=BigInt('11'), g=BigInt('2'))
+		pt = BigInt('11010010011111010100101', 2)
+		sk = EGPrivateKey.generate(test_group)
+		ct = BitStream(pt).multiple_of(test_group.p.nbits() - 1).map(sk.public_key.encrypt, test_group.p.nbits() - 1)
+		for i in range(len(ct)):
+			self.assertTrue(ct[i].gamma < test_group.p)
+			self.assertTrue(ct[i].delta < test_group.p)
+		m = BitStream.unmap(ct, sk.decrypt, test_group.p.nbits() - 1).read()
+		self.assertEqualJSON(pt, m)
 
 class BitStreamTestCase(EosTestCase):
 	def test_bitstream(self):
@@ -47,3 +58,10 @@ class BitStreamTestCase(EosTestCase):
 		self.assertEqual(bs.read(4), 0b1101)
 		self.assertEqual(bs.read(4), 0b0110)
 		self.assertEqual(bs.read(2), 0b11)
+	
+	def test_bitstream_map(self):
+		bs = BitStream(BigInt('100101011011', 2))
+		result = bs.map(lambda x: x, 4)
+		expect = [0b1001, 0b0101, 0b1011]
+		for i in range(len(expect)):
+			self.assertEqual(result[i], expect[i])
