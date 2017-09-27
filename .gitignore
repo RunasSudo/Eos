@@ -5,3 +5,6 @@
 __javascript__
 __pycache__
 refs
+
+\#*
+.#*

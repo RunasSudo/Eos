@@ -16,6 +16,7 @@
 
 from eos.core.bigint import *
 from eos.core.objects import *
+from eos.base.election import *
 
 class CyclicGroup(EmbeddedObject):
 	p = EmbeddedObjectField(BigInt)
@@ -92,6 +93,15 @@ class EGCiphertext(EmbeddedObject):
 	public_key = EmbeddedObjectField(EGPublicKey)
 	gamma = EmbeddedObjectField(BigInt) # G^k
 	delta = EmbeddedObjectField(BigInt) # M X^k
+	
+	def reencrypt(self, k=None):
+		# Generate an encryption of one
+		if k is None:
+			k = BigInt.crypto_random(ONE, self.public_key.group.p - TWO)
+		gamma = pow(self.public_key.group.g, k, self.public_key.group.p)
+		delta = pow(self.public_key.X, k, self.public_key.group.p)
+		
+		return EGCiphertext(public_key=self.public_key, gamma=((self.gamma * gamma) % self.public_key.group.p), delta=((self.delta * delta) % self.public_key.group.p)), k
 
 # Signed ElGamal per Schnorr & Jakobssen
 class SEGPublicKey(EGPublicKey):
@@ -118,26 +128,84 @@ class SEGPublicKey(EGPublicKey):
 
 class SEGPrivateKey(EGPrivateKey):
 	pk_class = SEGPublicKey
-	
-	def decrypt(self, ciphertext):
-		if (
-			ciphertext.gamma <= ZERO or ciphertext.gamma >= self.public_key.group.p or
-			ciphertext.delta <= ZERO or ciphertext.delta >= self.public_key.group.p
-			):
-			raise Exception('Ciphertext is malformed')
-		
-		gs = (pow(self.public_key.group.g, ciphertext.z, self.public_key.group.p) * pow(ciphertext.gamma, self.public_key.group.p - ONE - ciphertext.c, self.public_key.group.p)) % self.public_key.group.p
-		_, c = EosObject.to_sha256(str(gs), str(ciphertext.gamma), str(ciphertext.delta))
-		
-		if ciphertext.c != c:
-			raise Exception('Signature is invalid')
-		
-		gamma_inv = pow(ciphertext.gamma, self.public_key.group.p - ONE - self.x, self.public_key.group.p)
-		
-		pt = (gamma_inv * ciphertext.delta) % self.public_key.group.p
-		return pt - ONE
 
 class SEGCiphertext(EGCiphertext):
 	public_key = EmbeddedObjectField(SEGPublicKey)
 	c = EmbeddedObjectField(BigInt)
 	z = EmbeddedObjectField(BigInt)
+	
+	def is_signature_valid(self):
+		gs = (pow(self.public_key.group.g, self.z, self.public_key.group.p) * pow(self.gamma, self.public_key.group.p - ONE - self.c, self.public_key.group.p)) % self.public_key.group.p
+		_, c = EosObject.to_sha256(str(gs), str(self.gamma), str(self.delta))
+		
+		return self.c == c
+
+class BlockEncryptedAnswer(EncryptedAnswer):
+	blocks = EmbeddedObjectListField()
+	
+	def decrypt(self):
+		# TODO
+		raise Exception('NYI')
+
+class RPCMixnet:
+	def __init__(self):
+		self.params = []
+	
+	def random_permutation(self, n):
+		permutation = list(range(n))
+		# Fisher-Yates shuffle
+		i = n
+		while i != 0:
+			rnd = BigInt.crypto_random(0, i - 1)
+			rnd = rnd.__int__()
+			i -= 1
+			permutation[rnd], permutation[i] = permutation[i], permutation[rnd]
+		return permutation
+	
+	def shuffle(self, encrypted_answers):
+		shuffled_answers = [None] * len(encrypted_answers)
+		permutations = self.random_permutation(len(encrypted_answers))
+		
+		permutations_and_reenc = []
+		
+		for i in range(len(encrypted_answers)):
+			encrypted_answer = encrypted_answers[i]
+			
+			# Reencrypt the answer
+			shuffled_blocks = []
+			block_reencryptions = []
+			for block in encrypted_answer.blocks:
+				block2, reenc = block.reencrypt()
+				shuffled_blocks.append(block2)
+				block_reencryptions.append(reenc)
+			# And shuffle it to the new position
+			shuffled_answers[permutations[i]] = BlockEncryptedAnswer(blocks=shuffled_blocks)
+			# Record the parameters
+			permutations_and_reenc.append([permutations[i], block_reencryptions, block.public_key.group.random_element(), block.public_key.group.random_element()])
+		
+		commitments_left = []
+		for i in range(len(permutations_and_reenc)):
+			val = permutations_and_reenc[i]
+			val_json = [val[0], [str(x) for x in val[1]], str(val[2])]
+			commitments_left.append(EosObject.to_sha256(EosObject.to_json(val_json))[0])
+		
+		commitments_right = []
+		for i in range(len(permutations_and_reenc)):
+			# Find the answer that went to 'i'
+			idx = next(idx for idx in range(len(permutations_and_reenc)) if permutations_and_reenc[idx][0] == i)
+			val = permutations_and_reenc[idx]
+			
+			val_json = [idx, [str(x) for x in val[1]], str(val[3])]
+			commitments_right.append(EosObject.to_sha256(EosObject.to_json(val_json))[0])
+		
+		self.params = permutations_and_reenc
+		return shuffled_answers, commitments_left, commitments_right
+	
+	def challenge(self, i, is_left):
+		if is_left:
+			val = self.params[i]
+			return [val[0], val[1], val[2]]
+		else:
+			idx = next(idx for idx in range(len(self.params)) if self.params[idx][0] == i)
+			val = self.params[idx]
+			return [idx, val[1], val[3]]
