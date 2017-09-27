@@ -16,4 +16,9 @@
 
 import eos.core.objects
 import eos.core.bigint
-import eos.core.bitstring
+
+import eos.base.election
+import eos.base.workflow
+
+import eos.psr.bitstream
+import eos.psr.crypto

@@ -58,19 +58,21 @@ class EGPublicKey(EmbeddedObject):
 		return EGCiphertext(public_key=self, gamma=gamma, delta=delta)
 
 class EGPrivateKey(EmbeddedObject):
+	pk_class = EGPublicKey
+	
 	public_key = EmbeddedObjectField(EGPublicKey)
 	x = EmbeddedObjectField(BigInt)
 	
 	# HAC 8.17
-	@staticmethod
-	def generate(group=DEFAULT_GROUP):
+	@classmethod
+	def generate(cls, group=DEFAULT_GROUP):
 		# Choose an element 1 <= x <= p - 2
 		x = BigInt.crypto_random(ONE, group.p - TWO)
 		# Calculate the public key as G^x
 		X = pow(group.g, x, group.p)
 		
-		pk = EGPublicKey(group=group, X=X)
-		sk = EGPrivateKey(public_key=pk, x=x)
+		pk = cls.pk_class(group=group, X=X)
+		sk = cls(public_key=pk, x=x)
 		return sk
 	
 	# HAC 8.18
@@ -90,3 +92,52 @@ class EGCiphertext(EmbeddedObject):
 	public_key = EmbeddedObjectField(EGPublicKey)
 	gamma = EmbeddedObjectField(BigInt) # G^k
 	delta = EmbeddedObjectField(BigInt) # M X^k
+
+# Signed ElGamal per Schnorr & Jakobssen
+class SEGPublicKey(EGPublicKey):
+	def encrypt(self, message):
+		message += ONE # Dodgy hack to allow zeroes
+		
+		if message <= ZERO:
+			raise Exception('Invalid message')
+		if message >= self.group.p:
+			raise Exception('Invalid message')
+		
+		# Choose an element 1 <= k <= p - 2
+		r = BigInt.crypto_random(ONE, self.group.p - TWO)
+		s = BigInt.crypto_random(ONE, self.group.p - TWO)
+		
+		gamma = pow(self.group.g, r, self.group.p) # h
+		delta = (message * pow(self.X, r, self.group.p)) % self.group.p # f
+		
+		_, c = EosObject.to_sha256(str(pow(self.group.g, s, self.group.p)), str(gamma), str(delta))
+		
+		z = s + c*r
+		
+		return SEGCiphertext(public_key=self, gamma=gamma, delta=delta, c=c, z=z)
+
+class SEGPrivateKey(EGPrivateKey):
+	pk_class = SEGPublicKey
+	
+	def decrypt(self, ciphertext):
+		if (
+			ciphertext.gamma <= ZERO or ciphertext.gamma >= self.public_key.group.p or
+			ciphertext.delta <= ZERO or ciphertext.delta >= self.public_key.group.p
+			):
+			raise Exception('Ciphertext is malformed')
+		
+		gs = (pow(self.public_key.group.g, ciphertext.z, self.public_key.group.p) * pow(ciphertext.gamma, self.public_key.group.p - ONE - ciphertext.c, self.public_key.group.p)) % self.public_key.group.p
+		_, c = EosObject.to_sha256(str(gs), str(ciphertext.gamma), str(ciphertext.delta))
+		
+		if ciphertext.c != c:
+			raise Exception('Signature is invalid')
+		
+		gamma_inv = pow(ciphertext.gamma, self.public_key.group.p - ONE - self.x, self.public_key.group.p)
+		
+		pt = (gamma_inv * ciphertext.delta) % self.public_key.group.p
+		return pt - ONE
+
+class SEGCiphertext(EGCiphertext):
+	public_key = EmbeddedObjectField(SEGPublicKey)
+	c = EmbeddedObjectField(BigInt)
+	z = EmbeddedObjectField(BigInt)

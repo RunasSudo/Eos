@@ -17,13 +17,21 @@
 from eos.core.tests import *
 
 from eos.core.bigint import *
-from eos.psgjjr.bitstream import *
-from eos.psgjjr.crypto import *
+from eos.psr.bitstream import *
+from eos.psr.crypto import *
 
 class EGTestCase(EosTestCase):
 	def test_eg(self):
 		pt = DEFAULT_GROUP.random_element()
 		sk = EGPrivateKey.generate()
+		ct = sk.public_key.encrypt(pt)
+		m = sk.decrypt(ct)
+		self.assertEqualJSON(pt, m)
+
+class SEGTestCase(EosTestCase):
+	def test_eg(self):
+		pt = DEFAULT_GROUP.random_element()
+		sk = SEGPrivateKey.generate()
 		ct = sk.public_key.encrypt(pt)
 		m = sk.decrypt(ct)
 		self.assertEqualJSON(pt, m)

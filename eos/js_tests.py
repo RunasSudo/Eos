@@ -18,4 +18,4 @@ import eos.js
 
 import eos.core.tests
 import eos.base.tests
-import eos.psgjjr.tests
+import eos.psr.tests

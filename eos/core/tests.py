@@ -95,7 +95,7 @@ class ObjectTestCase(EosTestCase):
 
 class HashTestCase(EosTestCase):
 	def test_hash(self):
-		self.assertEqual(EosObject.to_sha256('Hello World!'), 'f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=')
+		self.assertEqual(EosObject.to_sha256('Hello World!')[0], 'f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=')
 
 class BigIntTestCase(EosTestCase):
 	def test_basic(self):

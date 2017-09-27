@@ -150,7 +150,7 @@ class EosObject(metaclass=EosObjectType):
 	
 	@property
 	def hash(self):
-		return EosObject.to_sha256(EosObject.serialise_and_wrap(self))
+		return EosObject.to_sha256(EosObject.to_json(EosObject.serialise_and_wrap(self)))[0]
 	
 	@staticmethod
 	def serialise_and_wrap(value, object_type=None):
@@ -179,16 +179,20 @@ class EosObject(metaclass=EosObjectType):
 			return JSON.parse(value)
 	
 	@staticmethod
-	def to_sha256(value):
+	def to_sha256(*values):
+		from eos.core.bigint import BigInt
+		
 		if is_python:
 			sha_obj = hashlib.sha256()
-			sha_obj.update(value.encode('utf-8'))
-			return base64.b64encode(sha_obj.digest()).decode('utf-8')
+			for value in values:
+				sha_obj.update(value.encode('utf-8'))
+			return base64.b64encode(sha_obj.digest()).decode('utf-8'), BigInt(sha_obj.hexdigest(), 16)
 		else:
 			# TNYI: This is completely borked
 			sha_obj = __pragma__('js', '{}', 'new lib.jsSHA("SHA-256", "TEXT")')
-			sha_obj.js_update(value)
-			return sha_obj.getHash('B64')
+			for value in values:
+				sha_obj.js_update(value)
+			return sha_obj.getHash('B64'), BigInt(sha_obj.getHash('HEX'), 16)
 
 class EosList(EosObject):
 	def __init__(self, *args):
