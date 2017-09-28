@@ -19,7 +19,11 @@ from eos.core.objects import *
 from eos.psr.election import *
 
 class RPCMixnet:
-	def __init__(self):
+	def __init__(self, mix_order):
+		self.mix_order = mix_order
+		
+		self.is_left = (self.mix_order % 2 == 0)
+		
 		self.params = []
 	
 	def random_permutation(self, n):
@@ -54,26 +58,26 @@ class RPCMixnet:
 			# Record the parameters
 			permutations_and_reenc.append([permutations[i], block_reencryptions, block.public_key.group.random_element(), block.public_key.group.random_element()])
 		
-		commitments_left = []
-		for i in range(len(permutations_and_reenc)):
-			val = permutations_and_reenc[i]
-			val_json = [val[0], [str(x) for x in val[1]], str(val[2])]
-			commitments_left.append(EosObject.to_sha256(EosObject.to_json(val_json))[0])
-		
-		commitments_right = []
-		for i in range(len(permutations_and_reenc)):
-			# Find the answer that went to 'i'
-			idx = next(idx for idx in range(len(permutations_and_reenc)) if permutations_and_reenc[idx][0] == i)
-			val = permutations_and_reenc[idx]
-			
-			val_json = [idx, [str(x) for x in val[1]], str(val[3])]
-			commitments_right.append(EosObject.to_sha256(EosObject.to_json(val_json))[0])
+		commitments = []
+		if self.is_left:
+			for i in range(len(permutations_and_reenc)):
+				val = permutations_and_reenc[i]
+				val_obj = MixChallengeResponse(index=val[0], reenc=val[1], rand=val[2])
+				commitments.append(EosObject.to_sha256(EosObject.to_json(val_obj.serialise()))[1])
+		else:
+			for i in range(len(permutations_and_reenc)):
+				# Find the answer that went to 'i'
+				idx = next(idx for idx in range(len(permutations_and_reenc)) if permutations_and_reenc[idx][0] == i)
+				val = permutations_and_reenc[idx]
+				
+				val_obj = MixChallengeResponse(index=idx, reenc=val[1], rand=val[3])
+				commitments.append(EosObject.to_sha256(EosObject.to_json(val_obj.serialise()))[1])
 		
 		self.params = permutations_and_reenc
-		return shuffled_answers, commitments_left, commitments_right
+		return shuffled_answers, commitments
 	
-	def challenge(self, i, is_left):
-		if is_left:
+	def challenge(self, i):
+		if self.is_left:
 			val = self.params[i]
 			return [val[0], val[1], val[2]]
 		else:

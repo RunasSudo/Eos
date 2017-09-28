@@ -119,7 +119,7 @@ class MixnetTestCase(EosTestCase):
 		
 		# Generate plaintexts
 		pts = []
-		for i in range(10):
+		for i in range(4):
 			pts.append(sk.public_key.group.random_element())
 		
 		# Encrypt plaintexts
@@ -130,44 +130,50 @@ class MixnetTestCase(EosTestCase):
 			ct = bs.map(sk.public_key.encrypt, sk.public_key.group.p.nbits() - 1)
 			answers.append(BlockEncryptedAnswer(blocks=ct))
 		
-		# Set up mixnet
-		mixnet = RPCMixnet()
-		
-		# Mix answers
-		shuffled_answers, commitments_left, commitments_right = mixnet.shuffle(answers)
-		
-		# Decrypt shuffle
-		msgs = []
-		for i in range(len(shuffled_answers)):
-			bs = BitStream.unmap(shuffled_answers[i].blocks, sk.decrypt, sk.public_key.group.p.nbits() - 1)
-			m = bs.read()
-			msgs.append(m)
-		
-		# Check decryption
-		self.assertEqual(set(int(x) for x in pts), set(int(x) for x in msgs))
-		
-		# Check commitments
-		def verify_shuffle(idx_left, idx_right, reencs):
-			claimed_blocks = shuffled_answers[idx_right].blocks
-			for j in range(len(answers[idx_left].blocks)):
-				reencrypted_block, _ = answers[idx_left].blocks[j].reencrypt(reencs[j])
-				self.assertEqual(claimed_blocks[j].gamma, reencrypted_block.gamma)
-				self.assertEqual(claimed_blocks[j].delta, reencrypted_block.delta)
-		
-		for i in range(len(pts)):
-			# Left
-			perm, reencs, rand = mixnet.challenge(i, True)
-			val_json = [perm, [str(x) for x in reencs], str(rand)]
-			self.assertEqual(commitments_left[i], EosObject.to_sha256(EosObject.to_json(val_json))[0])
-			verify_shuffle(i, perm, reencs)
+		def do_mixnet(mix_order):
+			# Set up mixnet
+			mixnet = RPCMixnet(mix_order)
 			
-			# Right
-			perm, reencs, rand = mixnet.challenge(i, False)
-			val_json = [perm, [str(x) for x in reencs], str(rand)]
-			self.assertEqual(commitments_right[i], EosObject.to_sha256(EosObject.to_json(val_json))[0])
-			verify_shuffle(perm, i, reencs)
+			# Mix answers
+			shuffled_answers, commitments = mixnet.shuffle(answers)
+			
+			# Decrypt shuffle
+			msgs = []
+			for i in range(len(shuffled_answers)):
+				bs = BitStream.unmap(shuffled_answers[i].blocks, sk.decrypt, sk.public_key.group.p.nbits() - 1)
+				m = bs.read()
+				msgs.append(m)
+			
+			# Check decryption
+			self.assertEqual(set(int(x) for x in pts), set(int(x) for x in msgs))
+			
+			# Check commitments
+			def verify_shuffle(idx_left, idx_right, reencs):
+				claimed_blocks = shuffled_answers[idx_right].blocks
+				for j in range(len(answers[idx_left].blocks)):
+					reencrypted_block, _ = answers[idx_left].blocks[j].reencrypt(reencs[j])
+					self.assertEqual(claimed_blocks[j].gamma, reencrypted_block.gamma)
+					self.assertEqual(claimed_blocks[j].delta, reencrypted_block.delta)
+			
+			for i in range(len(pts)):
+				perm, reencs, rand = mixnet.challenge(i)
+				val_obj = MixChallengeResponse(index=perm, reenc=reencs, rand=rand)
+				self.assertEqual(commitments[i], EosObject.to_sha256(EosObject.to_json(val_obj.serialise()))[1])
+				
+				if mixnet.is_left:
+					verify_shuffle(i, perm, reencs)
+				else:
+					verify_shuffle(perm, i, reencs)
+		
+		# NB: This isn't doing it in sequence, it's just testing a left mixnet and a right mixnet respectively
+		do_mixnet(0)
+		do_mixnet(1)
 
 class ElectionTestCase(EosTestCase):
+	@classmethod
+	def setUpClass(cls):
+		client.drop_database('test')
+	
 	def do_task_assert(self, election, task, next_task):
 		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)
 		if next_task is not None:
@@ -191,7 +197,7 @@ class ElectionTestCase(EosTestCase):
 			election.voters.append(voter)
 		
 		for i in range(3):
-			mixing_trustee = MixingTrustee(mix_order=i)
+			mixing_trustee = MixingTrustee()
 			election.mixing_trustees.append(mixing_trustee)
 		
 		election.sk = EGPrivateKey.generate()
@@ -225,7 +231,38 @@ class ElectionTestCase(EosTestCase):
 		election.save()
 		
 		# Close voting
-		self.do_task_assert(election, 'eos.base.workflow.TaskCloseVoting', 'eos.base.workflow.TaskDecryptVotes')
+		self.do_task_assert(election, 'eos.base.workflow.TaskCloseVoting', 'eos.psr.workflow.TaskMixVotes')
+		election.save()
+		
+		# Mix votes
+		election.workflow.get_task('eos.psr.workflow.TaskMixVotes').enter()
+		election.save()
+		
+		# Do the mix
+		for i in range(len(election.questions)):
+			for j in range(len(election.mixing_trustees)):
+				mixnet = RPCMixnet(j)
+				if j > 0:
+					orig_answers = election.mixing_trustees[j - 1].mixed_questions[i]
+				else:
+					orig_answers = []
+					for voter in election.voters:
+						for ballot in voter.ballots:
+							orig_answers.append(ballot.encrypted_answers[i])
+				shuffled_answers, commitments = mixnet.shuffle(orig_answers)
+				election.mixing_trustees[j].mixed_questions.append(EosList(shuffled_answers))
+				election.mixing_trustees[j].commitments.append(EosList(commitments))
+		
+		election.workflow.get_task('eos.psr.workflow.TaskMixVotes').exit()
+		election.save()
+		
+		# Verify mixes
+		election.workflow.get_task('eos.psr.workflow.TaskVerifyMixes').enter()
+		election.save()
+		
+		# TODO
+		
+		election.workflow.get_task('eos.psr.workflow.TaskVerifyMixes').exit()
 		election.save()
 		
 		# Decrypt votes, for realsies

@@ -16,9 +16,40 @@
 
 from eos.core.objects import *
 from eos.base.workflow import *
+import eos.base.workflow
 
 # Concrete tasks
 # ==============
+
+class TaskMixVotes(WorkflowTask):
+	depends_on = ['eos.base.workflow.TaskCloseVoting']
+	
+	def on_enter(self):
+		# Do not automatically exit this task
+		pass
+
+class TaskVerifyMixes(WorkflowTask):
+	depends_on = ['eos.psr.workflow.TaskMixVotes']
+	
+	def on_enter(self):
+		# Do not automatically exit this task
+		pass
+
+class TaskDecryptVotes(eos.base.workflow.TaskDecryptVotes):
+	depends_on = ['eos.psr.workflow.TaskVerifyMixes']
+	
+	def on_enter(self):
+		election = self.recurse_parents('eos.base.election.Election')
+		
+		for _ in range(len(election.questions)):
+			election.results.append(EosObject.objects['eos.base.election.RawResult']())
+		
+		for i in range(len(election.mixing_trustees[-1].mixed_questions)):
+			for encrypted_answer in election.mixing_trustees[-1].mixed_questions[i]:
+				answer = encrypted_answer.decrypt()
+				election.results[i].answers.append(answer)
+		
+		self.exit()
 
 # Concrete workflows
 # ==================
@@ -30,5 +61,7 @@ class PSRWorkflow(Workflow):
 		self.tasks.append(TaskConfigureElection())
 		self.tasks.append(TaskOpenVoting())
 		self.tasks.append(TaskCloseVoting())
-		self.tasks.append(TaskDecryptVotes())
+		self.tasks.append(TaskMixVotes())
+		self.tasks.append(TaskVerifyMixes())
+		self.tasks.append(TaskDecryptVotes()) # The PSR one, not the base one
 		self.tasks.append(TaskReleaseResults())

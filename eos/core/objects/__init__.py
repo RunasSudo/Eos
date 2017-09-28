@@ -71,7 +71,6 @@ class PrimitiveField(Field):
 
 DictField = PrimitiveField
 IntField = PrimitiveField
-ListField = PrimitiveField
 StringField = PrimitiveField
 
 class EmbeddedObjectField(Field):
@@ -161,8 +160,10 @@ class EosObject(metaclass=EosObjectType):
 	@staticmethod
 	def serialise_and_wrap(value, object_type=None):
 		if object_type:
-			return value.serialise()
-		return {'type': value._name, 'value': value.serialise()}
+			if value:
+				return value.serialise()
+			return None
+		return {'type': value._name, 'value': (value.serialise() if value else None)}
 	
 	@staticmethod
 	def deserialise_and_unwrap(value, object_type=None):
@@ -205,6 +206,13 @@ class EosList(EosObject):
 		super().__init__()
 		
 		self.impl = list(*args)
+	
+	def post_init(self):
+		for i in range(len(self.impl)):
+			val = self.impl[i]
+			val._instance = (self, i)
+			if not val._inited:
+				val.post_init()
 	
 	# Lists in JS are implemented as native Arrays, so no cheating here :(
 	def __len__(self):

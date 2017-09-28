@@ -14,6 +14,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from eos.core.bigint import *
 from eos.core.objects import *
 from eos.base.election import *
 from eos.psr.bitstream import *
@@ -46,9 +47,16 @@ class Trustee(EmbeddedObject):
 	name = StringField()
 	email = StringField()
 
+class MixChallengeResponse(EmbeddedObject):
+	index = IntField()
+	reenc = EmbeddedObjectListField(BigInt)
+	rand = EmbeddedObjectField(BigInt)
+
 class MixingTrustee(Trustee):
-	mix_order = IntField()
-	mixed_questions = EmbeddedObjectListField()
+	mixed_questions = ListField(EmbeddedObjectListField(BlockEncryptedAnswer))
+	commitments = ListField(EmbeddedObjectListField(BigInt))
+	challenge = EmbeddedObjectField(BigInt)
+	response = ListField(EmbeddedObjectListField(MixChallengeResponse))
 
 class PSRElection(Election):
 	_db_name = Election._name

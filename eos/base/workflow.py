@@ -61,7 +61,7 @@ class WorkflowTask(EmbeddedObject):
 	
 	@classmethod
 	def satisfies(cls, descriptor):
-		return cls._name == descriptor or descriptor in cls.provides
+		return cls._name == descriptor or descriptor in cls.provides or (descriptor in EosObject.objects and issubclass(cls, EosObject.objects[descriptor]))
 	
 	def on_enter(self):
 		self.exit()
