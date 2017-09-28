@@ -16,6 +16,7 @@
 
 from eos.core.bigint import *
 from eos.core.objects import *
+from eos.core.hashing import *
 from eos.psr.election import *
 
 class RPCMixnet:
@@ -63,7 +64,7 @@ class RPCMixnet:
 			for i in range(len(permutations_and_reenc)):
 				val = permutations_and_reenc[i]
 				val_obj = MixChallengeResponse(index=val[0], reenc=val[1], rand=val[2])
-				commitments.append(EosObject.to_sha256(EosObject.to_json(val_obj.serialise()))[1])
+				commitments.append(SHA256().update_text(EosObject.to_json(val_obj.serialise())).hash_as_bigint())
 		else:
 			for i in range(len(permutations_and_reenc)):
 				# Find the answer that went to 'i'
@@ -71,7 +72,7 @@ class RPCMixnet:
 				val = permutations_and_reenc[idx]
 				
 				val_obj = MixChallengeResponse(index=idx, reenc=val[1], rand=val[3])
-				commitments.append(EosObject.to_sha256(EosObject.to_json(val_obj.serialise()))[1])
+				commitments.append(SHA256().update_text(EosObject.to_json(val_obj.serialise())).hash_as_bigint())
 		
 		self.params = permutations_and_reenc
 		return shuffled_answers, commitments

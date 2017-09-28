@@ -17,6 +17,7 @@
 from eos.core.tests import *
 
 from eos.core.bigint import *
+from eos.core.hashing import *
 from eos.psr.bitstream import *
 from eos.psr.crypto import *
 from eos.psr.election import *
@@ -158,7 +159,7 @@ class MixnetTestCase(EosTestCase):
 			for i in range(len(pts)):
 				perm, reencs, rand = mixnet.challenge(i)
 				val_obj = MixChallengeResponse(index=perm, reenc=reencs, rand=rand)
-				self.assertEqual(commitments[i], EosObject.to_sha256(EosObject.to_json(val_obj.serialise()))[1])
+				self.assertEqual(commitments[i], SHA256().update_text(EosObject.to_json(val_obj.serialise())).hash_as_bigint())
 				
 				if mixnet.is_left:
 					verify_shuffle(i, perm, reencs)

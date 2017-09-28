@@ -16,6 +16,7 @@
 
 from eos.core.bigint import *
 from eos.core.objects import *
+from eos.core.hashing import *
 from eos.base.election import *
 
 class CyclicGroup(EmbeddedObject):
@@ -120,7 +121,7 @@ class SEGPublicKey(EGPublicKey):
 		gamma = pow(self.group.g, r, self.group.p) # h
 		delta = (message * pow(self.X, r, self.group.p)) % self.group.p # f
 		
-		_, c = EosObject.to_sha256(str(pow(self.group.g, s, self.group.p)), str(gamma), str(delta))
+		c = SHA256().update_bigint(pow(self.group.g, s, self.group.p), gamma, delta).hash_as_bigint()
 		
 		z = s + c*r
 		
@@ -136,6 +137,6 @@ class SEGCiphertext(EGCiphertext):
 	
 	def is_signature_valid(self):
 		gs = (pow(self.public_key.group.g, self.z, self.public_key.group.p) * pow(self.gamma, self.public_key.group.p - ONE - self.c, self.public_key.group.p)) % self.public_key.group.p
-		_, c = EosObject.to_sha256(str(gs), str(self.gamma), str(self.delta))
+		c = SHA256().update_bigint(gs, self.gamma, self.delta).hash_as_bigint()
 		
 		return self.c == c

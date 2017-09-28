@@ -16,6 +16,7 @@
 
 from eos.core.bigint import *
 from eos.core.objects import *
+from eos.core.hashing import *
 
 # Common library things
 # ===================
@@ -95,7 +96,7 @@ class ObjectTestCase(EosTestCase):
 
 class HashTestCase(EosTestCase):
 	def test_hash(self):
-		self.assertEqual(EosObject.to_sha256('Hello World!')[0], 'f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=')
+		self.assertEqual(SHA256().update_text('Hello World!').hash_as_b64(), 'f4OxZX/x/FO5LcGBSKHWXfwtSx+j1ncoSt3SABJtkGk=')
 
 class BigIntTestCase(EosTestCase):
 	def test_basic(self):
