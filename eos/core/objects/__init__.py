@@ -129,6 +129,9 @@ class EosObjectType(type):
 		cls._name = ((cls.__module__ if is_python else meta.__next_class_module__) + '.' + cls.__name__).replace('.js.', '.').replace('.python.', '.') #TNYI: module and qualname
 		if name != 'EosObject':
 			EosObject.objects[cls._name] = cls
+		if '_db_name' not in attrs:
+			# Don't inherit _db_name, use only if explicitly given
+			cls._db_name = cls._name
 		return cls
 
 class EosObject(metaclass=EosObjectType):
@@ -142,6 +145,9 @@ class EosObject(metaclass=EosObjectType):
 		self._inited = True
 	
 	def recurse_parents(self, cls):
+		if not isinstance(cls, type):
+			cls = EosObject.objects[cls]
+		
 		if isinstance(self, cls):
 			return self
 		if self._instance[0]:
@@ -207,6 +213,9 @@ class EosList(EosObject):
 		return self.impl[idx]
 	def __setitem__(self, idx, val):
 		self.impl[idx] = val
+		val._instance = (self, idx)
+		if not val._inited:
+			val.post_init()
 	def __contains__(self, val):
 		return val in self.impl
 	
@@ -311,7 +320,7 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 class TopLevelObject(DocumentObject):
 	def save(self):
 		#res = db[self._name].replace_one({'_id': self.serialise()['_id']}, self.serialise(), upsert=True)
-		res = db[self._name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
+		res = db[self._db_name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
 
 class EmbeddedObject(DocumentObject):
 	pass

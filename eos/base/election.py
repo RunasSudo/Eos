@@ -45,23 +45,12 @@ class Result(EmbeddedObject):
 
 class ApprovalQuestion(Question):
 	choices = ListField(StringField())
-	
-	def compute_result(self):
-		result = ApprovalResult(choices=([0] * len(self.choices)))
-		for voter in self.recurse_parents(Election).voters:
-			for ballot in voter.ballots:
-				# TODO: Separate decryption phase
-				encrypted_answer = ballot.encrypted_answers[self._instance[1]] # _instance[1] is the question number
-				answer = encrypted_answer.decrypt()
-				for choice in answer.choices:
-					result.choices[choice] += 1
-		return result
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
 
-class ApprovalResult(Result):
-	choices = ListField(IntField())
+class RawResult(Result):
+	answers = EmbeddedObjectListField()
 
 class Election(TopLevelObject):
 	_id = UUIDField()

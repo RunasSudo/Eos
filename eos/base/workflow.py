@@ -20,7 +20,7 @@ class WorkflowTask(EmbeddedObject):
 	class Status:
 		NOT_READY = 10
 		READY = 20
-		#ENTERED = 30
+		ENTERED = 30
 		#COMPLETE = 40
 		EXITED = 50
 	
@@ -40,6 +40,7 @@ class WorkflowTask(EmbeddedObject):
 		self.status = WorkflowTask.Status.READY if self.are_dependencies_met() else WorkflowTask.Status.NOT_READY
 		
 		self.listeners = {
+			'enter': [],
 			'exit': []
 		}
 		
@@ -62,16 +63,31 @@ class WorkflowTask(EmbeddedObject):
 	def satisfies(cls, descriptor):
 		return cls._name == descriptor or descriptor in cls.provides
 	
+	def on_enter(self):
+		self.exit()
+	
+	def enter(self):
+		if self.status is not WorkflowTask.Status.READY:
+			raise Exception('Attempted to enter a task when not ready')
+		
+		self.status = WorkflowTask.Status.ENTERED
+		self.fire_event('enter')
+		self.on_enter()
+	
 	def fire_event(self, event):
 		for listener in self.listeners[event]:
 			listener()
 	
+	def on_exit(self):
+		pass
+	
 	def exit(self):
-		if self.status is not WorkflowTask.Status.READY:
-			raise Exception('Attempted to exit a task when not ready')
+		if self.status is not WorkflowTask.Status.ENTERED:
+			raise Exception('Attempted to exit a task when not entered')
 		
 		self.status = WorkflowTask.Status.EXITED
 		self.fire_event('exit')
+		self.on_exit()
 
 class Workflow(EmbeddedObject):
 	tasks = EmbeddedObjectListField()
@@ -109,6 +125,26 @@ class TaskOpenVoting(WorkflowTask):
 class TaskCloseVoting(WorkflowTask):
 	depends_on = ['eos.base.workflow.TaskOpenVoting']
 
+class TaskDecryptVotes(WorkflowTask):
+	depends_on = ['eos.base.workflow.TaskCloseVoting']
+	
+	def on_enter(self):
+		election = self.recurse_parents('eos.base.election.Election')
+		
+		for _ in range(len(election.questions)):
+			election.results.append(EosObject.objects['eos.base.election.RawResult']())
+		
+		for voter in election.voters:
+			for ballot in voter.ballots:
+				for i in range(len(ballot.encrypted_answers)):
+					answer = ballot.encrypted_answers[i].decrypt()
+					election.results[i].answers.append(answer)
+		
+		self.exit()
+
+class TaskReleaseResults(WorkflowTask):
+	depends_on = ['eos.base.workflow.TaskDecryptVotes']
+
 # Concrete workflows
 # ==================
 
@@ -119,3 +155,5 @@ class WorkflowBase(Workflow):
 		self.tasks.append(TaskConfigureElection())
 		self.tasks.append(TaskOpenVoting())
 		self.tasks.append(TaskCloseVoting())
+		self.tasks.append(TaskDecryptVotes())
+		self.tasks.append(TaskReleaseResults())

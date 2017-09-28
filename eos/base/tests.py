@@ -23,19 +23,16 @@ from eos.core.objects import *
 class ElectionTestCase(EosTestCase):
 	@classmethod
 	def setUpClass(cls):
-		if is_python:
-			client.drop_database('test')
+		client.drop_database('test')
 	
-	def exit_task_assert(self, election, task, next_task):
+	def do_task_assert(self, election, task, next_task):
 		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)
-		self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.NOT_READY)
-		election.workflow.get_task(task).exit()
+		if next_task is not None:
+			self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.NOT_READY)
+		election.workflow.get_task(task).enter()
 		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.EXITED)
-		self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.READY)
-	
-	def save_if_python(self, obj):
-		if is_python:
-			obj.save()
+		if next_task is not None:
+			self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.READY)
 	
 	@py_only
 	def test_run_election(self):
@@ -65,18 +62,17 @@ class ElectionTestCase(EosTestCase):
 		question = ApprovalQuestion(prompt='Chairman', choices=['John Doe', 'Andrew Citizen'])
 		election.questions.append(question)
 		
-		self.save_if_python(election)
+		election.save()
 		
 		# Check that it saved
-		if is_python:
-			self.assertEqual(db[Election._name].find_one()['value'], election.serialise())
-			self.assertEqual(EosObject.deserialise_and_unwrap(db[Election._name].find_one()).serialise(), election.serialise())
+		self.assertEqual(db[Election._db_name].find_one()['value'], election.serialise())
+		self.assertEqual(EosObject.deserialise_and_unwrap(db[Election._db_name].find_one()).serialise(), election.serialise())
 		
 		self.assertEqualJSON(EosObject.deserialise_and_unwrap(EosObject.serialise_and_wrap(election)).serialise(), election.serialise())
 		
 		# Freeze election
-		self.exit_task_assert(election, 'eos.base.workflow.TaskConfigureElection', 'eos.base.workflow.TaskOpenVoting')
-		self.save_if_python(election)
+		self.do_task_assert(election, 'eos.base.workflow.TaskConfigureElection', 'eos.base.workflow.TaskOpenVoting')
+		election.save()
 		
 		# Try to freeze it again
 		try:
@@ -84,6 +80,10 @@ class ElectionTestCase(EosTestCase):
 			self.fail()
 		except Exception:
 			pass
+		
+		# Open voting
+		self.do_task_assert(election, 'eos.base.workflow.TaskOpenVoting', 'eos.base.workflow.TaskCloseVoting')
+		election.save()
 		
 		# Cast ballots
 		VOTES = [[[0], [0]], [[0, 1], [1]], [[2], [0]]]
@@ -96,19 +96,23 @@ class ElectionTestCase(EosTestCase):
 				ballot.encrypted_answers.append(encrypted_answer)
 			election.voters[i].ballots.append(ballot)
 		
-		self.save_if_python(election)
+		election.save()
 		
 		# Close voting
-		self.exit_task_assert(election, 'eos.base.workflow.TaskOpenVoting', 'eos.base.workflow.TaskCloseVoting')
-		self.save_if_python(election)
+		self.do_task_assert(election, 'eos.base.workflow.TaskCloseVoting', 'eos.base.workflow.TaskDecryptVotes')
+		election.save()
 		
-		# Compute result
-		election.results = [None, None]
-		for i in range(2):
-			result = election.questions[i].compute_result()
-			election.results[i] = result
+		# "Decrypt" votes
+		self.do_task_assert(election, 'eos.base.workflow.TaskDecryptVotes', 'eos.base.workflow.TaskReleaseResults')
+		election.save()
 		
-		self.save_if_python(election)
+		# Check result
+		RESULTS = [[[0], [0, 1], [2]], [[0], [1], [0]]]
+		for i in range(len(RESULTS)):
+			votes1 = RESULTS[i]
+			votes2 = [x.choices for x in election.results[i].answers]
+			self.assertEqual(sorted(votes1), sorted(votes2))
 		
-		self.assertEqual(election.results[0].choices, [2, 1, 1])
-		self.assertEqual(election.results[1].choices, [2, 1])
+		# Release result
+		self.do_task_assert(election, 'eos.base.workflow.TaskReleaseResults', None)
+		election.save()

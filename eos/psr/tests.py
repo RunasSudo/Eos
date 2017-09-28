@@ -19,6 +19,9 @@ from eos.core.tests import *
 from eos.core.bigint import *
 from eos.psr.bitstream import *
 from eos.psr.crypto import *
+from eos.psr.election import *
+from eos.psr.mixnet import *
+from eos.psr.workflow import *
 
 class EGTestCase(EosTestCase):
 	def test_eg(self):
@@ -102,15 +105,11 @@ class BlockEGTestCase(EosTestCase):
 	
 	def test_object(self):
 		obj = self.Person(name='John Smith')
-		pt = EosObject.to_json(EosObject.serialise_and_wrap(obj))
-		bs = BitStream()
-		bs.write_string(pt)
-		bs.multiple_of(self.test_group.p.nbits() - 1, True)
-		ct = bs.map(self.sk.public_key.encrypt, self.test_group.p.nbits() - 1)
-		bs2 = BitStream.unmap(ct, self.sk.decrypt, self.test_group.p.nbits() - 1)
-		m = bs2.read_string()
-		obj2 = EosObject.deserialise_and_unwrap(EosObject.from_json(m))
-		self.assertEqualJSON(obj, obj2)
+		
+		ct = BlockEncryptedAnswer.encrypt(self.sk.public_key, obj)
+		m = ct.decrypt(self.sk)
+		
+		self.assertEqualJSON(obj, m)
 
 class MixnetTestCase(EosTestCase):
 	@py_only
@@ -167,3 +166,79 @@ class MixnetTestCase(EosTestCase):
 			val_json = [perm, [str(x) for x in reencs], str(rand)]
 			self.assertEqual(commitments_right[i], EosObject.to_sha256(EosObject.to_json(val_json))[0])
 			verify_shuffle(perm, i, reencs)
+
+class ElectionTestCase(EosTestCase):
+	def do_task_assert(self, election, task, next_task):
+		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)
+		if next_task is not None:
+			self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.NOT_READY)
+		election.workflow.get_task(task).enter()
+		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.EXITED)
+		if next_task is not None:
+			self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.READY)
+	
+	@py_only
+	def test_run_election(self):
+		# Set up election
+		election = PSRElection()
+		election.workflow = PSRWorkflow()
+		
+		# Set election details
+		election.name = 'Test Election'
+		
+		for i in range(3):
+			voter = Voter()
+			election.voters.append(voter)
+		
+		for i in range(3):
+			mixing_trustee = MixingTrustee(mix_order=i)
+			election.mixing_trustees.append(mixing_trustee)
+		
+		election.sk = EGPrivateKey.generate()
+		
+		question = ApprovalQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'])
+		election.questions.append(question)
+		
+		question = ApprovalQuestion(prompt='Chairman', choices=['John Doe', 'Andrew Citizen'])
+		election.questions.append(question)
+		
+		election.save()
+		
+		# Freeze election
+		self.do_task_assert(election, 'eos.base.workflow.TaskConfigureElection', 'eos.base.workflow.TaskOpenVoting')
+		
+		# Open voting
+		self.do_task_assert(election, 'eos.base.workflow.TaskOpenVoting', 'eos.base.workflow.TaskCloseVoting')
+		election.save()
+		
+		# Cast ballots
+		VOTES = [[[0], [0]], [[0, 1], [1]], [[2], [0]]]
+		
+		for i in range(3):
+			ballot = Ballot()
+			for j in range(2):
+				answer = ApprovalAnswer(choices=VOTES[i][j])
+				encrypted_answer = BlockEncryptedAnswer.encrypt(election.sk.public_key, answer)
+				ballot.encrypted_answers.append(encrypted_answer)
+			election.voters[i].ballots.append(ballot)
+		
+		election.save()
+		
+		# Close voting
+		self.do_task_assert(election, 'eos.base.workflow.TaskCloseVoting', 'eos.base.workflow.TaskDecryptVotes')
+		election.save()
+		
+		# Decrypt votes, for realsies
+		self.do_task_assert(election, 'eos.base.workflow.TaskDecryptVotes', 'eos.base.workflow.TaskReleaseResults')
+		election.save()
+		
+		# Check result
+		RESULTS = [[[0], [0, 1], [2]], [[0], [1], [0]]]
+		for i in range(len(RESULTS)):
+			votes1 = RESULTS[i]
+			votes2 = [x.choices for x in election.results[i].answers]
+			self.assertEqual(sorted(votes1), sorted(votes2))
+		
+		# Release result
+		self.do_task_assert(election, 'eos.base.workflow.TaskReleaseResults', None)
+		election.save()

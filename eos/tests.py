@@ -79,14 +79,14 @@ for dirpath, dirnames, filenames in os.walk('eos'):
 						method_val = getattr(impl, method)
 						if isinstance(method_val, types.MethodType) and not hasattr(cls_py, method):
 							# Python
-							if not getattr(method_val, '_js_only', False):
+							if not (len(sys.argv) > 2 and sys.argv[2] == 'js') and not getattr(method_val, '_js_only', False):
 								cls_py.add_method(method)
 								if method.startswith('test_'):
 									test_case = cls_py(method)
 									test_suite.addTest(test_case)
 							
 							# Javascript
-							if not getattr(method_val, '_py_only', False):
+							if not (len(sys.argv) > 2 and sys.argv[2] == 'py') and not getattr(method_val, '_py_only', False):
 								if method.startswith('test_'):
 									cls_js.add_method(method)
 									test_case = cls_js(method)
