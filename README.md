@@ -15,12 +15,14 @@ Eye Candy | No | Heck No
 Eos aims to be implementation-agnostic with respect to cryptographic details. The included *eos.psr* package provides an example implementation with the following particulars:
 
 * ElGamal encryption
-  * MENEZES, Alfred J., VAN OORSCHOT, Paul C. and VANSTONE, Scott A. *Handbook of Applied Cryptography*. CRC Press, 2001. Fifth printing. ISBN 978-0-8493-8523-0. Available from: http://cacr.uwaterloo.ca/hac/.
+  * MENEZES, Alfred J., Paul C. VAN OORSCHOT and Scott A. VANSTONE. *Handbook of Applied Cryptography*. CRC Press, 2001. Fifth printing. ISBN 978-0-8493-8523-0. Available from: http://cacr.uwaterloo.ca/hac/
 * Distributed threshold ElGamal due to **P**edersen (1991) – planned
-* **S**igned ElGamal due to Seurin and Treger (2013)
+* **S**igned ElGamal due to Schnorr and Jakobsson (2000)
+  * SCHNORR, Claus Peter and Markus JAKOBSSON. ‘Security of Signed ElGamal Encryption’. In: T. OKAMOTO, ed. *Advances in Cryptology – ASIACRYPT 2000*. Berlin: Springer-Verlag, 2000. pp. 73–89. Lecture Notes in Computer Science, vol. 1976. ISBN 978-3-540-44448-0. Available from: https://doi.org/10.1007/3-540-44448-3_7
 * **R**andomised partial checking (RPC) due to Jakobsson, Juels and Rivest (2002)
+  * JAKOBSSON, Markus, Ari JUELS and Ronald L. RIVEST. ‘Making Mix Nets Robust For Electronic Voting By Randomized Partial Checking’. In: *Proceedings of the 11th USENIX Security Symposium*. pp. 339–353. Berkeley: USENIX Association, 2002. Available from: https://www.usenix.org/event/sec02/full_papers/jakobsson/jakobsson.pdf
 
-## Mega disclaimer
+## Mother of all disclaimers
 
 This is a fun side-project of mine, and should in no way be considered to be a serious attempt to build a production-ready election system suitable for real world deployment. Not even crypto experts are quite up to the task, and I am most certainly not a crypto expert, nor am I anything resembling a professional in any field even tangentially related to cryptographic elections.
 
