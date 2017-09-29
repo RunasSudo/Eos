@@ -23,6 +23,7 @@ except:
 		pass
 
 from eos.core.bigint import *
+from eos.core.objects import *
 
 # Libraries
 # =========
@@ -66,6 +67,11 @@ class SHA256:
 	def update_bigint(self, *values):
 		for value in values:
 			self.update_text(str(value))
+		return self
+	
+	def update_obj(self, *values):
+		for value in values:
+			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value)))
 		return self
 	
 	def hash_as_b64(self):

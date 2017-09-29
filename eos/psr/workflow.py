@@ -28,7 +28,7 @@ class TaskMixVotes(WorkflowTask):
 		# Do not automatically exit this task
 		pass
 
-class TaskVerifyMixes(WorkflowTask):
+class TaskProveMixes(WorkflowTask):
 	depends_on = ['eos.psr.workflow.TaskMixVotes']
 	
 	def on_enter(self):
@@ -36,7 +36,7 @@ class TaskVerifyMixes(WorkflowTask):
 		pass
 
 class TaskDecryptVotes(eos.base.workflow.TaskDecryptVotes):
-	depends_on = ['eos.psr.workflow.TaskVerifyMixes']
+	depends_on = ['eos.psr.workflow.TaskProveMixes']
 	
 	def on_enter(self):
 		election = self.recurse_parents('eos.base.election.Election')
@@ -62,6 +62,6 @@ class PSRWorkflow(Workflow):
 		self.tasks.append(TaskOpenVoting())
 		self.tasks.append(TaskCloseVoting())
 		self.tasks.append(TaskMixVotes())
-		self.tasks.append(TaskVerifyMixes())
+		self.tasks.append(TaskProveMixes())
 		self.tasks.append(TaskDecryptVotes()) # The PSR one, not the base one
 		self.tasks.append(TaskReleaseResults())

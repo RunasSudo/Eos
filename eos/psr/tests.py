@@ -157,14 +157,13 @@ class MixnetTestCase(EosTestCase):
 					self.assertEqual(claimed_blocks[j].delta, reencrypted_block.delta)
 			
 			for i in range(len(pts)):
-				perm, reencs, rand = mixnet.challenge(i)
-				val_obj = MixChallengeResponse(index=perm, reenc=reencs, rand=rand)
-				self.assertEqual(commitments[i], SHA256().update_text(EosObject.to_json(val_obj.serialise())).hash_as_bigint())
+				val_obj = mixnet.challenge(i)
+				self.assertEqual(commitments[i], SHA256().update_obj(val_obj).hash_as_bigint())
 				
 				if mixnet.is_left:
-					verify_shuffle(i, perm, reencs)
+					verify_shuffle(val_obj.challenge_index, val_obj.response_index, val_obj.reenc)
 				else:
-					verify_shuffle(perm, i, reencs)
+					verify_shuffle(val_obj.response_index, val_obj.challenge_index, val_obj.reenc)
 		
 		# NB: This isn't doing it in sequence, it's just testing a left mixnet and a right mixnet respectively
 		do_mixnet(0)
@@ -258,9 +257,24 @@ class ElectionTestCase(EosTestCase):
 		election.workflow.get_task('eos.psr.workflow.TaskMixVotes').exit()
 		election.save()
 		
-		# Verify mixes
-		election.workflow.get_task('eos.psr.workflow.TaskVerifyMixes').enter()
+		# Prove mixes
+		election.workflow.get_task('eos.psr.workflow.TaskProveMixes').enter()
 		election.save()
+		
+		def verify_shuffle(i, j, idx_left, idx_right, reencs):
+			if j > 0:
+				orig_answers = election.mixing_trustees[j - 1].mixed_questions[i]
+			else:
+				orig_answers = []
+				for voter in election.voters:
+					for ballot in voter.ballots:
+						orig_answers.append(ballot.encrypted_answers[i])
+			
+			claimed_blocks = election.mixing_trustees[j].mixed_questions[i][idx_right].blocks
+			for k in range(len(orig_answers[idx_left].blocks)):
+				reencrypted_block, _ = orig_answers[idx_left].blocks[k].reencrypt(reencs[k])
+				self.assertEqual(claimed_blocks[k].gamma, reencrypted_block.gamma)
+				self.assertEqual(claimed_blocks[k].delta, reencrypted_block.delta)
 		
 		# Record challenge responses
 		for i in range(len(election.questions)):
@@ -280,14 +294,17 @@ class ElectionTestCase(EosTestCase):
 					should_reveal = ((j % 2) == (challenge_bit % 2))
 					if should_reveal:
 						response = trustee.mixnets[i].challenge(k)
-						trustee.response[i].append(MixChallengeResponse(
-							challenge_index=k,
-							response_index=response[0],
-							reenc=response[1],
-							rand=response[2]
-						))
+						trustee.response[i].append(response)
+						
+						# Verify proof
+						self.assertEqual(trustee.commitments[i][k], SHA256().update_obj(response).hash_as_bigint())
+						
+						if j % 2 == 0:
+							verify_shuffle(i, j, response.challenge_index, response.response_index, response.reenc)
+						else:
+							verify_shuffle(i, j, response.response_index, response.challenge_index, response.reenc)
 		
-		election.workflow.get_task('eos.psr.workflow.TaskVerifyMixes').exit()
+		election.workflow.get_task('eos.psr.workflow.TaskProveMixes').exit()
 		election.save()
 		
 		# Decrypt votes, for realsies
@@ -295,7 +312,7 @@ class ElectionTestCase(EosTestCase):
 		election.save()
 		
 		# Check result
-		RESULTS = [[[0], [0, 1], [2]], [[0], [1], [0]]]
+		RESULTS = [[voter[i] for voter in VOTES] for i in range(len(election.questions))]
 		for i in range(len(RESULTS)):
 			votes1 = RESULTS[i]
 			votes2 = [x.choices for x in election.results[i].answers]

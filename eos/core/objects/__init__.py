@@ -151,10 +151,6 @@ class EosObject(metaclass=EosObjectType):
 			return self._instance[0].recurse_parents(cls)
 		return None
 	
-	@property
-	def hash(self):
-		return SHA256().update_text(EosObject.to_json(EosObject.serialise_and_wrap(self))).hash_as_b64()
-	
 	@staticmethod
 	def serialise_and_wrap(value, object_type=None):
 		if object_type:

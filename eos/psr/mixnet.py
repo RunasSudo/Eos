@@ -63,16 +63,16 @@ class RPCMixnet:
 		if self.is_left:
 			for i in range(len(permutations_and_reenc)):
 				val = permutations_and_reenc[i]
-				val_obj = MixChallengeResponse(index=val[0], reenc=val[1], rand=val[2])
-				commitments.append(SHA256().update_text(EosObject.to_json(val_obj.serialise())).hash_as_bigint())
+				val_obj = MixChallengeResponse(challenge_index=i, response_index=val[0], reenc=val[1], rand=val[2])
+				commitments.append(SHA256().update_obj(val_obj).hash_as_bigint())
 		else:
 			for i in range(len(permutations_and_reenc)):
 				# Find the answer that went to 'i'
 				idx = next(idx for idx in range(len(permutations_and_reenc)) if permutations_and_reenc[idx][0] == i)
 				val = permutations_and_reenc[idx]
 				
-				val_obj = MixChallengeResponse(index=idx, reenc=val[1], rand=val[3])
-				commitments.append(SHA256().update_text(EosObject.to_json(val_obj.serialise())).hash_as_bigint())
+				val_obj = MixChallengeResponse(challenge_index=i, response_index=idx, reenc=val[1], rand=val[3])
+				commitments.append(SHA256().update_obj(val_obj).hash_as_bigint())
 		
 		self.params = permutations_and_reenc
 		return shuffled_answers, commitments
@@ -80,8 +80,8 @@ class RPCMixnet:
 	def challenge(self, i):
 		if self.is_left:
 			val = self.params[i]
-			return [val[0], val[1], val[2]]
+			return MixChallengeResponse(challenge_index=i, response_index=val[0], reenc=val[1], rand=val[2])
 		else:
 			idx = next(idx for idx in range(len(self.params)) if self.params[idx][0] == i)
 			val = self.params[idx]
-			return [idx, val[1], val[3]]
+			return MixChallengeResponse(challenge_index=i, response_index=idx, reenc=val[1], rand=val[3])
