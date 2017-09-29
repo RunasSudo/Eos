@@ -261,48 +261,24 @@ class ElectionTestCase(EosTestCase):
 		election.workflow.get_task('eos.psr.workflow.TaskProveMixes').enter()
 		election.save()
 		
-		def verify_shuffle(i, j, idx_left, idx_right, reencs):
-			if j > 0:
-				orig_answers = election.mixing_trustees[j - 1].mixed_questions[i]
-			else:
-				orig_answers = []
-				for voter in election.voters:
-					for ballot in voter.ballots:
-						orig_answers.append(ballot.encrypted_answers[i])
-			
-			claimed_blocks = election.mixing_trustees[j].mixed_questions[i][idx_right].blocks
-			for k in range(len(orig_answers[idx_left].blocks)):
-				reencrypted_block, _ = orig_answers[idx_left].blocks[k].reencrypt(reencs[k])
-				self.assertEqual(claimed_blocks[k].gamma, reencrypted_block.gamma)
-				self.assertEqual(claimed_blocks[k].delta, reencrypted_block.delta)
-		
 		# Record challenge responses
 		for i in range(len(election.questions)):
 			for j in range(len(election.mixing_trustees)):
 				trustee = election.mixing_trustees[j]
-				if j % 2 == 0:
-					trustee.challenge.append(trustee.compute_challenge(i).hash_as_bigint())
-				else:
-					trustee.challenge.append(election.mixing_trustees[j - 1].challenge[i])
+				trustee.challenge.append(trustee.compute_challenge(i))
 				challenge_bs = InfiniteHashBitStream(trustee.challenge[i])
 				
 				trustee.response.append(EosList())
 				
-				nbits = BigInt(len(trustee.mixed_questions[i])).nbits()
 				for k in range(len(trustee.mixed_questions[i])):
 					challenge_bit = challenge_bs.read(1)
 					should_reveal = ((j % 2) == (challenge_bit % 2))
 					if should_reveal:
 						response = trustee.mixnets[i].challenge(k)
 						trustee.response[i].append(response)
-						
-						# Verify proof
-						self.assertEqual(trustee.commitments[i][k], SHA256().update_obj(response).hash_as_bigint())
-						
-						if j % 2 == 0:
-							verify_shuffle(i, j, response.challenge_index, response.response_index, response.reenc)
-						else:
-							verify_shuffle(i, j, response.response_index, response.challenge_index, response.reenc)
+				
+				# Verify challenge response
+				trustee.verify(i)
 		
 		election.workflow.get_task('eos.psr.workflow.TaskProveMixes').exit()
 		election.save()
