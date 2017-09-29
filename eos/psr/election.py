@@ -16,6 +16,7 @@
 
 from eos.core.bigint import *
 from eos.core.objects import *
+from eos.core.hashing import *
 from eos.base.election import *
 from eos.psr.bitstream import *
 from eos.psr.crypto import *
@@ -48,15 +49,29 @@ class Trustee(EmbeddedObject):
 	email = StringField()
 
 class MixChallengeResponse(EmbeddedObject):
-	index = IntField()
+	challenge_index = IntField()
+	response_index = IntField()
 	reenc = EmbeddedObjectListField(BigInt)
 	rand = EmbeddedObjectField(BigInt)
 
 class MixingTrustee(Trustee):
 	mixed_questions = ListField(EmbeddedObjectListField(BlockEncryptedAnswer))
 	commitments = ListField(EmbeddedObjectListField(BigInt))
-	challenge = EmbeddedObjectField(BigInt)
+	challenge = EmbeddedObjectListField(BigInt)
 	response = ListField(EmbeddedObjectListField(MixChallengeResponse))
+	
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		self.mixnets = [] # TODO: Remove this stuff
+	
+	def compute_challenge(self, question_num):
+		sha = SHA256()
+		trustees = self.recurse_parents(Election).mixing_trustees
+		for i in range(len(trustees)):
+			sha.update_text(EosObject.to_json(MixingTrustee._fields['mixed_questions'].element_field.serialise(trustees[i].mixed_questions[question_num])))
+		for i in range(self._instance[1]):
+			sha.update_text(EosObject.to_json(MixingTrustee._fields['response'].element_field.serialise(trustees[i].response[question_num])))
+		return sha
 
 class PSRElection(Election):
 	_db_name = Election._name

@@ -16,12 +16,13 @@
 
 from eos.core.bigint import *
 from eos.core.objects import *
+from eos.core.hashing import *
 
 class BitStream(EosObject):
-	def __init__(self, value=None):
+	def __init__(self, value=None, nbits=None):
 		if value:
 			self.impl = value
-			self.nbits = self.impl.nbits()
+			self.nbits = nbits if nbits else self.impl.nbits()
 		else:
 			self.impl = ZERO
 			self.nbits = 0
@@ -57,6 +58,17 @@ class BitStream(EosObject):
 		self.impl = ((self.impl >> self.remaining) << (self.remaining + nbits)) | (bits << self.remaining) | (self.impl & ((ONE << self.remaining) - 1))
 		self.ptr += nbits
 		self.nbits += nbits
+	
+	# Append to the end without affecting ptr
+	def append(self, bits, nbits=None):
+		if nbits is None:
+			nbits = bits.nbits()
+		if nbits < bits.nbits():
+			raise Exception('Too many bits to append to BitString')
+		
+		self.impl = (self.impl << nbits) | bits
+		self.nbits += nbits
+		self.remaining += nbits
 	
 	def read_string(self):
 		length = self.read(32)
@@ -124,3 +136,23 @@ class BitStream(EosObject):
 	@classmethod
 	def deserialise(cls, value):
 		return cls(value)
+
+class InfiniteHashBitStream(BitStream):
+	def __init__(self, seed):
+		self.sha = SHA256()
+		self.sha.update_bigint(seed)
+		self.ctr = 0
+		self.sha.update_text(str(self.ctr))
+		
+		super().__init__(self.sha.hash_as_bigint(), self.sha.nbits)
+	
+	def read(self, nbits=None):
+		# 11000110110
+		#    ^----
+		if nbits is None:
+			nbits = self.remaining
+		while nbits > self.remaining:
+			self.ctr += 1
+			self.sha.update_text(str(self.ctr))
+			self.append(self.sha.hash_as_bigint(), self.sha.nbits)
+		return super().read(nbits)

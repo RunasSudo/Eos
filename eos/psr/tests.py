@@ -242,7 +242,8 @@ class ElectionTestCase(EosTestCase):
 		# Do the mix
 		for i in range(len(election.questions)):
 			for j in range(len(election.mixing_trustees)):
-				mixnet = RPCMixnet(j)
+				# Wouldn't happen server-side IRL
+				election.mixing_trustees[j].mixnets.append(RPCMixnet(j))
 				if j > 0:
 					orig_answers = election.mixing_trustees[j - 1].mixed_questions[i]
 				else:
@@ -250,7 +251,7 @@ class ElectionTestCase(EosTestCase):
 					for voter in election.voters:
 						for ballot in voter.ballots:
 							orig_answers.append(ballot.encrypted_answers[i])
-				shuffled_answers, commitments = mixnet.shuffle(orig_answers)
+				shuffled_answers, commitments = election.mixing_trustees[j].mixnets[i].shuffle(orig_answers)
 				election.mixing_trustees[j].mixed_questions.append(EosList(shuffled_answers))
 				election.mixing_trustees[j].commitments.append(EosList(commitments))
 		
@@ -261,7 +262,30 @@ class ElectionTestCase(EosTestCase):
 		election.workflow.get_task('eos.psr.workflow.TaskVerifyMixes').enter()
 		election.save()
 		
-		# TODO
+		# Record challenge responses
+		for i in range(len(election.questions)):
+			for j in range(len(election.mixing_trustees)):
+				trustee = election.mixing_trustees[j]
+				if j % 2 == 0:
+					trustee.challenge.append(trustee.compute_challenge(i).hash_as_bigint())
+				else:
+					trustee.challenge.append(election.mixing_trustees[j - 1].challenge[i])
+				challenge_bs = InfiniteHashBitStream(trustee.challenge[i])
+				
+				trustee.response.append(EosList())
+				
+				nbits = BigInt(len(trustee.mixed_questions[i])).nbits()
+				for k in range(len(trustee.mixed_questions[i])):
+					challenge_bit = challenge_bs.read(1)
+					should_reveal = ((j % 2) == (challenge_bit % 2))
+					if should_reveal:
+						response = trustee.mixnets[i].challenge(k)
+						trustee.response[i].append(MixChallengeResponse(
+							challenge_index=k,
+							response_index=response[0],
+							reenc=response[1],
+							rand=response[2]
+						))
 		
 		election.workflow.get_task('eos.psr.workflow.TaskVerifyMixes').exit()
 		election.save()

@@ -46,6 +46,8 @@ else:
 # ==============
 
 class SHA256:
+	nbits = 256
+	
 	def __init__(self):
 		if is_python:
 			self.impl = hashlib.sha256()
