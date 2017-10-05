@@ -57,7 +57,7 @@ class RPCMixnet:
 			# And shuffle it to the new position
 			shuffled_answers[permutations[i]] = BlockEncryptedAnswer(blocks=shuffled_blocks)
 			# Record the parameters
-			permutations_and_reenc.append([permutations[i], block_reencryptions, block.public_key.group.random_element(), block.public_key.group.random_element()])
+			permutations_and_reenc.append([permutations[i], block_reencryptions, block.public_key.group.random_Zq_element(), block.public_key.group.random_Zq_element()])
 		
 		commitments = []
 		if self.is_left:

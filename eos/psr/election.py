@@ -29,8 +29,8 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 		pt = EosObject.to_json(EosObject.serialise_and_wrap(obj))
 		bs = BitStream()
 		bs.write_string(pt)
-		bs.multiple_of(pk.group.p.nbits() - 1, True)
-		ct = bs.map(pk.encrypt, pk.group.p.nbits() - 1)
+		bs.multiple_of(pk.nbits(), True)
+		ct = bs.map(pk.encrypt, pk.nbits())
 		
 		return cls(blocks=ct)
 	
@@ -38,7 +38,7 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 		if sk is None:
 			sk = self.recurse_parents(PSRElection).sk
 		
-		bs = BitStream.unmap(self.blocks, sk.decrypt, sk.public_key.group.p.nbits() - 1)
+		bs = BitStream.unmap(self.blocks, sk.decrypt, sk.public_key.nbits())
 		m = bs.read_string()
 		obj = EosObject.deserialise_and_unwrap(EosObject.from_json(m))
 		
@@ -155,4 +155,6 @@ class PSRElection(Election):
 	_db_name = Election._name
 	
 	sk = EmbeddedObjectField(SEGPrivateKey) # TODO: Threshold
+	
+	public_key = EmbeddedObjectField(SEGPublicKey)
 	mixing_trustees = EmbeddedObjectListField(MixingTrustee)

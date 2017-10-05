@@ -26,11 +26,20 @@ class CyclicGroup(EmbeddedObject):
 	@property
 	def q(self):
 		# p = 2q + 1
-		return (self.p - ONE) // TWO
+		return (self.p - ONE) / TWO
 	
-	def random_element(self, crypto_random=True):
+	def random_Zp_element(self, crypto_random=True):
 		crypto_method = BigInt.crypto_random if crypto_random else BigInt.noncrypto_random
 		return crypto_method(ONE, self.p - ONE)
+	
+	def random_Zps_element(self, crypto_random=True):
+		crypto_method = BigInt.crypto_random if crypto_random else BigInt.noncrypto_random
+		# Z_p* = {1..p-1} provided that p is a prime
+		return crypto_method(ONE, self.p - ONE)
+	
+	def random_Zq_element(self, crypto_random=True):
+		crypto_method = BigInt.crypto_random if crypto_random else BigInt.noncrypto_random
+		return crypto_method(ZERO, self.q - ONE)
 
 # RFC 3526
 DEFAULT_GROUP = CyclicGroup(
@@ -42,10 +51,12 @@ class EGPublicKey(EmbeddedObject):
 	group = EmbeddedObjectField(CyclicGroup)
 	X = EmbeddedObjectField(BigInt)
 	
+	def nbits(self):
+		# Our messages are restricted to G_q
+		return self.group.q.nbits() - 1
+	
 	# HAC 8.18
-	def encrypt(self, message):
-		message += ONE # Dodgy hack to allow zeroes
-		
+	def _encrypt(self, message):
 		if message <= ZERO:
 			raise Exception('Invalid message')
 		if message >= self.group.p:
@@ -58,6 +69,23 @@ class EGPublicKey(EmbeddedObject):
 		delta = (message * pow(self.X, k, self.group.p)) % self.group.p
 		
 		return EGCiphertext(public_key=self, gamma=gamma, delta=delta)
+	
+	# Adida 2008
+	def encrypt(self, message):
+		if message < ZERO:
+			raise Exception('Invalid message')
+		if message >= self.group.q:
+			raise Exception('Invalid message')
+		
+		m0 = message + ONE
+		
+		if pow(m0, self.group.q, self.group.p) == ONE:
+			# m0 is already in G_q
+			return self._encrypt(m0)
+		else:
+			# For the life of me I can't find any reputable references for this aside from Adida 2008...
+			m0 = (-m0) % self.group.p
+			return self._encrypt(m0)
 
 class EGPrivateKey(EmbeddedObject):
 	pk_class = EGPublicKey
@@ -88,7 +116,12 @@ class EGPrivateKey(EmbeddedObject):
 		gamma_inv = pow(ciphertext.gamma, self.public_key.group.p - ONE - self.x, self.public_key.group.p)
 		
 		pt = (gamma_inv * ciphertext.delta) % self.public_key.group.p
-		return pt - ONE
+		
+		# Undo the encryption mapping
+		if pt < self.public_key.group.q:
+			return pt - ONE
+		else:
+			return ((-pt) % self.public_key.group.p) - ONE
 
 class EGCiphertext(EmbeddedObject):
 	public_key = EmbeddedObjectField(EGPublicKey)
@@ -106,14 +139,7 @@ class EGCiphertext(EmbeddedObject):
 
 # Signed ElGamal per Schnorr & Jakobssen
 class SEGPublicKey(EGPublicKey):
-	def encrypt(self, message):
-		message += ONE # Dodgy hack to allow zeroes
-		
-		if message <= ZERO:
-			raise Exception('Invalid message')
-		if message >= self.group.p:
-			raise Exception('Invalid message')
-		
+	def _encrypt(self, message):
 		# Choose an element 1 <= k <= p - 2
 		r = BigInt.crypto_random(ONE, self.group.p - TWO)
 		s = BigInt.crypto_random(ONE, self.group.p - TWO)
@@ -163,6 +189,7 @@ class PedersenVSSPrivateKey(EmbeddedObject):
 	def get_modified_secret(self):
 		mod_s = self.x
 		for j in range(1, threshold + 1): # 1 to threshold
+			...
 	
 	def decrypt(self, ciphertext):
 		if (

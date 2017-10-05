@@ -55,6 +55,9 @@ class BigInt(EosObject):
 			('__add__', 'add'),
 			('__sub__', 'subtract'),
 			('__mul__', 'multiply'),
+			('__floordiv__', 'divide'),
+			('__truediv__', 'divide'),
+			('__div__', 'divide'), # TNYI: Still uses Python 2...
 			('__mod__', 'mod'),
 			('__and__', 'and'),
 			('__or__', 'or'),
@@ -85,6 +88,16 @@ class BigInt(EosObject):
 					if not isinstance(other, BigInt):
 						other = BigInt(other)
 					return func_(self.impl.compareTo(other.impl))
+				return operator_func
+			setattr(self, key, make_operator_func(func))
+		
+		for key, func in [
+			('__neg__', 'negate')
+		]:
+			def make_operator_func(func_):
+				# Create a closure
+				def operator_func():
+					return BigInt((getattr(self.impl, func_).bind(self.impl))())
 				return operator_func
 			setattr(self, key, make_operator_func(func))
 	

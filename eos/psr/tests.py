@@ -16,6 +16,7 @@
 
 from eos.core.tests import *
 
+from eos.core.objects import __pragma__
 from eos.core.bigint import *
 from eos.core.hashing import *
 from eos.psr.bitstream import *
@@ -25,9 +26,45 @@ from eos.psr.mixnet import *
 from eos.psr.secretsharing import *
 from eos.psr.workflow import *
 
+class GroupValidityTestCase(EosTestCase):
+	# HAC 4.24
+	def miller_rabin_test(self, n, t):
+		# Write n - 1 = 2^s * r such that r is odd
+		s = 0
+		r = n - ONE
+		while r % TWO == ZERO:
+			r = r // TWO
+			s = s + 1
+		for _ in range(t):
+			a = BigInt.noncrypto_random(TWO, n - TWO)
+			y = pow(a, r, n)
+			if y != ONE and y != (n - ONE):
+				j = 1
+				while j <= s - 1 and y != (n - ONE):
+					y = pow(y, TWO, n)
+					if y == ONE:
+						return False
+					j = j + 1
+				if y != (n - ONE):
+					return False
+		return True
+	
+	@py_only
+	def test_miller_rabin(self):
+		self.assertTrue(self.miller_rabin_test(BigInt('7'), 30))
+		self.assertFalse(self.miller_rabin_test(BigInt('35'), 30))
+		self.assertTrue(self.miller_rabin_test(BigInt('15485863'), 30))
+		self.assertFalse(self.miller_rabin_test(BigInt('502560280658509'), 30)) # 15485863 * 32452843
+	
+	@py_only
+	def test_default_group_validity(self):
+		self.assertTrue(self.miller_rabin_test(DEFAULT_GROUP.p, 30))
+		self.assertTrue(self.miller_rabin_test(DEFAULT_GROUP.q, 30))
+		# Since the subgroup G_q is of prime order q, g != 1 is a generator
+
 class EGTestCase(EosTestCase):
 	def test_eg(self):
-		pt = DEFAULT_GROUP.random_element()
+		pt = DEFAULT_GROUP.random_Zq_element()
 		sk = EGPrivateKey.generate()
 		ct = sk.public_key.encrypt(pt)
 		m = sk.decrypt(ct)
@@ -35,7 +72,7 @@ class EGTestCase(EosTestCase):
 
 class SEGTestCase(EosTestCase):
 	def test_eg(self):
-		pt = DEFAULT_GROUP.random_element()
+		pt = DEFAULT_GROUP.random_Zq_element()
 		sk = SEGPrivateKey.generate()
 		ct = sk.public_key.encrypt(pt)
 		self.assertTrue(ct.is_signature_valid())
@@ -98,11 +135,11 @@ class BlockEGTestCase(EosTestCase):
 	
 	def test_basic(self):
 		pt = BigInt('11010010011111010100101', 2)
-		ct = BitStream(pt).multiple_of(self.test_group.p.nbits() - 1).map(self.sk.public_key.encrypt, self.test_group.p.nbits() - 1)
+		ct = BitStream(pt).multiple_of(self.sk.public_key.nbits()).map(self.sk.public_key.encrypt, self.sk.public_key.nbits())
 		for i in range(len(ct)):
 			self.assertTrue(ct[i].gamma < self.test_group.p)
 			self.assertTrue(ct[i].delta < self.test_group.p)
-		m = BitStream.unmap(ct, self.sk.decrypt, self.test_group.p.nbits() - 1).read()
+		m = BitStream.unmap(ct, self.sk.decrypt, self.sk.public_key.nbits()).read()
 		self.assertEqualJSON(pt, m)
 	
 	def test_object(self):
@@ -122,14 +159,14 @@ class MixnetTestCase(EosTestCase):
 		# Generate plaintexts
 		pts = []
 		for i in range(4):
-			pts.append(sk.public_key.group.random_element())
+			pts.append(sk.public_key.group.random_Zq_element())
 		
 		# Encrypt plaintexts
 		answers = []
 		for i in range(len(pts)):
 			bs = BitStream(pts[i])
-			bs.multiple_of(sk.public_key.group.p.nbits() - 1)
-			ct = bs.map(sk.public_key.encrypt, sk.public_key.group.p.nbits() - 1)
+			bs.multiple_of(sk.public_key.nbits())
+			ct = bs.map(sk.public_key.encrypt, sk.public_key.nbits())
 			answers.append(BlockEncryptedAnswer(blocks=ct))
 		
 		def do_mixnet(mix_order):
@@ -142,7 +179,7 @@ class MixnetTestCase(EosTestCase):
 			# Decrypt shuffle
 			msgs = []
 			for i in range(len(shuffled_answers)):
-				bs = BitStream.unmap(shuffled_answers[i].blocks, sk.decrypt, sk.public_key.group.p.nbits() - 1)
+				bs = BitStream.unmap(shuffled_answers[i].blocks, sk.decrypt, sk.public_key.nbits())
 				m = bs.read()
 				msgs.append(m)
 			
@@ -202,6 +239,7 @@ class ElectionTestCase(EosTestCase):
 			election.mixing_trustees.append(mixing_trustee)
 		
 		election.sk = EGPrivateKey.generate()
+		election.public_key = election.sk.public_key
 		
 		question = ApprovalQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'])
 		election.questions.append(question)
@@ -302,6 +340,7 @@ class ElectionTestCase(EosTestCase):
 class AAAPVSSTestCase(EosTestCase):
 	@py_only
 	def test_basic(self):
+		return
 		setup = PedersenVSSSetup()
 		setup.group = DEFAULT_GROUP
 		setup.threshold = 3 # 3 of 5
@@ -326,7 +365,7 @@ class AAAPVSSTestCase(EosTestCase):
 				other = setup.participants[j]
 				share = participant.get_share_for(j)
 				#share_dec = other.sk.decrypt(share)
-				share_dec = BitStream.unmap(share, other.sk.decrypt, other.sk.public_key.group.p.nbits()).read_bigint()
+				share_dec = BitStream.unmap(share, other.sk.decrypt, other.sk.public_key.nbits()).read_bigint()
 				other.shares_received.append(share_dec)
 		
 		# Step 2
@@ -345,7 +384,6 @@ class AAAPVSSTestCase(EosTestCase):
 				for k in range(0, setup.threshold):
 					g_share_dec_expected = (g_share_dec_expected * pow(participant.F[k], pow(j + 1, k), setup.group.p)) % setup.group.p
 				if pow(setup.group.g, share_dec, setup.group.p) != g_share_dec_expected:
-					import pdb; pdb.set_trace()
 					raise Exception('Share not consistent with commitments')
 		
 		# Compute threshold public key
@@ -357,7 +395,7 @@ class AAAPVSSTestCase(EosTestCase):
 		
 		# Encrypt data
 		
-		pt = pk.group.random_element()
+		pt = pk.group.random_Zq_element()
 		ct = pk.encrypt(pt)
 		
 		# Decrypt data

@@ -70,20 +70,18 @@ class PedersenVSSParticipant():
 	def commit_pk_share(self):
 		# Generate random polynomial
 		for _ in range(0, self.setup.threshold): # 0 to k-1
-			coeff = self.setup.group.random_element()
+			coeff = self.setup.group.random_Zq_element()
 			self.f.coefficients.append(coeff)
-			#self.F.append(PedersenVSSCommitment(val=coeff, rand=self.sk.public_key.group.random_element()))
 			self.F.append(pow(self.setup.group.g, coeff, self.setup.group.p))
 		
-		self.h = PedersenVSSCommitment(val=self.F[0], rand=self.setup.group.random_element())
+		self.h = PedersenVSSCommitment(val=self.F[0], rand=self.setup.group.random_Zq_element())
 		self.h_commitment = SHA256().update_obj(self.h).hash_as_bigint()
 		
 		return self.h_commitment
 	
 	def get_share_for(self, other_idx):
 		other = self.setup.participants[other_idx]
-		#return other.pk.encrypt(self.f.value(other_idx + 1) % self.setup.group.p)
-		return BitStream().write_bigint(self.f.value(other_idx + 1)).multiple_of(other.pk.group.p.nbits(), True).map(other.pk.encrypt, other.pk.group.p.nbits())
+		return BitStream().write_bigint(self.f.value(other_idx + 1)).multiple_of(other.pk.nbits(), True).map(other.pk.encrypt, other.pk.nbits())
 	
 	def compute_secret_key(self):
 		x = ZERO

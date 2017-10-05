@@ -39,6 +39,10 @@ class BigInt(EosObject):
 			modulo = BigInt(modulo)
 		return BigInt(self.impl.__pow__(other.impl, modulo.impl))
 	
+	def __truediv__(self, other):
+		# Python will try to compute this as a float
+		return self.__floordiv__(other)
+	
 	def nbits(self):
 		return math.ceil(math.log2(self.impl)) if self.impl > 0 else 0
 	
@@ -58,7 +62,7 @@ class BigInt(EosObject):
 	def crypto_random(cls, lower_bound, upper_bound):
 		return cls(system_random.randint(int(lower_bound), int(upper_bound)))
 
-for func in ['__add__', '__sub__', '__mul__', '__mod__', '__and__', '__or__', '__lshift__', '__rshift__', '__xor__']:
+for func in ['__add__', '__sub__', '__mul__', '__floordiv__', '__mod__', '__and__', '__or__', '__lshift__', '__rshift__', '__xor__']:
 	def make_operator_func(func_):
 		# Create a closure
 		def operator_func(self, other):
@@ -75,6 +79,14 @@ for func in ['__eq__', '__ne__', '__lt__', '__gt__', '__le__', '__ge__']:
 			if not isinstance(other, BigInt):
 				other = BigInt(other)
 			return getattr(self.impl, func_)(other.impl)
+		return operator_func
+	setattr(BigInt, func, make_operator_func(func))
+
+for func in ['__neg__']:
+	def make_operator_func(func_):
+		# Create a closure
+		def operator_func(self):
+			return BigInt(getattr(self.impl, func_)())
 		return operator_func
 	setattr(BigInt, func, make_operator_func(func))
 
