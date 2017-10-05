@@ -140,3 +140,36 @@ class SEGCiphertext(EGCiphertext):
 		c = SHA256().update_bigint(gs, self.gamma, self.delta).hash_as_bigint()
 		
 		return self.c == c
+
+class Polynomial(EmbeddedObject):
+	coefficients = EmbeddedObjectListField(BigInt) # x^0, x^1, ... x^n
+	modulus = EmbeddedObjectField(BigInt)
+	
+	def value(self, x):
+		if not isinstance(x, BigInt):
+			x = BigInt(x)
+		
+		result = ZERO
+		for i in range(len(self.coefficients)):
+			#result = (result + ((self.coefficients[i] * pow(x, i, self.modulus)) % self.modulus)) % self.modulus
+			result = result + (self.coefficients[i] * pow(x, i))
+		return result
+
+class PedersenVSSPrivateKey(EmbeddedObject):
+	public_key = EmbeddedObjectField(SEGPublicKey)
+	
+	x = EmbeddedObjectField(BigInt) # secret
+	
+	def get_modified_secret(self):
+		mod_s = self.x
+		for j in range(1, threshold + 1): # 1 to threshold
+	
+	def decrypt(self, ciphertext):
+		if (
+			ciphertext.gamma <= ZERO or ciphertext.gamma >= self.public_key.group.p or
+			ciphertext.delta <= ZERO or ciphertext.delta >= self.public_key.group.p
+			):
+			raise Exception('Ciphertext is malformed')
+		
+		gamma_inv = pow(ciphertext.gamma, self.public_key.group.p - ONE - self.x, self.public_key.group.p)
+		return gamma_inv

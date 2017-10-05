@@ -27,6 +27,9 @@ class BigInt(EosObject):
 		
 		self.impl = int(a, b) if isinstance(a, str) else int(a)
 	
+	def __repr__(self):
+		return '<BigInt {}>'.format(str(self))
+	
 	def __pow__(self, other, modulo=None):
 		if not isinstance(other, BigInt):
 			other = BigInt(other)

@@ -22,6 +22,7 @@ from eos.psr.bitstream import *
 from eos.psr.crypto import *
 from eos.psr.election import *
 from eos.psr.mixnet import *
+from eos.psr.secretsharing import *
 from eos.psr.workflow import *
 
 class EGTestCase(EosTestCase):
@@ -297,3 +298,83 @@ class ElectionTestCase(EosTestCase):
 		# Release result
 		self.do_task_assert(election, 'eos.base.workflow.TaskReleaseResults', None)
 		election.save()
+
+class AAAPVSSTestCase(EosTestCase):
+	@py_only
+	def test_basic(self):
+		setup = PedersenVSSSetup()
+		setup.group = DEFAULT_GROUP
+		setup.threshold = 3 # 3 of 5
+		
+		for _ in range(5):
+			participant = PedersenVSSParticipant(setup)
+			participant.sk = EGPrivateKey.generate()
+			participant.pk = participant.sk.public_key
+			setup.participants.append(participant)
+		
+		# Step 1
+		
+		for participant in setup.participants:
+			participant.commit_pk_share()
+		
+		# IRL: Send hi=F[0] commitments around
+		
+		# Send shares around
+		for i in range(len(setup.participants)):
+			participant = setup.participants[i]
+			for j in range(len(setup.participants)):
+				other = setup.participants[j]
+				share = participant.get_share_for(j)
+				#share_dec = other.sk.decrypt(share)
+				share_dec = BitStream.unmap(share, other.sk.decrypt, other.sk.public_key.group.p.nbits()).read_bigint()
+				other.shares_received.append(share_dec)
+		
+		# Step 2
+		
+		# IRL: Decommit hi=F[0], send F around
+		
+		# Verify shares
+		for i in range(len(setup.participants)):
+			participant = setup.participants[i]
+			for j in range(len(setup.participants)):
+				other = setup.participants[j]
+				
+				# Verify share received by other from participant
+				share_dec = other.shares_received[i]
+				g_share_dec_expected = ONE
+				for k in range(0, setup.threshold):
+					g_share_dec_expected = (g_share_dec_expected * pow(participant.F[k], pow(j + 1, k), setup.group.p)) % setup.group.p
+				if pow(setup.group.g, share_dec, setup.group.p) != g_share_dec_expected:
+					import pdb; pdb.set_trace()
+					raise Exception('Share not consistent with commitments')
+		
+		# Compute threshold public key
+		pk = setup.compute_public_key()
+		
+		# Compute secret key shares
+		for participant in setup.participants:
+			participant.compute_secret_key()
+		
+		# Encrypt data
+		
+		pt = pk.group.random_element()
+		ct = pk.encrypt(pt)
+		
+		# Decrypt data
+		
+		decryption_shares = []
+		
+		# Pick any threshold
+		__pragma__('skip')
+		import random
+		__pragma__('noskip')
+		threshold_participants = list(range(len(setup.participants)))
+		random.shuffle(threshold_participants)
+		threshold_participants = threshold_participants[:setup.threshold]
+		
+		for i in setup.threshold:
+			share = setup.participants[i].threshold_sk.decrypt(ct)
+			decryption_shares.append((i, share))
+		
+		m = setup.combine_decryptions(decryption_shares)
+		self.assertEqualJSON(pt, m)

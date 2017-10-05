@@ -70,6 +70,16 @@ class BitStream(EosObject):
 		self.nbits += nbits
 		self.remaining += nbits
 	
+	def read_bigint(self):
+		length = self.read(32)
+		length = length.__int__()
+		return self.read(length)
+	
+	def write_bigint(self, value):
+		self.write(BigInt(value.nbits()), 32) # TODO: Arbitrary lengths
+		self.write(value)
+		return self
+	
 	def read_string(self):
 		length = self.read(32)
 		length = length.__int__() # JS attempts to call this twice if we do it in one line
@@ -98,6 +108,8 @@ class BitStream(EosObject):
 		else:
 			for i in range(len(strg)):
 				self.write(BigInt(strg.charCodeAt(i)), 7)
+		
+		return self
 	
 	# Make the size of this BitStream a multiple of the block_size
 	def multiple_of(self, block_size, pad_at_end=False):
