@@ -1,0 +1,21 @@
+{
+  "name": "eosweb",
+  "homepage": "https://github.com/RunasSudo/Eos",
+  "authors": [
+    "RunasSudo (Yingtong Li) <runassudo@yingtongli.me>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "AGPL-3.0+",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "semantic": "semantic-ui#^2.2.13"
+  }
+}

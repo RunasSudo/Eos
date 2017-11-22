@@ -25,3 +25,7 @@ app = flask.Flask(__name__)
 def run_tests(prefix, lang):
 	import eos.tests
 	eos.tests.run_tests(prefix, lang)
+
+@app.route('/')
+def index():
+	return flask.render_template('index.html')

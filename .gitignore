@@ -5,6 +5,7 @@
 __javascript__
 __pycache__
 refs
+bower_components
 
 \#*
 .#*
