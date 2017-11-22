@@ -14,5 +14,5 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Allow FLASK_APP=eosweb instead of eosweb.eosweb
-from .eosweb import app
+# Allow FLASK_APP=eosweb instead of eosweb.core.main
+from .core.main import app

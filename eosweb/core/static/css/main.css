@@ -1,6 +1,4 @@
-{% extends 'base.html' %}
-
-{#
+/*
 	Eos - Verifiable elections
 	Copyright © 2017  RunasSudo (Yingtong Li)
 	
@@ -16,10 +14,9 @@
 	
 	You should have received a copy of the GNU Affero General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#}
+*/
 
-{% block title %}Home{% endblock %}
-
-{% block content %}
-	Hello World!
-{% endblock %}
+.hash {
+	font-family: monospace;
+	word-wrap: break-word;
+}

@@ -307,6 +307,14 @@ class TopLevelObject(DocumentObject):
 	def save(self):
 		#res = db[self._name].replace_one({'_id': self.serialise()['_id']}, self.serialise(), upsert=True)
 		res = db[self._db_name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
+	
+	@classmethod
+	def get_all(cls):
+		return [EosObject.deserialise_and_unwrap(x) for x in db[cls._db_name].find()]
+	
+	@classmethod
+	def get_by_id(cls, _id):
+		return EosObject.deserialise_and_unwrap(db[cls._db_name].find_one(_id))
 
 class EmbeddedObject(DocumentObject):
 	pass

@@ -1,0 +1,51 @@
+{% extends 'election/base.html' %}
+
+{#
+	Eos - Verifiable elections
+	Copyright © 2017  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% set Status = eos.base.workflow.WorkflowTask.Status %}
+
+{% block electioncontent %}
+	{% if election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status == Status.EXITED %}
+		{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
+			<p><a href="#" class="ui huge primary button">Click here to vote in this election</a></p>
+		{% else %}
+			<p><button class="ui huge button">Voting in this election has not yet opened</button></p>
+		{% endif %}
+		
+		<p>
+			Voting in this election
+			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
+				opened
+			{% else %}
+				is scheduled to open
+			{% endif %}
+			at the administrators' discretion, and
+			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
+				closed
+			{% else %}
+				is scheduled to close
+			{% endif %}
+			at the administrators' discretion.
+		</p>
+	{% else %}
+		<p><button class="ui huge button">This election is not yet ready for voting</button></p>
+		
+		<p>The administrator of this election has not yet finished setting the election parameters. The details of the election may change at any time.</p>
+	{% endif %}
+{% endblock %}

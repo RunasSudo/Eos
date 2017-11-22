@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{#
+	Eos - Verifiable elections
+	Copyright © 2017  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% block title %}{{ election.name }}{% endblock %}
+
+{% block content %}
+	<h1>{{ election.name }}</h1>
+	
+	<p><small><b>Election fingerprint:</b> <span class="hash">{{ SHA256().update_obj(election).hash_as_b64() }}</span></small></p>
+	
+	<div class="ui secondary pointing menu" id="election-tab-menu">
+		<a href="#" class="election-tab-ajax item active">Overview</a>
+	</div>
+	<div class="ui container" id="election-tab-content">
+		{% block electioncontent %}
+		{% endblock %}
+	</div>
+{% endblock %}
+
+{% block basecontent %}
+	{{ super() }}
+	
+	<script>
+		$(".election-tab-ajax").click(function() {
+			var linkEl = $(this);
+			history.pushState({}, "", linkEl.attr("href"));
+			
+			$("#election-tab-menu .item").removeClass("active");
+			linkEl.addClass("active");
+			
+			$("#election-tab-content").html('<div class="ui active text loader">Loading. Please wait.</div>');
+			
+			$("#election-tab-content").load(linkEl.attr("href") + " #election-tab-content", function() {
+				linkEl.find(".loader").removeClass("active");
+			});
+			return false;
+		});
+	</script>
+{% endblock %}
