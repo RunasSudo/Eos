@@ -337,7 +337,7 @@ class ElectionTestCase(EosTestCase):
 		self.do_task_assert(election, 'eos.base.workflow.TaskReleaseResults', None)
 		election.save()
 
-class AAAPVSSTestCase(EosTestCase):
+class PVSSTestCase(EosTestCase):
 	@py_only
 	def test_basic(self):
 		return
