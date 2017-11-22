@@ -55,41 +55,45 @@ class BaseJSTestCase(TestCase):
 		setattr(cls, method, call_method)
 
 # Test discovery
-import eos.core.tests
-for dirpath, dirnames, filenames in os.walk('eos'):
-	if dirpath == 'eos':
-		# Skip this file
-		continue
-	if 'tests.py' in filenames:
-		module_name = dirpath.replace('/', '.') + '.tests'
-		module = importlib.import_module(module_name)
-		for name in dir(module):
-			obj = getattr(module, name)
-			if isinstance(obj, type):
-				if issubclass(obj, eos.core.tests.EosTestCase):
-					if obj.__module__ != module_name:
-						continue
-					if len(sys.argv) > 1 and not obj.__module__.startswith(sys.argv[1]):
-						continue
-					
-					impl = obj()
-					cls_py = type(name + 'ImplPy', (BasePyTestCase,), {'impl': impl})
-					cls_js = type(name + 'ImplJS', (BaseJSTestCase,), {'module': module_name, 'name': name})
-					for method in dir(impl):
-						method_val = getattr(impl, method)
-						if isinstance(method_val, types.MethodType) and not hasattr(cls_py, method):
-							# Python
-							if not (len(sys.argv) > 2 and sys.argv[2] == 'js') and not getattr(method_val, '_js_only', False):
-								cls_py.add_method(method)
-								if method.startswith('test_'):
-									test_case = cls_py(method)
-									test_suite.addTest(test_case)
-							
-							# Javascript
-							if not (len(sys.argv) > 2 and sys.argv[2] == 'py') and not getattr(method_val, '_py_only', False):
-								if method.startswith('test_'):
-									cls_js.add_method(method)
-									test_case = cls_js(method)
-									test_suite.addTest(test_case)
+def run_tests(prefix=None, lang=None):
+	import eos.core.tests
+	for dirpath, dirnames, filenames in os.walk('eos'):
+		if dirpath == 'eos':
+			# Skip this file
+			continue
+		if 'tests.py' in filenames:
+			module_name = dirpath.replace('/', '.') + '.tests'
+			module = importlib.import_module(module_name)
+			for name in dir(module):
+				obj = getattr(module, name)
+				if isinstance(obj, type):
+					if issubclass(obj, eos.core.tests.EosTestCase):
+						if obj.__module__ != module_name:
+							continue
+						if prefix is not None and not obj.__module__.startswith(prefix):
+							continue
+						
+						impl = obj()
+						cls_py = type(name + 'ImplPy', (BasePyTestCase,), {'impl': impl})
+						cls_js = type(name + 'ImplJS', (BaseJSTestCase,), {'module': module_name, 'name': name})
+						for method in dir(impl):
+							method_val = getattr(impl, method)
+							if isinstance(method_val, types.MethodType) and not hasattr(cls_py, method):
+								# Python
+								if not (lang is not None and lang == 'js') and not getattr(method_val, '_js_only', False):
+									cls_py.add_method(method)
+									if method.startswith('test_'):
+										test_case = cls_py(method)
+										test_suite.addTest(test_case)
+								
+								# Javascript
+								if not (lang is not None and lang == 'py') and not getattr(method_val, '_py_only', False):
+									if method.startswith('test_'):
+										cls_js.add_method(method)
+										test_case = cls_js(method)
+										test_suite.addTest(test_case)
+	
+	TextTestRunner(verbosity=3, failfast=True).run(test_suite)
 
-TextTestRunner(verbosity=3, failfast=True).run(test_suite)
+if __name__ == '__main__':
+	run_tests(*sys.argv[1:])

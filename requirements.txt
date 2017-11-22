@@ -1,7 +1,13 @@
+click==6.7
 coverage==4.4.1
+Flask==0.12.2
+itsdangerous==0.24
+Jinja2==2.10
+MarkupSafe==1.0
 mypy==0.521
 PyExecJS==1.4.1
 pymongo==3.5.1
 six==1.10.0
 Transcrypt==3.6.50
 typed-ast==1.0.4
+Werkzeug==0.12.2
