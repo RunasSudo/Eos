@@ -25,6 +25,8 @@ from eos.psr.workflow import *
 
 import eos.core.hashing
 
+import functools
+
 app = flask.Flask(__name__)
 
 @app.cli.command('test')
@@ -81,6 +83,7 @@ def index():
 	return flask.render_template('index.html')
 
 def using_election(func):
+	@functools.wraps(func)
 	def wrapped(election_id):
 		election = Election.get_by_id(election_id)
 		return func(election)
