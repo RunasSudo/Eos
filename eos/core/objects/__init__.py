@@ -152,12 +152,12 @@ class EosObject(metaclass=EosObjectType):
 		return None
 	
 	@staticmethod
-	def serialise_and_wrap(value, object_type=None):
+	def serialise_and_wrap(value, object_type=None, hashed=False):
 		if object_type:
 			if value:
-				return value.serialise()
+				return value.serialise(hashed)
 			return None
-		return {'type': value._name, 'value': (value.serialise() if value else None)}
+		return {'type': value._name, 'value': (value.serialise(hashed) if value else None)}
 	
 	@staticmethod
 	def deserialise_and_unwrap(value, object_type=None):
@@ -296,8 +296,8 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 				setattr(self, attr, default)
 	
 	# TNYI: Strange things happen with py_ attributes
-	def serialise(self):
-		return {(attr[3:] if attr.startswith('py_') else attr): val.serialise(getattr(self, attr)) for attr, val in self._fields.items()}
+	def serialise(self, hashed=False):
+		return {(attr[3:] if attr.startswith('py_') else attr): val.serialise(getattr(self, attr)) for attr, val in self._fields.items() if (val.hashed or not hashed)}
 	
 	@classmethod
 	def deserialise(cls, value):

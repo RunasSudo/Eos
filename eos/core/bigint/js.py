@@ -120,7 +120,7 @@ class BigInt(EosObject):
 	def nbits(self):
 		return self.impl.bitLength()
 	
-	def serialise(self):
+	def serialise(self, hashed=False):
 		return str(self)
 	
 	@classmethod
