@@ -1,6 +1,6 @@
-# Eos: Verifiable elections
+# Eos: Modular verifiable elections
 
-Work in progress – current development is focusing on an API for elections and cryptography, future work will be directed towards a functional user interface
+Work in progress – An API for elections and cryptography is more or less complete, focus is now on building a functional user interface
 
 ## Comparison with competitors
 
@@ -16,7 +16,8 @@ Eos aims to be implementation-agnostic with respect to cryptographic details. Th
 
 * ElGamal encryption
   * MENEZES, Alfred J., Paul C. VAN OORSCHOT and Scott A. VANSTONE. *Handbook of Applied Cryptography*. CRC Press, 2001. Fifth printing. ISBN 978-0-8493-8523-0. Available from: http://cacr.uwaterloo.ca/hac/
-* Distributed threshold ElGamal due to **P**edersen (1991) – planned
+* Distributed threshold ElGamal due to **P**edersen (1991)
+  * PEDERSEN, Torben Pryds. ‘A Threshold Cryptosystem without a Trusted Party’. In: D.W. Davies, ed. *Advances in Cryptology — EUROCRYPT '91*. Berlin: Springer, 1991. pp. 522–526. Lecture Notes in Computer Science, vol. 547. ISBN 978-3-540-46416-7. Available from: https://doi.org/10.1007/3-540-46416-6_47
 * **S**igned ElGamal due to Schnorr and Jakobsson (2000)
   * SCHNORR, Claus Peter and Markus JAKOBSSON. ‘Security of Signed ElGamal Encryption’. In: T. OKAMOTO, ed. *Advances in Cryptology – ASIACRYPT 2000*. Berlin: Springer-Verlag, 2000. pp. 73–89. Lecture Notes in Computer Science, vol. 1976. ISBN 978-3-540-44448-0. Available from: https://doi.org/10.1007/3-540-44448-3_7
 * **R**andomised partial checking (RPC) due to Jakobsson, Juels and Rivest (2002)
