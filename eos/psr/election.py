@@ -154,7 +154,7 @@ class MixingTrustee(Trustee):
 class PSRElection(Election):
 	_db_name = Election._name
 	
-	sk = EmbeddedObjectField(SEGPrivateKey) # TODO: Threshold
+	sk = EmbeddedObjectField(SEGPrivateKey, is_protected=True) # TODO: Threshold
 	
 	public_key = EmbeddedObjectField(SEGPublicKey)
 	mixing_trustees = EmbeddedObjectListField(MixingTrustee)

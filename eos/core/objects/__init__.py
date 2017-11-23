@@ -57,8 +57,9 @@ if is_python:
 
 class Field:
 	def __init__(self, *args, **kwargs):
-		self.default = kwargs.get('default', kwargs.get('py_default', None))
-		self.hashed = kwargs.get('hashed', True)
+		self.default = kwargs['default'] if 'default' in kwargs else kwargs['py_default'] if 'py_default' in kwargs else None
+		self.is_protected = kwargs['is_protected'] if 'is_protected' in kwargs else False
+		self.is_hashed = kwargs['is_hashed'] if 'is_hashed' in kwargs else not self.is_protected
 
 class PrimitiveField(Field):
 	def serialise(self, value):
@@ -152,12 +153,12 @@ class EosObject(metaclass=EosObjectType):
 		return None
 	
 	@staticmethod
-	def serialise_and_wrap(value, object_type=None, hashed=False):
+	def serialise_and_wrap(value, object_type=None, for_hash=False, should_protect=False):
 		if object_type:
 			if value:
-				return value.serialise(hashed)
+				return value.serialise(for_hash, should_protect)
 			return None
-		return {'type': value._name, 'value': (value.serialise(hashed) if value else None)}
+		return {'type': value._name, 'value': (value.serialise(for_hash, should_protect) if value else None)}
 	
 	@staticmethod
 	def deserialise_and_unwrap(value, object_type=None):
@@ -296,12 +297,17 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 				setattr(self, attr, default)
 	
 	# TNYI: Strange things happen with py_ attributes
-	def serialise(self, hashed=False):
-		return {(attr[3:] if attr.startswith('py_') else attr): val.serialise(getattr(self, attr)) for attr, val in self._fields.items() if (val.hashed or not hashed)}
+	def serialise(self, for_hash=False, should_protect=False):
+		return {(attr[3:] if attr.startswith('py_') else attr): val.serialise(getattr(self, attr)) for attr, val in self._fields.items() if ((val.is_hashed or not for_hash) and (not should_protect or not val.is_protected))}
 	
 	@classmethod
 	def deserialise(cls, value):
-		return cls(**{attr: val.deserialise(value[attr[3:] if attr.startswith('py_') else attr]) for attr, val in cls._fields.items()})
+		attrs = {}
+		for attr, val in cls._fields.items():
+			json_attr = attr[3:] if attr.startswith('py_') else attr
+			if json_attr in value:
+				attrs[attr] = val.deserialise(value[json_attr])
+		return cls(**attrs)
 
 class TopLevelObject(DocumentObject):
 	def save(self):

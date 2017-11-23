@@ -60,6 +60,6 @@ class Election(TopLevelObject):
 	_id = UUIDField()
 	workflow = EmbeddedObjectField(Workflow) # Once saved, we don't care what kind of workflow it is
 	name = StringField()
-	voters = EmbeddedObjectListField(hashed=False)
+	voters = EmbeddedObjectListField(is_hashed=False)
 	questions = EmbeddedObjectListField()
-	results = EmbeddedObjectListField(hashed=False)
+	results = EmbeddedObjectListField(is_hashed=False)

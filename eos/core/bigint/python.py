@@ -46,7 +46,7 @@ class BigInt(EosObject):
 	def nbits(self):
 		return math.ceil(math.log2(self.impl)) if self.impl > 0 else 0
 	
-	def serialise(self, hashed=False):
+	def serialise(self, for_hash=False, should_protect=False):
 		return str(self)
 	
 	@classmethod
