@@ -6,9 +6,13 @@ Work in progress – An API for elections and cryptography is more or less compl
 
 | | Helios | Eos
 --- | --- | ---
-Usable | Yes | No
-Good | Yes | No
-Eye Candy | No | Heck No
+Usable | Yes | Kinda
+Good | Yes | Not really
+Eye Candy | No | Yes!
+
+![Screenshot](https://raw.githubusercontent.com/RunasSudo/Eos/master/docs/screenshot.png)
+
+**Why create Eos?** – Read [here](docs/essay.md) for some background.
 
 ## Cryptographic details and references
 
