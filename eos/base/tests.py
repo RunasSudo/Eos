@@ -94,7 +94,8 @@ class ElectionTestCase(EosTestCase):
 				answer = ApprovalAnswer(choices=VOTES[i][j])
 				encrypted_answer = NullEncryptedAnswer(answer=answer)
 				ballot.encrypted_answers.append(encrypted_answer)
-			election.voters[i].ballots.append(ballot)
+			vote = Vote(ballot=ballot)
+			election.voters[i].votes.append(vote)
 		
 		election.save()
 		

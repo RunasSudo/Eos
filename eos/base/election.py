@@ -30,13 +30,17 @@ class NullEncryptedAnswer(EncryptedAnswer):
 		return self.answer
 
 class Ballot(EmbeddedObject):
-	_id = UUIDField()
+	#_id = UUIDField()
 	encrypted_answers = EmbeddedObjectListField()
+
+class Vote(EmbeddedObject):
+	ballot = EmbeddedObjectField()
+	cast_at = StringField()
 
 class Voter(EmbeddedObject):
 	_id = UUIDField()
 	name = StringField()
-	ballots = EmbeddedObjectListField()
+	votes = EmbeddedObjectListField()
 
 class EmailVoter(Voter):
 	email = StringField()

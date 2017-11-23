@@ -135,7 +135,9 @@ class TaskDecryptVotes(WorkflowTask):
 			election.results.append(EosObject.objects['eos.base.election.RawResult']())
 		
 		for voter in election.voters:
-			for ballot in voter.ballots:
+			if len(voter.votes) > 0:
+				vote = voter.votes[-1]
+				ballot = vote.ballot
 				for i in range(len(ballot.encrypted_answers)):
 					answer = ballot.encrypted_answers[i].decrypt()
 					election.results[i].answers.append(answer)

@@ -84,7 +84,9 @@ class MixingTrustee(Trustee):
 			# Use the raw ballots from voters
 			orig_answers = []
 			for voter in self.recurse_parents(Election).voters:
-				for ballot in voter.ballots:
+				if len(voter.votes) > 0:
+					vote = voter.votes[-1]
+					ballot = vote.ballot
 					orig_answers.append(ballot.encrypted_answers[question_num])
 			return orig_answers
 	

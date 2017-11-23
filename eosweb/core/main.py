@@ -26,7 +26,10 @@ from eos.psr.workflow import *
 import eos.core.hashing
 import eosweb
 
+from datetime import datetime
+
 import functools
+import json
 
 app = flask.Flask(__name__)
 
@@ -123,7 +126,32 @@ def election_view_ballots(election):
 def election_view_trustees(election):
 	return flask.render_template('election/trustees.html', election=election)
 
-
+@app.route('/election/<election_id>/cast_ballot', methods=['POST'])
+@using_election
+def election_api_cast_vote(election):
+	data = json.loads(flask.request.data)
+	
+	voter = None
+	for election_voter in election.voters:
+		if election_voter.name == data['auth']['username']:
+			voter = election_voter
+			break
+	
+	if voter is None:
+		# User is not authenticated
+		return flask.Response('Invalid credentials', 403)
+	
+	# Cast the vote
+	ballot = EosObject.deserialise_and_unwrap(data['ballot'])
+	vote = Vote(ballot=ballot, cast_at=datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))
+	voter.votes.append(vote)
+	
+	election.save()
+	
+	return flask.Response(json.dumps({
+		'voter': EosObject.serialise_and_wrap(voter),
+		'vote': EosObject.serialise_and_wrap(vote)
+	}), mimetype='application/json')
 
 # === Model-Views ===
 

@@ -1,0 +1,52 @@
+{#
+	Eos - Verifiable elections
+	Copyright © 2017  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+<div class="ui active text loader">Preparing your ballot. Please wait.</div>
+
+<script>
+	boothWorker.onmessage = function(msg) {
+		try {
+			encryptedAnswers = [];
+			for (var encrypted_answer_json of msg.data) {
+				encryptedAnswers.push(eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(encrypted_answer_json, null));
+			}
+			booth.ballot = eosjs.eos.base.election.__all__.Ballot();
+			booth.ballot.encrypted_answers = encryptedAnswers;
+			
+			nextTemplate();
+		} catch (err) {
+			boothError(err);
+			throw err;
+		}
+	}
+	boothWorker.onerror = function(err) {
+		boothError(err);
+		throw err;
+	}
+	try {
+		boothWorker.postMessage({
+			"action": "generateEncryptedVote",
+			"static_base_url": "{{ static_base_url }}",
+			"election": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(election, null),
+			"answers": booth.answers,
+		});
+	} catch (err) {
+		boothError(err);
+		throw err;
+	}
+</script>

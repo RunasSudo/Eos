@@ -19,10 +19,15 @@
 window = self; // Workaround for libraries
 isLibrariesLoaded = false;
 
-function generateEncryptedVote(election, selections) {
-	encryptedVote = eos_js.eos_core.objects.__all__.PlaintextVote({ "choices": selections, "election_uuid": election.id, "election_hash": election.hash() });
+function generateEncryptedVote(election, answers) {
+	encrypted_answers = [];
+	for (var answer_json of answers) {
+		answer = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(answer_json, null);
+		encrypted_answer = eosjs.eos.psr.election.__all__.BlockEncryptedAnswer.encrypt(election.public_key, answer);
+		encrypted_answers.push(eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(encrypted_answer, null));
+	}
 	
-	postMessage(eos_js.eos_core.libobjects.__all__.EosObject.serialise_and_wrap(encryptedVote, null));
+	postMessage(encrypted_answers);
 }
 
 onmessage = function(msg) {
@@ -34,9 +39,9 @@ onmessage = function(msg) {
 	}
 	
 	if (msg.data.action === "generateEncryptedVote") {
-		msg.data.election = eosjs.eos.core.libobjects.__all__.EosObject.deserialise_and_unwrap(msg.data.election, null);
+		msg.data.election = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(msg.data.election, null);
 		
-		generateEncryptedVote(msg.data.election, msg.data.selections);
+		generateEncryptedVote(msg.data.election, msg.data.answers);
 	} else {
 		throw "Unknown action: " + msg.data.action;
 	}

@@ -42,7 +42,7 @@
 		function resetBooth() {
 			booth = {
 				"questionNum": 0,
-				"selections": [],
+				"answers": [],
 			};
 		}
 		resetBooth();
@@ -71,6 +71,7 @@
 			// Load templates for the question types
 			for (var question of election.questions) {
 				templates[selection_model_view_map[question._name]['selections_make']] = null;
+				templates[selection_model_view_map[question._name]['selections_review']] = null;
 			}
 			
 			loadTemplates();
@@ -137,10 +138,11 @@
 					"templates": templates,
 					"template": template,
 					"election_base_url": "{{ url_for('election_api_json', election_id=election._id) }}",
-					"static_base_url": "{{ url_for('static', filename='nunjucks') }}",
+					"static_base_url": "{{ url_for('static', filename='') }}",
 					"election": election,
 					"booth": booth,
 					"eosjs": eosjs,
+					"selection_model_view_map": selection_model_view_map
 				}, opts);
 				$(destination).html(templates[template].render(opts));
 			} catch (err) {
@@ -149,13 +151,19 @@
 			}
 		}
 		
-		function nextTemplate() {
-			currentBoothTask++;
+		function nextTemplate(num) {
+			if (!num) {
+				num = 1;
+			}
+			currentBoothTask += num;
 			boothTasks[currentBoothTask].activate(true);
 		}
 		
-		function prevTemplate() {
-			currentBoothTask--;
+		function prevTemplate(num) {
+			if (!num) {
+				num = 1;
+			}
+			currentBoothTask -= num;
 			boothTasks[currentBoothTask].activate(false);
 		}
 		
@@ -163,18 +171,52 @@
 		// TODO: Make modular
 		
 		boothTasks.append({
-			activate: function(shouldInit) {
+			activate: function(fromLeft) {
 				showTemplate('booth/welcome.html');
 			}
 		});
 		templates['booth/base.html'] = null;
 		templates['booth/welcome.html'] = null;
 		boothTasks.append({
-			activate: function(shouldInit) {
+			activate: function(fromLeft) {
 				showTemplate('booth/selections.html');
 			}
 		});
 		templates['booth/selections.html'] = null;
+		boothTasks.append({
+			activate: function(fromLeft) {
+				if (fromLeft) {
+					showTemplate('booth/encrypt.html');
+				} else {
+					prevTemplate();
+				}
+			}
+		});
+		templates['booth/encrypt.html'] = null;
+		boothTasks.append({
+			activate: function(fromLeft) {
+				showTemplate('booth/review.html', {ballot: booth.ballot});
+			}
+		});
+		templates['booth/review.html'] = null;
+		boothTasks.append({
+			activate: function(fromLeft) {
+				showTemplate('booth/audit.html', {ballot: booth.ballot});
+			}
+		});
+		templates['booth/audit.html'] = null;
+		boothTasks.append({
+			activate: function(fromLeft) {
+				showTemplate('booth/cast.html', {ballot: booth.ballot});
+			}
+		});
+		templates['booth/cast.html'] = null;
+		boothTasks.append({
+			activate: function(fromLeft) {
+				showTemplate('booth/complete.html', {voter: booth.voter, vote: booth.vote});
+			}
+		});
+		templates['booth/complete.html'] = null;
 		
 		// === END BOOTH TASKS ===
 		

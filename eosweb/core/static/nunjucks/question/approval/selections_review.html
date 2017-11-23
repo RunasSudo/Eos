@@ -1,5 +1,3 @@
-{% extends 'election/base.html' %}
-
 {#
 	Eos - Verifiable elections
 	Copyright © 2017  RunasSudo (Yingtong Li)
@@ -18,25 +16,22 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-{% block electioncontent %}
-	<table class="ui celled table">
-		<thead>
-			<tr>
-				<th>Voter</th>
-				<th>Ballot fingerprint</th>
-			</tr>
-		</thead>
-		<tbody>
-			{% for voter in election.voters %}
-				<tr>
-					<td>{{ voter.name }}</td>
-					{% if voter.votes|length > 0 %}
-						<td class="hash">{{ SHA256().update_obj(voter.votes[-1].ballot).hash_as_b64() }}</td>
-					{% else %}
-						<td class="hash"></td>
-					{% endif %}
-				</tr>
-			{% endfor %}
-		</tbody>
-	</table>
-{% endblock %}
+<div class="ui list">
+	{% for choice in booth.answers[loop.index0].value.choices %}
+		<div class="item">
+			<i class="checkmark icon"></i>
+			<div class="content">{{ question.choices[choice] }}</div>
+		</div>
+	{% else %}
+		<div class="item">
+			<i class="warning circle icon"></i>
+			<div class="content">No candidates selected</div>
+		</div>
+	{% endfor %}
+</div>
+
+{% if booth.answers[loop.index0].value.choices.length < question.max_choices %}
+	<div class="ui warning message">
+		<p>You have selected fewer than the maximum allowed number of candidates. If this was not your intention, please click the ‘Back’ button below now, and correct your selections.</p>
+	</div>
+{% endif %}

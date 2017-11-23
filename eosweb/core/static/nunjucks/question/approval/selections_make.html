@@ -51,8 +51,8 @@
 	}
 	
 	// Fill in ballot with previous selections
-	if (booth.selections[booth.questionNum]) {
-		for (var selection of booth.selections[booth.questionNum]) {
+	if (booth.answers[booth.questionNum]) {
+		for (var selection of booth.answers[booth.questionNum].value.choices) { // Answer already serialised
 			$("#question-choice-" + selection).prop("checked", true);
 		}
 		choicesChanged();
@@ -63,6 +63,7 @@
 		$("#question-choices input:checked").each(function(i, el) {
 			selections.push(parseInt(el.id.substring("question-choice-".length)))
 		});
-		booth.selections[booth.questionNum] = selections;
+		answer = eosjs.eos.base.election.__all__.ApprovalAnswer(eosjs.__kwargtrans__({choices: selections}));
+		booth.answers[booth.questionNum] = eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(answer);
 	}
 </script>

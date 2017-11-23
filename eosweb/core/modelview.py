@@ -28,6 +28,7 @@ model_view_map = {
 		'tabs': 'election/psr/tabs.html'
 	},
 	ApprovalQuestion: {
-		'selections_make': 'question/approval/selections_make.html'
+		'selections_make': 'question/approval/selections_make.html',
+		'selections_review': 'question/approval/selections_review.html'
 	}
 }

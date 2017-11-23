@@ -302,6 +302,9 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 	
 	@classmethod
 	def deserialise(cls, value):
+		if value is None:
+			return None
+		
 		attrs = {}
 		for attr, val in cls._fields.items():
 			json_attr = attr[3:] if attr.startswith('py_') else attr

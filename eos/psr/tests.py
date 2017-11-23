@@ -265,7 +265,8 @@ class ElectionTestCase(EosTestCase):
 				answer = ApprovalAnswer(choices=VOTES[i][j])
 				encrypted_answer = BlockEncryptedAnswer.encrypt(election.sk.public_key, answer)
 				ballot.encrypted_answers.append(encrypted_answer)
-			election.voters[i].ballots.append(ballot)
+			vote = Vote(ballot=ballot)
+			election.voters[i].votes.append(vote)
 		
 		election.save()
 		
@@ -287,8 +288,8 @@ class ElectionTestCase(EosTestCase):
 				else:
 					orig_answers = []
 					for voter in election.voters:
-						for ballot in voter.ballots:
-							orig_answers.append(ballot.encrypted_answers[i])
+						ballot = voter.votes[-1].ballot
+						orig_answers.append(ballot.encrypted_answers[i])
 				shuffled_answers, commitments = election.mixing_trustees[j].mixnets[i].shuffle(orig_answers)
 				election.mixing_trustees[j].mixed_questions.append(EosList(shuffled_answers))
 				election.mixing_trustees[j].commitments.append(EosList(commitments))

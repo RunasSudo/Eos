@@ -29,17 +29,19 @@
 	{% set menuindex = 3 %}
 {% elif template == 'booth/audit.html' %}
 	{% set menuindex = 4 %}
-{% elif template == 'booth/complete.html' %}
+{% elif template == 'booth/cast.html' %}
 	{% set menuindex = 5 %}
+{% elif template == 'booth/complete.html' %}
+	{% set menuindex = 6 %}
 {% endif %}
 
 <div class="ui secondary pointing menu" id="election-tab-menu">
 	{# oh dear god #}
-	<a href="#" class="ui{% if menuindex >= 1 %} active{% endif %} item"{% if menuindex != 1 %} style="color: #767676;{% if menuindex > 1 %} font-weight: 400;{% endif %}"{% endif %}>1. Welcome</a>
-	<a href="#" class="ui{% if menuindex >= 2 %} active{% endif %} item"{% if menuindex != 2 %} style="color: #767676;{% if menuindex > 2 %} font-weight: 400;{% endif %}"{% endif %}>2. Make selections</a>
-	<a href="#" class="ui{% if menuindex >= 3 %} active{% endif %} item"{% if menuindex != 3 %} style="color: #767676;{% if menuindex > 3 %} font-weight: 400;{% endif %}"{% endif %}>3. Review selections</a>
-	<a href="#" class="ui{% if menuindex >= 4 %} active{% endif %} item"{% if menuindex != 4 %} style="color: #767676;{% if menuindex > 4 %} font-weight: 400;{% endif %}"{% endif %}>4. Audit ballot</a>
-	<a href="#" class="ui{% if menuindex >= 5 %} active{% endif %} item"{% if menuindex != 5 %} style="color: #767676;{% if menuindex > 5 %} font-weight: 400;{% endif %}"{% endif %}>5. Cast ballot</a>
+	<span class="ui{% if menuindex >= 1 %} active{% endif %} item"{% if menuindex != 1 %} style="color: #767676;{% if menuindex > 1 %} font-weight: 400;{% endif %}"{% endif %}>1. Welcome</span>
+	<span class="ui{% if menuindex >= 2 %} active{% endif %} item"{% if menuindex != 2 %} style="color: #767676;{% if menuindex > 2 %} font-weight: 400;{% endif %}"{% endif %}>2. Make selections</span>
+	<span class="ui{% if menuindex >= 3 %} active{% endif %} item"{% if menuindex != 3 %} style="color: #767676;{% if menuindex > 3 %} font-weight: 400;{% endif %}"{% endif %}>3. Review selections</span>
+	<span class="ui{% if menuindex >= 4 %} active{% endif %} item"{% if menuindex != 4 %} style="color: #767676;{% if menuindex > 4 %} font-weight: 400;{% endif %}"{% endif %}>4. Audit ballot</span>
+	<span class="ui{% if menuindex >= 5 %} active{% endif %} item"{% if menuindex != 5 %} style="color: #767676;{% if menuindex > 5 %} font-weight: 400;{% endif %}"{% endif %}>5. Cast ballot</span>
 </div>
 
 <div class="ui container">

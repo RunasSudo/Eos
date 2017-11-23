@@ -1,0 +1,103 @@
+{% extends templates['booth/base.html'] %}
+
+{#
+	Eos - Verifiable elections
+	Copyright © 2017  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% block content %}
+	<div id="cast_prompt">
+		<p>Your vote has <b>not yet been cast</b>. If you have not already done so, please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
+		<p>This election requires you to log in to vote. Please enter your name below, then click ‘Cast ballot’ to cast your ballot.</p>
+		<div class="ui form">
+			<div class="inline field">
+				<label for="booth_login_name">Name</label>
+				<input type="text" id="booth_login_name">
+			</div>
+			<div class="ui error message" id="error_invalid_id">
+				<i class="close icon"></i>
+				<div class="header">Error</div>
+				<p>The log in details you entered are not valid for this election. Please check your username and password and try again. If the issue persists, contact your election administrator.</p>
+			</div>
+		</div>
+		
+		<div class="ui hidden error message" id="error_unknown">
+			<i class="close icon"></i>
+			<div class="header">Error</div>
+			<p>An unknown error occurred while attempting to cast your ballot. You may click the ‘Cast ballot’ button below to try again. If the issue persists, contact your election administrator.</p>
+			<p id="error_unknown_tech"></p>
+		</div>
+	</div>
+	<div id="casting" style="display: none;">
+		<div class="ui active text loader">Casting your ballot. Please wait.</div>
+	</div>
+{% endblock %}
+
+{% block buttons %}
+	<button class="ui left floated button" onclick="prevTemplate(2);">Back</a>
+	<button class="ui right floated primary button" onclick="castBallot();">Cast ballot</button>
+{% endblock %}
+
+{% block after %}
+	<script>
+		$(".message .close").on("click", function() {
+			$(this).closest(".message").addClass("hidden");
+		});
+		
+		function castBallot() {
+			$("#cast_prompt").hide();
+			$("#casting").show();
+			
+			$.ajax({
+				url: "{{ election_base_url }}cast_ballot",
+				type: "POST",
+				data: eosjs.eos.core.objects.__all__.EosObject.to_json({
+					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(booth.ballot, null),
+					"auth": { "username": $("#booth_login_name").val() }
+				}),
+				contentType: "application/json",
+				dataType: "text"
+			})
+				.done(function(data) {
+					response = eosjs.eos.core.objects.__all__.EosObject.from_json(data);
+					booth.voter = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(response.voter);
+					booth.vote = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(response.vote);
+					
+					// Clear plaintexts
+					booth.answers = null;
+					
+					nextTemplate();
+				})
+				.fail(function(xhr, status, err) {
+					if (xhr.status === 403) { // Forbidden
+						$("#error_invalid_id").addClass("visible");
+						
+						$("#error_unknown").addClass("hidden");
+					} else {
+						$("#error_unknown_tech").text("Technical details: " + err);
+						$("#error_unknown").removeClass("hidden");
+						
+						$("#error_invalid_id").removeClass("visible");
+					}
+					
+					$("#casting").hide();
+					$("#cast_prompt").show();
+					
+					throw err;
+				});
+		}
+	</script>
+{% endblock %}
