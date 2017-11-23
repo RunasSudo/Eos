@@ -1,0 +1,32 @@
+{% extends templates['booth/base.html'] %}
+
+{#
+	Eos - Verifiable elections
+	Copyright © 2017  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% block content %}
+	<p>Welcome to the {{ election.py_name }} voting booth.</p>
+	<p>Follow the on-screen directions to prepare and cast your ballot in this election. The bar above will show your progress. Please note that your ballot will <b>not be cast until</b> you complete the final ‘Cast ballot’ stage and receive a <b>‘smart ballot tracker’</b>.</p>
+	<p>If at any point you wish to return to a previous screen, click the ‘Back’ button below.</p>
+	<p>If you wish, you may disconnect your internet connection now while preparing your ballot, however you must re-connect your internet connection before logging in to cast your ballot.</p>
+	<p>Please click the blue ‘Continue’ button below to continue.</p>
+{% endblock %}
+
+{% block buttons %}
+	<a href="{{ election_base_url }}/view" class="ui left floated button">Back</a>
+	<button class="ui right floated primary button" onclick="nextTemplate();">Continue</button>
+{% endblock %}

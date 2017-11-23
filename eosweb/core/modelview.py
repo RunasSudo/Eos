@@ -26,5 +26,8 @@ model_view_map = {
 	},
 	PSRElection: {
 		'tabs': 'election/psr/tabs.html'
+	},
+	ApprovalQuestion: {
+		'selections_make': 'question/approval/selections_make.html'
 	}
 }

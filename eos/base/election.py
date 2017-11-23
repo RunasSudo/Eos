@@ -49,6 +49,8 @@ class Result(EmbeddedObject):
 
 class ApprovalQuestion(Question):
 	choices = ListField(StringField())
+	min_choices = IntField()
+	max_choices = IntField()
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())

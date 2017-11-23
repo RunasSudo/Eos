@@ -16,6 +16,7 @@
     "tests"
   ],
   "dependencies": {
-    "semantic": "semantic-ui#^2.2.13"
+    "semantic": "semantic-ui#^2.2.13",
+    "nunjucks": "^3.0.1"
   }
 }

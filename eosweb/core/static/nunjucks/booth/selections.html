@@ -1,0 +1,58 @@
+{% extends templates['booth/base.html'] %}
+
+{#
+	Eos - Verifiable elections
+	Copyright © 2017  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% block content %}
+	<div id="question-box" class="ui container"></div>
+{% endblock %}
+
+{% block buttons %}
+	<button class="ui left floated button" onclick="previousQuestion();">Back</a>
+	<button class="ui right floated primary button" onclick="nextQuestion();">Continue</button>
+{% endblock %}
+
+{% block after %}
+	<script>
+		function saveSelections() {
+			boothError("Question template unable to save selections");
+		}
+		
+		showTemplate(selection_model_view_map[election.questions[booth.questionNum]._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+		
+		function previousQuestion() {
+			saveSelections();
+			if (booth.questionNum == 0) {
+				prevTemplate();
+			} else {
+				booth.questionNum--;
+				showTemplate(selection_model_view_map[election.questions[booth.questionNum]._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+			}
+		}
+		
+		function nextQuestion() {
+			saveSelections();
+			if (booth.questionNum == election.questions.length - 1) {
+				nextTemplate();
+			} else {
+				booth.questionNum++;
+				showTemplate(selection_model_view_map[election.questions[booth.questionNum]._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+			}
+		}
+	</script>
+{% endblock %}

@@ -60,10 +60,10 @@ def setup_test_election():
 	election.sk = EGPrivateKey.generate()
 	election.public_key = election.sk.public_key
 	
-	question = ApprovalQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'])
+	question = ApprovalQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'], min_choices=0, max_choices=2)
 	election.questions.append(question)
 	
-	question = ApprovalQuestion(prompt='Chairman', choices=['John Doe', 'Andrew Citizen'])
+	question = ApprovalQuestion(prompt='Chairman', choices=['John Doe', 'Andrew Citizen'], min_choices=0, max_choices=1)
 	election.questions.append(question)
 	
 	election.save()
@@ -91,6 +91,11 @@ def using_election(func):
 		return func(election)
 	return wrapped
 
+@app.route('/election/<election_id>/')
+@using_election
+def election_api_json(election):
+	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, should_protect=True)), mimetype='application/json')
+
 @app.route('/election/<election_id>/view')
 @using_election
 def election_view(election):
@@ -99,7 +104,9 @@ def election_view(election):
 @app.route('/election/<election_id>/booth')
 @using_election
 def election_booth(election):
-	return flask.render_template('election/booth.html', election=election)
+	selection_model_view_map = EosObject.to_json({key._name: val for key, val in model_view_map.items()}) # ewww
+	
+	return flask.render_template('election/booth.html', election=election, selection_model_view_map=selection_model_view_map)
 
 @app.route('/election/<election_id>/view/questions')
 @using_election
@@ -115,6 +122,8 @@ def election_view_ballots(election):
 @using_election
 def election_view_trustees(election):
 	return flask.render_template('election/trustees.html', election=election)
+
+
 
 # === Model-Views ===
 
