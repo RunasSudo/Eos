@@ -1,4 +1,4 @@
-{% extends 'semantic_base.html' %}
+{% extends 'election/base.html' %}
 
 {#
 	Eos - Verifiable elections
@@ -18,19 +18,25 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-{% block head %}
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" type="text/css">
-{% endblock %}
-
-{% block basecontent %}
-	<div class="ui fixed inverted menu" style="margin-right: 1.5em;">
-		<div class="ui container">
-			<a href="/" class="header item">Eos Voting</a>
-			<a href="#" class="item right">Log in</a>
-		</div>
-	</div>
-	<div class="ui main text container" style="margin-top: 7em; margin-bottom: 3em;">
-		{% block content %}
-		{% endblock content %}
-	</div>
+{% block electioncontent %}
+	<table class="ui celled table">
+		<thead>
+			<tr>
+				<th>Voter</th>
+				<th>Ballot fingerprint</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for voter in election.voters %}
+				<tr>
+					<td>{{ voter.name }}</td>
+					{% if voter.ballot|length > 0 %}
+						<td class="hash">{{ SHA256().update_obj(voter.ballot[-1]).hash_as_b64() }}</td>
+					{% else %}
+						<td class="hash"></td>
+					{% endif %}
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
 {% endblock %}

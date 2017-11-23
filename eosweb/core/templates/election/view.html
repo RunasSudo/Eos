@@ -23,7 +23,11 @@
 {% block electioncontent %}
 	{% if election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status == Status.EXITED %}
 		{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
-			<p><a href="#" class="ui huge primary button">Click here to vote in this election</a></p>
+			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
+				<p><button class="ui huge button">Voting in this election has closed</button></p>
+			{% else %}
+				<p><a href="{{ url_for('election_booth', election_id=election._id) }}" class="ui huge primary button">Click here to vote in this election</a></p>
+			{% endif %}
 		{% else %}
 			<p><button class="ui huge button">Voting in this election has not yet opened</button></p>
 		{% endif %}

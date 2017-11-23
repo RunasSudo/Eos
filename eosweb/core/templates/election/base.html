@@ -20,13 +20,17 @@
 
 {% block title %}{{ election.name }}{% endblock %}
 
+{% macro tab(name, view) %}
+	<a href="{{ url_for(view, election_id=election._id) }}" class="election-tab-ajax item{% if request.endpoint == view %} active{% endif %}">{{ name }}</a>
+{% endmacro %}
+
 {% block content %}
 	<h1>{{ election.name }}</h1>
 	
 	<p><small><b>Election fingerprint:</b> <span class="hash">{{ SHA256().update_obj(election).hash_as_b64() }}</span></small></p>
 	
 	<div class="ui secondary pointing menu" id="election-tab-menu">
-		<a href="#" class="election-tab-ajax item active">Overview</a>
+		{% include eosweb.core.main.model_view_map[election.__class__]['tabs'] %}
 	</div>
 	<div class="ui container" id="election-tab-content">
 		{% block electioncontent %}

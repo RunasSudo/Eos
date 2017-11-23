@@ -24,6 +24,7 @@ from eos.psr.mixnet import *
 from eos.psr.workflow import *
 
 import eos.core.hashing
+import eosweb
 
 import functools
 
@@ -49,11 +50,12 @@ def setup_test_election():
 	# Set election details
 	election.name = 'Test Election'
 	
-	for i in range(3):
-		voter = Voter()
-		election.voters.append(voter)
+	voter = Voter()
+	election.voters.append(Voter(name='Alice'))
+	election.voters.append(Voter(name='Bob'))
+	election.voters.append(Voter(name='Charlie'))
 	
-	election.mixing_trustees.append(MixingTrustee())
+	election.mixing_trustees.append(MixingTrustee(name='Eos Voting'))
 	
 	election.sk = EGPrivateKey.generate()
 	election.public_key = election.sk.public_key
@@ -76,7 +78,7 @@ def setup_test_election():
 
 @app.context_processor
 def inject_globals():
-	return {'eos': eos, 'SHA256': eos.core.hashing.SHA256}
+	return {'eos': eos, 'eosweb': eosweb, 'SHA256': eos.core.hashing.SHA256}
 
 @app.route('/')
 def index():
@@ -93,3 +95,31 @@ def using_election(func):
 @using_election
 def election_view(election):
 	return flask.render_template('election/view.html', election=election)
+
+@app.route('/election/<election_id>/booth')
+@using_election
+def election_booth(election):
+	return flask.render_template('election/booth.html', election=election)
+
+@app.route('/election/<election_id>/view/questions')
+@using_election
+def election_view_questions(election):
+	return flask.render_template('election/questions.html', election=election)
+
+@app.route('/election/<election_id>/view/ballots')
+@using_election
+def election_view_ballots(election):
+	return flask.render_template('election/ballots.html', election=election)
+
+@app.route('/election/<election_id>/view/trustees')
+@using_election
+def election_view_trustees(election):
+	return flask.render_template('election/trustees.html', election=election)
+
+# === Model-Views ===
+
+model_view_map = {}
+
+# TODO: Make more modular
+from . import modelview
+model_view_map.update(modelview.model_view_map)

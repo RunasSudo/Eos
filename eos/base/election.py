@@ -35,7 +35,11 @@ class Ballot(EmbeddedObject):
 
 class Voter(EmbeddedObject):
 	_id = UUIDField()
+	name = StringField()
 	ballots = EmbeddedObjectListField()
+
+class EmailVoter(Voter):
+	email = StringField()
 
 class Question(EmbeddedObject):
 	prompt = StringField()
