@@ -233,7 +233,7 @@ class ElectionTestCase(EosTestCase):
 		election.name = 'Test Election'
 		
 		for i in range(3):
-			voter = Voter()
+			voter = Voter(name=['Alice', 'Bob', 'Charlie'][i])
 			election.voters.append(voter)
 		
 		for i in range(3):

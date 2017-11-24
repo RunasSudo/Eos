@@ -51,7 +51,7 @@ class ElectionTestCase(EosTestCase):
 		election.name = 'Test Election'
 		
 		for i in range(3):
-			voter = Voter()
+			voter = Voter(name=['Alice', 'Bob', 'Charlie'][i])
 			election.voters.append(voter)
 			# Check _instance
 			self.assertEqual(voter._instance, (election.voters, i))
