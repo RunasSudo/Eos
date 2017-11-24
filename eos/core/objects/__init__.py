@@ -89,10 +89,10 @@ class ListField(Field):
 		self.element_field = element_field
 	
 	def serialise(self, value, for_hash=False, should_protect=False):
-		return [self.element_field.serialise(x, for_hash, should_protect) for x in value]
+		return [self.element_field.serialise(x, for_hash, should_protect) for x in (value.impl if isinstance(value, EosList) else value)]
 	
 	def deserialise(self, value):
-		return [self.element_field.deserialise(x) for x in value]
+		return EosList([self.element_field.deserialise(x) for x in value])
 
 class EmbeddedObjectListField(Field):
 	def __init__(self, object_type=None, *args, **kwargs):
@@ -100,9 +100,8 @@ class EmbeddedObjectListField(Field):
 		self.object_type = object_type
 	
 	def serialise(self, value, for_hash=False, should_protect=False):
-		#return [EosObject.serialise_and_wrap(x, self.object_type, for_hash, should_protect) for x in value]
-		# TNYI: Doesn't know how to deal with iterators like this
-		return [EosObject.serialise_and_wrap(x, self.object_type, for_hash, should_protect) for x in value.impl]
+		# TNYI: Doesn't know how to deal with iterators like EosList
+		return [EosObject.serialise_and_wrap(x, self.object_type, for_hash, should_protect) for x in (value.impl if isinstance(value, EosList) else value)]
 	
 	def deserialise(self, value):
 		return EosList([EosObject.deserialise_and_unwrap(x, self.object_type) for x in value])
@@ -192,9 +191,14 @@ class EosList(EosObject):
 	def post_init(self):
 		for i in range(len(self.impl)):
 			val = self.impl[i]
-			val._instance = (self, i)
-			if not val._inited:
-				val.post_init()
+			# Check if object has writeable attributes
+			if is_python and hasattr(val, '__dict__'):
+				val._instance = (self, i)
+				if not val._inited:
+					val.post_init()
+	
+	def __repr__(self):
+		return '<EosList {}>'.format(repr(self.impl))
 	
 	# Lists in JS are implemented as native Arrays, so no cheating here :(
 	def __len__(self):
@@ -208,6 +212,16 @@ class EosList(EosObject):
 			val.post_init()
 	def __contains__(self, val):
 		return val in self.impl
+	
+	# For sorting, etc.
+	def __eq__(self, other):
+		if isinstance(other, EosList):
+			other = other.impl
+		return self.impl == other
+	def __lt__(self, other):
+		if isinstance(other, EosList):
+			other = other.impl
+		return self.impl < other
 	
 	def append(self, value):
 		if isinstance(value, EosObject):

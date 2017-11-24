@@ -235,7 +235,7 @@ class ElectionTestCase(EosTestCase):
 			election.voters.append(voter)
 		
 		for i in range(3):
-			mixing_trustee = MixingTrustee()
+			mixing_trustee = InternalMixingTrustee()
 			election.mixing_trustees.append(mixing_trustee)
 		
 		election.sk = EGPrivateKey.generate()
@@ -275,60 +275,24 @@ class ElectionTestCase(EosTestCase):
 		election.save()
 		
 		# Mix votes
-		election.workflow.get_task('eos.psr.workflow.TaskMixVotes').enter()
-		election.save()
-		
-		# Do the mix
-		for i in range(len(election.questions)):
-			for j in range(len(election.mixing_trustees)):
-				# Wouldn't happen server-side IRL
-				election.mixing_trustees[j].mixnets.append(RPCMixnet(j))
-				if j > 0:
-					orig_answers = election.mixing_trustees[j - 1].mixed_questions[i]
-				else:
-					orig_answers = []
-					for voter in election.voters:
-						ballot = voter.votes[-1].ballot
-						orig_answers.append(ballot.encrypted_answers[i])
-				shuffled_answers, commitments = election.mixing_trustees[j].mixnets[i].shuffle(orig_answers)
-				election.mixing_trustees[j].mixed_questions.append(EosList(shuffled_answers))
-				election.mixing_trustees[j].commitments.append(EosList(commitments))
-		
-		election.workflow.get_task('eos.psr.workflow.TaskMixVotes').exit()
+		self.do_task_assert(election, 'eos.psr.workflow.TaskMixVotes', 'eos.psr.workflow.TaskProveMixes')
 		election.save()
 		
 		# Prove mixes
-		election.workflow.get_task('eos.psr.workflow.TaskProveMixes').enter()
+		self.do_task_assert(election, 'eos.psr.workflow.TaskProveMixes', 'eos.base.workflow.TaskDecryptVotes')
 		election.save()
 		
-		# Record challenge responses
+		# Verify mixes
 		for i in range(len(election.questions)):
 			for j in range(len(election.mixing_trustees)):
-				trustee = election.mixing_trustees[j]
-				trustee.challenge.append(trustee.compute_challenge(i))
-				challenge_bs = InfiniteHashBitStream(trustee.challenge[i])
-				
-				trustee.response.append(EosList())
-				
-				for k in range(len(trustee.mixed_questions[i])):
-					challenge_bit = challenge_bs.read(1)
-					should_reveal = ((j % 2) == (challenge_bit % 2))
-					if should_reveal:
-						response = trustee.mixnets[i].challenge(k)
-						trustee.response[i].append(response)
-				
-				# Verify challenge response
-				trustee.verify(i)
-		
-		election.workflow.get_task('eos.psr.workflow.TaskProveMixes').exit()
-		election.save()
+				election.mixing_trustees[j].verify(i)
 		
 		# Decrypt votes, for realsies
 		self.do_task_assert(election, 'eos.base.workflow.TaskDecryptVotes', 'eos.base.workflow.TaskReleaseResults')
 		election.save()
 		
 		# Check result
-		RESULTS = [[voter[i] for voter in VOTES] for i in range(len(election.questions))]
+		RESULTS = [[EosList(voter[i]) for voter in VOTES] for i in range(len(election.questions))]
 		for i in range(len(RESULTS)):
 			votes1 = RESULTS[i]
 			votes2 = [x.choices for x in election.results[i].answers]

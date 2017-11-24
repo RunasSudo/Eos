@@ -24,7 +24,9 @@
 	{% if election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status == Status.EXITED %}
 		{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
 			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
-				<p><button class="ui huge button">Voting in this election has closed</button></p>
+				{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status < Status.EXITED %}
+					<p><button class="ui huge button">Voting in this election has closed</button></p>
+				{% endif %}
 			{% else %}
 				<p><a href="{{ url_for('election_booth', election_id=election._id) }}" class="ui huge primary button">Click here to vote in this election</a></p>
 			{% endif %}
@@ -51,5 +53,14 @@
 		<p><button class="ui huge button">This election is not yet ready for voting</button></p>
 		
 		<p>The administrator of this election has not yet finished setting the election parameters. The details of the election may change at any time.</p>
+	{% endif %}
+	
+	{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
+		<h2>Results</h2>
+		
+		{% for question in election.questions %}
+			<h3>{{ loop.index }}. {{ question.prompt }}</h2>
+			{% include eosweb.core.main.model_view_map[question.__class__]['result_raw'] %}
+		{% endfor %}
 	{% endif %}
 {% endblock %}

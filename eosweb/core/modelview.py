@@ -19,16 +19,15 @@ from eos.psr.election import *
 
 model_view_map = {
 	ApprovalQuestion: {
-		'view': 'question/approval/view.html'
+		'view': 'question/approval/view.html',
+		'result_raw': 'question/approval/result_raw.html',
+		'selections_make': 'question/approval/selections_make.html',
+		'selections_review': 'question/approval/selections_review.html'
 	},
 	Election: {
 		'tabs': 'election/core/tabs.html'
 	},
 	PSRElection: {
 		'tabs': 'election/psr/tabs.html'
-	},
-	ApprovalQuestion: {
-		'selections_make': 'question/approval/selections_make.html',
-		'selections_review': 'question/approval/selections_review.html'
 	}
 }

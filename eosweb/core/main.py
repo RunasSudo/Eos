@@ -58,7 +58,8 @@ def setup_test_election():
 	election.voters.append(Voter(name='Bob'))
 	election.voters.append(Voter(name='Charlie'))
 	
-	election.mixing_trustees.append(MixingTrustee(name='Eos Voting'))
+	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
+	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
 	
 	election.sk = EGPrivateKey.generate()
 	election.public_key = election.sk.public_key
@@ -76,6 +77,28 @@ def setup_test_election():
 	
 	# Open voting
 	election.workflow.get_task('eos.base.workflow.TaskOpenVoting').enter()
+	
+	election.save()
+
+@app.cli.command('close_test_election')
+def close_test_election():
+	election = Election.get_all()[0]
+	election.workflow.get_task('eos.base.workflow.TaskCloseVoting').enter()
+	
+	election.save()
+
+@app.cli.command('count_test_election')
+def count_test_election():
+	election = Election.get_all()[0]
+	
+	# Mix votes
+	election.workflow.get_task('eos.psr.workflow.TaskMixVotes').enter()
+	# Prove mixes
+	election.workflow.get_task('eos.psr.workflow.TaskProveMixes').enter()
+	# Decrypt votes, for realsies
+	election.workflow.get_task('eos.psr.workflow.TaskDecryptVotes').enter()
+	# Release result
+	election.workflow.get_task('eos.base.workflow.TaskReleaseResults').enter()
 	
 	election.save()
 
@@ -129,6 +152,10 @@ def election_view_trustees(election):
 @app.route('/election/<election_id>/cast_ballot', methods=['POST'])
 @using_election
 def election_api_cast_vote(election):
+	if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status >= WorkflowTask.Status.EXITED or election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status <= WorkflowTask.Status.READY:
+		# Voting is not yet open or has closed
+		return flask.Response('Voting is not yet open or has closed', 405)
+	
 	data = json.loads(flask.request.data)
 	
 	voter = None

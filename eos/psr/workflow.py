@@ -25,15 +25,37 @@ class TaskMixVotes(WorkflowTask):
 	depends_on = ['eos.base.workflow.TaskCloseVoting']
 	
 	def on_enter(self):
-		# Do not automatically exit this task
-		pass
+		election = self.recurse_parents('eos.base.election.Election')
+		
+		should_exit = True
+		
+		for i in range(len(election.questions)):
+			for j in range(len(election.mixing_trustees)):
+				success = election.mixing_trustees[j].mix_votes(i)
+				if not success:
+					should_exit = False
+					break # out of inner loop - further mixing required by hand for this question
+		
+		if should_exit:
+			self.exit()
 
 class TaskProveMixes(WorkflowTask):
 	depends_on = ['eos.psr.workflow.TaskMixVotes']
 	
 	def on_enter(self):
-		# Do not automatically exit this task
-		pass
+		election = self.recurse_parents('eos.base.election.Election')
+		
+		should_exit = True
+		
+		for i in range(len(election.questions)):
+			for j in range(len(election.mixing_trustees)):
+				success = election.mixing_trustees[j].prove_mixes(i)
+				if not success:
+					should_exit = False
+					break # out of inner loop - further mixing required by hand for this question
+		
+		if should_exit:
+			self.exit()
 
 class TaskDecryptVotes(eos.base.workflow.TaskDecryptVotes):
 	depends_on = ['eos.psr.workflow.TaskProveMixes']
