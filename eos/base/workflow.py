@@ -18,6 +18,7 @@ from eos.core.objects import *
 
 class WorkflowTask(EmbeddedObject):
 	class Status:
+		UNKNOWN = 0
 		NOT_READY = 10
 		READY = 20
 		ENTERED = 30
@@ -27,7 +28,7 @@ class WorkflowTask(EmbeddedObject):
 	depends_on = []
 	provides = []
 	
-	status = IntField()
+	status = IntField(default=0, is_hashed=False)
 	
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -37,7 +38,8 @@ class WorkflowTask(EmbeddedObject):
 		
 		self.workflow = self.recurse_parents(Workflow)
 		
-		self.status = WorkflowTask.Status.READY if self.are_dependencies_met() else WorkflowTask.Status.NOT_READY
+		if self.status == WorkflowTask.Status.UNKNOWN:
+			self.status = WorkflowTask.Status.READY if self.are_dependencies_met() else WorkflowTask.Status.NOT_READY
 		
 		self.listeners = {
 			'enter': [],

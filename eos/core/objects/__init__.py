@@ -62,7 +62,7 @@ class Field:
 		self.is_hashed = kwargs['is_hashed'] if 'is_hashed' in kwargs else not self.is_protected
 
 class PrimitiveField(Field):
-	def serialise(self, value):
+	def serialise(self, value, for_hash=False, should_protect=False):
 		return value
 	
 	def deserialise(self, value):
@@ -77,8 +77,8 @@ class EmbeddedObjectField(Field):
 		super().__init__(*args, **kwargs)
 		self.object_type = object_type
 	
-	def serialise(self, value):
-		return EosObject.serialise_and_wrap(value, self.object_type)
+	def serialise(self, value, for_hash=False, should_protect=False):
+		return EosObject.serialise_and_wrap(value, self.object_type, for_hash, should_protect)
 	
 	def deserialise(self, value):
 		return EosObject.deserialise_and_unwrap(value, self.object_type)
@@ -88,8 +88,8 @@ class ListField(Field):
 		super().__init__(default=EosList, *args, **kwargs)
 		self.element_field = element_field
 	
-	def serialise(self, value):
-		return [self.element_field.serialise(x) for x in value]
+	def serialise(self, value, for_hash=False, should_protect=False):
+		return [self.element_field.serialise(x, for_hash, should_protect) for x in value]
 	
 	def deserialise(self, value):
 		return [self.element_field.deserialise(x) for x in value]
@@ -99,18 +99,20 @@ class EmbeddedObjectListField(Field):
 		super().__init__(default=EosList, *args, **kwargs)
 		self.object_type = object_type
 	
-	def serialise(self, value):
-		return [EosObject.serialise_and_wrap(x, self.object_type) for x in value]
+	def serialise(self, value, for_hash=False, should_protect=False):
+		#return [EosObject.serialise_and_wrap(x, self.object_type, for_hash, should_protect) for x in value]
+		# TNYI: Doesn't know how to deal with iterators like this
+		return [EosObject.serialise_and_wrap(x, self.object_type, for_hash, should_protect) for x in value.impl]
 	
 	def deserialise(self, value):
-		return [EosObject.deserialise_and_unwrap(x, self.object_type) for x in value]
+		return EosList([EosObject.deserialise_and_unwrap(x, self.object_type) for x in value])
 
 if is_python:
 	class UUIDField(Field):
 		def __init__(self, *args, **kwargs):
 			super().__init__(default=uuid.uuid4, *args, **kwargs)
 		
-		def serialise(self, value):
+		def serialise(self, value, for_hash=False, should_protect=False):
 			return str(value)
 		
 		def deserialise(self, value):
@@ -143,7 +145,8 @@ class EosObject(metaclass=EosObjectType):
 		self._inited = True
 	
 	def recurse_parents(self, cls):
-		if not isinstance(cls, type):
+		#if not isinstance(cls, type):
+		if isinstance(cls, str):
 			cls = EosObject.objects[cls]
 		
 		if isinstance(self, cls):
@@ -240,12 +243,12 @@ class DocumentObjectType(EosObjectType):
 				def field_getter(self):
 					return self._field_values[name]
 				def field_setter(self, value):
+					self._field_values[name] = value
+					
 					if isinstance(value, EosObject):
 						value._instance = (self, name)
 						if not value._inited:
 							value.post_init()
-					
-					self._field_values[name] = value
 				return property(field_getter, field_setter)
 			
 			for attr, val in fields.items():
@@ -274,12 +277,12 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 					def field_getter():
 						return self._field_values[name]
 					def field_setter(value):
+						self._field_values[name] = value
+						
 						if isinstance(value, EosObject):
 							value._instance = (self, name)
 							if not value._inited:
 								value.post_init()
-						
-						self._field_values[name] = value
 					return (field_getter, field_setter)
 				prop = make_property(attr, val)
 				# TNYI: No support for property()
@@ -298,7 +301,7 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 	
 	# TNYI: Strange things happen with py_ attributes
 	def serialise(self, for_hash=False, should_protect=False):
-		return {(attr[3:] if attr.startswith('py_') else attr): val.serialise(getattr(self, attr)) for attr, val in self._fields.items() if ((val.is_hashed or not for_hash) and (not should_protect or not val.is_protected))}
+		return {(attr[3:] if attr.startswith('py_') else attr): val.serialise(getattr(self, attr), for_hash, should_protect) for attr, val in self._fields.items() if ((val.is_hashed or not for_hash) and (not should_protect or not val.is_protected))}
 	
 	@classmethod
 	def deserialise(cls, value):

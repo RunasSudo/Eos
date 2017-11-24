@@ -69,7 +69,8 @@
 		
 		function electionLoaded() {
 			// Load templates for the question types
-			for (var question of election.questions) {
+			for (var i = 0; i < election.questions.__len__(); i++) {
+				var question = election.questions.__getitem__(i);
 				templates[selection_model_view_map[question._name]['selections_make']] = null;
 				templates[selection_model_view_map[question._name]['selections_review']] = null;
 			}
