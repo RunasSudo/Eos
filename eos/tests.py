@@ -51,7 +51,13 @@ class BaseJSTestCase(TestCase):
 	def add_method(cls, method):
 		def call_method(self, *args):
 			# TODO: args
-			return cls.ctx.eval('test.' + method + '()')
+			try:
+				return cls.ctx.eval('test.' + method + '()')
+			except execjs._exceptions.ProcessExitedWithNonZeroStatus as ex:
+				import traceback
+				traceback.print_exc()
+				print(ex.stderr)
+				self.fail()
 		setattr(cls, method, call_method)
 
 # Test discovery
@@ -74,8 +80,8 @@ def run_tests(prefix=None, lang=None):
 							continue
 						
 						impl = obj()
-						cls_py = type(name + 'ImplPy', (BasePyTestCase,), {'impl': impl})
-						cls_js = type(name + 'ImplJS', (BaseJSTestCase,), {'module': module_name, 'name': name})
+						cls_py = type(name + 'ImplPy', (BasePyTestCase,), {'__module__': module_name, 'impl': impl})
+						cls_js = type(name + 'ImplJS', (BaseJSTestCase,), {'__module__': module_name, 'module': module_name, 'name': name})
 						for method in dir(impl):
 							method_val = getattr(impl, method)
 							if isinstance(method_val, types.MethodType) and not hasattr(cls_py, method):
