@@ -154,6 +154,11 @@ class EosObject(metaclass=EosObjectType):
 			return self._instance[0].recurse_parents(cls)
 		return None
 	
+	def __eq__(self, other):
+		if not isinstance(other, EosObject):
+			return False
+		return EosObject.serialise_and_wrap(self) == EosObject.serialise_and_wrap(other)
+	
 	@staticmethod
 	def serialise_and_wrap(value, object_type=None, for_hash=False, should_protect=False):
 		if object_type:

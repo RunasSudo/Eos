@@ -55,12 +55,26 @@ class ApprovalQuestion(Question):
 	choices = ListField(StringField())
 	min_choices = IntField()
 	max_choices = IntField()
+	
+	def pretty_answer(self, answer):
+		return ', '.join([self.choices[choice] for choice in answer.choices])
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
 
 class RawResult(Result):
 	answers = EmbeddedObjectListField()
+	
+	def count(self):
+		combined = []
+		for answer in self.answers:
+			index = next((i for i, val in enumerate(combined) if val[0] == answer), None)
+			if index is None:
+				combined.append([answer, 1])
+			else:
+				combined[index][1] += 1
+		combined.sort(key=lambda x: x[1], reverse=True)
+		return combined
 
 class Election(TopLevelObject):
 	_id = UUIDField()
