@@ -81,6 +81,8 @@ class ElectionTestCase(EosTestCase):
 		except Exception:
 			pass
 		
+		election_hash = SHA256().update_obj(election).hash_as_b64()
+		
 		# Open voting
 		self.do_task_assert(election, 'eos.base.workflow.TaskOpenVoting', 'eos.base.workflow.TaskCloseVoting')
 		election.save()
@@ -89,12 +91,12 @@ class ElectionTestCase(EosTestCase):
 		VOTES = [[[0], [0]], [[0, 1], [1]], [[2], [0]]]
 		
 		for i in range(3):
-			ballot = Ballot()
+			ballot = Ballot(election_id=election._id, election_hash=election_hash)
 			for j in range(2):
 				answer = ApprovalAnswer(choices=VOTES[i][j])
 				encrypted_answer = NullEncryptedAnswer(answer=answer)
 				ballot.encrypted_answers.append(encrypted_answer)
-			vote = Vote(ballot=ballot)
+			vote = Vote(ballot=ballot, cast_at=DateTimeField.now())
 			election.voters[i].votes.append(vote)
 		
 		election.save()

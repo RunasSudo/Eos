@@ -29,6 +29,7 @@ class WorkflowTask(EmbeddedObject):
 	provides = []
 	
 	status = IntField(default=0, is_hashed=False)
+	exited_at = DateTimeField(is_hashed=False)
 	
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -81,7 +82,7 @@ class WorkflowTask(EmbeddedObject):
 			listener()
 	
 	def on_exit(self):
-		pass
+		self.exited_at = DateTimeField.now()
 	
 	def exit(self):
 		if self.status is not WorkflowTask.Status.ENTERED:

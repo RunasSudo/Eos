@@ -76,7 +76,6 @@ class BigInt(EosObject):
 			setattr(self, key, make_operator_func(func))
 		
 		for key, func in [
-			('__eq__', lambda x: x == 0),
 			('__ne__', lambda x: x != 0),
 			('__lt__', lambda x: x < 0),
 			('__gt__', lambda x: x > 0),
@@ -103,6 +102,12 @@ class BigInt(EosObject):
 	
 	def __str__(self):
 		return str(self.impl)
+	
+	# TNYI: Transcrypt doesn't like that we've defined __eq__ in EosObject
+	def __eq__(self, other):
+		if not isinstance(other, BigInt):
+			other = BigInt(other)
+		return self.impl.compareTo(other.impl) == 0
 	
 	def __int__(self):
 		# WARNING: This will yield unexpected results for large numbers

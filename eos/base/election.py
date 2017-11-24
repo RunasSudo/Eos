@@ -32,10 +32,12 @@ class NullEncryptedAnswer(EncryptedAnswer):
 class Ballot(EmbeddedObject):
 	#_id = UUIDField()
 	encrypted_answers = EmbeddedObjectListField()
+	election_id = UUIDField()
+	election_hash = StringField()
 
 class Vote(EmbeddedObject):
 	ballot = EmbeddedObjectField()
-	cast_at = StringField()
+	cast_at = DateTimeField()
 
 class Voter(EmbeddedObject):
 	_id = UUIDField()

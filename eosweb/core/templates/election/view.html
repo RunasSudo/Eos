@@ -37,13 +37,13 @@
 		<p>
 			Voting in this election
 			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
-				opened
+				opened at {{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
 			{% else %}
 				is scheduled to open
 			{% endif %}
 			at the administrators' discretion, and
 			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
-				closed
+				closed at {{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
 			{% else %}
 				is scheduled to close
 			{% endif %}
@@ -57,6 +57,8 @@
 	
 	{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
 		<h2>Results</h2>
+		
+		<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.</p>
 		
 		{% for question in election.questions %}
 			<h3>{{ loop.index }}. {{ question.prompt }}</h2>

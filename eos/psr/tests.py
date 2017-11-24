@@ -16,7 +16,7 @@
 
 from eos.core.tests import *
 
-from eos.core.objects import __pragma__
+from eos.core.objects import *
 from eos.core.bigint import *
 from eos.core.hashing import *
 from eos.psr.bitstream import *
@@ -25,6 +25,8 @@ from eos.psr.election import *
 from eos.psr.mixnet import *
 from eos.psr.secretsharing import *
 from eos.psr.workflow import *
+
+from eos.core.objects import __pragma__
 
 class GroupValidityTestCase(EosTestCase):
 	# HAC 4.24
@@ -252,6 +254,8 @@ class ElectionTestCase(EosTestCase):
 		# Freeze election
 		self.do_task_assert(election, 'eos.base.workflow.TaskConfigureElection', 'eos.base.workflow.TaskOpenVoting')
 		
+		election_hash = SHA256().update_obj(election).hash_as_b64() # Keep track of the hash and make sure it doesn't change
+		
 		# Open voting
 		self.do_task_assert(election, 'eos.base.workflow.TaskOpenVoting', 'eos.base.workflow.TaskCloseVoting')
 		election.save()
@@ -260,12 +264,12 @@ class ElectionTestCase(EosTestCase):
 		VOTES = [[[0], [0]], [[0, 1], [1]], [[2], [0]]]
 		
 		for i in range(3):
-			ballot = Ballot()
+			ballot = Ballot(election_id=election._id, election_hash=election_hash)
 			for j in range(2):
 				answer = ApprovalAnswer(choices=VOTES[i][j])
 				encrypted_answer = BlockEncryptedAnswer.encrypt(election.sk.public_key, answer)
 				ballot.encrypted_answers.append(encrypted_answer)
-			vote = Vote(ballot=ballot)
+			vote = Vote(ballot=ballot, cast_at=DateTimeField.now())
 			election.voters[i].votes.append(vote)
 		
 		election.save()
@@ -301,6 +305,9 @@ class ElectionTestCase(EosTestCase):
 		# Release result
 		self.do_task_assert(election, 'eos.base.workflow.TaskReleaseResults', None)
 		election.save()
+		
+		# Check the hash hasn't changed during that
+		self.assertEqual(SHA256().update_obj(election).hash_as_b64(), election_hash)
 
 class PVSSTestCase(EosTestCase):
 	@py_only

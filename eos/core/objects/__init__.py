@@ -31,6 +31,7 @@ if is_python:
 	from bson.binary import UUIDLegacy
 	
 	import base64
+	from datetime import datetime
 	import hashlib
 	import json
 	import uuid
@@ -118,6 +119,37 @@ if is_python:
 			return uuid.UUID(value)
 else:
 	UUIDField = PrimitiveField
+
+class DateTimeField(Field):
+	def pad(self, number):
+		if number < 10:
+			return '0' + str(number)
+		return str(number)
+	
+	def serialise(self, value, for_hash=False, should_protect=False):
+		if value is None:
+			return None
+		
+		if is_python:
+			return value.strftime('%Y-%m-%dT%H:%M:%SZ')
+		else:
+			return value.getUTCFullYear() + '-' + self.pad(value.getUTCMonth() + 1) + '-' + self.pad(value.getUTCDate()) + 'T' + self.pad(value.getUTCHours()) + ':' + self.pad(value.getUTCMinutes()) + ':' + self.pad(value.getUTCSeconds()) + 'Z'
+	
+	def deserialise(self, value):
+		if value is None:
+			return None
+		
+		if is_python:
+			return datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
+		else:
+			return Date.parse(value)
+	
+	@staticmethod
+	def now():
+		if is_python:
+			return datetime.utcnow()
+		else:
+			return __pragma__('js', '{}', 'new Date()')
 
 # Objects
 # =======

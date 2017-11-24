@@ -17,6 +17,7 @@
 import click
 import flask
 
+from eos.core.objects import *
 from eos.base.election import *
 from eos.psr.crypto import *
 from eos.psr.election import *
@@ -170,7 +171,7 @@ def election_api_cast_vote(election):
 	
 	# Cast the vote
 	ballot = EosObject.deserialise_and_unwrap(data['ballot'])
-	vote = Vote(ballot=ballot, cast_at=datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))
+	vote = Vote(ballot=ballot, cast_at=DateTimeField.now())
 	voter.votes.append(vote)
 	
 	election.save()
