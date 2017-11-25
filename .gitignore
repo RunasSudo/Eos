@@ -7,6 +7,7 @@ __pycache__
 refs
 bower_components
 eosjs.js
+local_settings.py
 
 \#*
 .#*

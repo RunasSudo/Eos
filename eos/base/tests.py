@@ -23,7 +23,8 @@ from eos.core.objects import *
 class ElectionTestCase(EosTestCase):
 	@classmethod
 	def setUpClass(cls):
-		client.drop_database('test')
+		db_connect('test')
+		dbinfo.client.drop_database('test')
 	
 	def do_task_assert(self, election, task, next_task):
 		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)
@@ -65,8 +66,8 @@ class ElectionTestCase(EosTestCase):
 		election.save()
 		
 		# Check that it saved
-		self.assertEqual(db[Election._db_name].find_one()['value'], election.serialise())
-		self.assertEqual(EosObject.deserialise_and_unwrap(db[Election._db_name].find_one()).serialise(), election.serialise())
+		self.assertEqual(dbinfo.db[Election._db_name].find_one()['value'], election.serialise())
+		self.assertEqual(EosObject.deserialise_and_unwrap(dbinfo.db[Election._db_name].find_one()).serialise(), election.serialise())
 		
 		self.assertEqualJSON(EosObject.deserialise_and_unwrap(EosObject.serialise_and_wrap(election)).serialise(), election.serialise())
 		

@@ -49,9 +49,16 @@ else:
 # Database
 # ========
 
-if is_python:
-	client = pymongo.MongoClient()
-	db = client['test']
+class DBInfo:
+	def __init__(self):
+		self.client = None
+		self.db = None
+
+dbinfo = DBInfo()
+
+def db_connect(db_name, mongo_uri='mongodb://localhost:27017/'):
+	dbinfo.client = pymongo.MongoClient(mongo_uri)
+	dbinfo.db = dbinfo.client[db_name]
 
 # Fields
 # ======
@@ -369,15 +376,15 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 class TopLevelObject(DocumentObject):
 	def save(self):
 		#res = db[self._name].replace_one({'_id': self.serialise()['_id']}, self.serialise(), upsert=True)
-		res = db[self._db_name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
+		res = dbinfo.db[self._db_name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
 	
 	@classmethod
 	def get_all(cls):
-		return [EosObject.deserialise_and_unwrap(x) for x in db[cls._db_name].find()]
+		return [EosObject.deserialise_and_unwrap(x) for x in dbinfo.db[cls._db_name].find()]
 	
 	@classmethod
 	def get_by_id(cls, _id):
-		return EosObject.deserialise_and_unwrap(db[cls._db_name].find_one(_id))
+		return EosObject.deserialise_and_unwrap(dbinfo.db[cls._db_name].find_one(_id))
 
 class EmbeddedObject(DocumentObject):
 	pass

@@ -30,9 +30,25 @@ import eosweb
 from datetime import datetime
 
 import functools
+import importlib
 import json
+import os
 
 app = flask.Flask(__name__)
+
+# Load config
+app.config.from_object('eosweb.core.settings')
+if 'EOSWEB_SETTINGS' in os.environ:
+	app.config.from_envvar('EOSWEB_SETTINGS')
+
+# Load app config
+for app_name in app.config['APPS']:
+	app.config.from_object(app_name + '.settings')
+if 'EOSWEB_SETTINGS' in os.environ:
+	app.config.from_envvar('EOSWEB_SETTINGS')
+
+# Connect to database
+db_connect(app.config['DB_NAME'], app.config['MONGO_URI'])
 
 @app.cli.command('test')
 @click.option('--prefix', default=None)
@@ -45,7 +61,7 @@ def run_tests(prefix, lang):
 @app.cli.command('drop_db_and_setup')
 def setup_test_election():
 	# DANGER!
-	client.drop_database('test')
+	dbinfo.client.drop_database(app.config['DB_NAME'])
 	
 	# Set up election
 	election = PSRElection()
