@@ -39,6 +39,9 @@
 		var currentBoothTask = 0;
 		var selection_model_view_map = {{ selection_model_view_map|safe }}; {# :rooWut: #}
 		
+		var username = {% if session.user %}"{{ session.user.username }}"{% else %}null{% endif %};
+		var auth_methods = {{ auth_methods|safe }};
+		
 		function resetBooth() {
 			booth = {
 				"questionNum": 0,
@@ -143,7 +146,9 @@
 					"election": election,
 					"booth": booth,
 					"eosjs": eosjs,
-					"selection_model_view_map": selection_model_view_map
+					"selection_model_view_map": selection_model_view_map,
+					"username": username,
+					"auth_methods": auth_methods
 				}, opts);
 				$(destination).html(templates[template].render(opts));
 			} catch (err) {

@@ -16,13 +16,13 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-<h2>{{ questionNum + 1 }}. {{ election.questions[questionNum].prompt }}</h2>
+<h2>{{ questionNum + 1 }}. {{ election.questions.__getitem__(questionNum).prompt }}</h2>
 
-<p><small>Vote for between {{ election.questions[questionNum].min_choices }} and {{ election.questions[questionNum].max_choices }} candidates. Click the check-boxes to the left of the candidates' names to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.</small></p>
+<p><small>Vote for between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }} candidates. Click the check-boxes to the left of the candidates' names to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.</small></p>
 
 <div id="question-choices" class="ui form" style="margin-bottom: 1em;">
 	<div class="grouped fields">
-		{% for choice in election.questions[questionNum].choices %}
+		{% for choice in election.questions.__getitem__(questionNum).choices.impl %}
 			<div class="field">
 				<div class="ui checkbox">
 					<input type="checkbox" id="question-choice-{{ loop.index0 }}" onchange="choicesChanged();">
@@ -40,7 +40,7 @@
 <script>
 	function choicesChanged() {
 		var numChoices = $("#question-choices input:checked").length;
-		if (numChoices >= election.questions[booth.questionNum].max_choices) {
+		if (numChoices >= election.questions.__getitem__(booth.questionNum).max_choices) {
 			// Prevent making any more selections
 			$("#question-choices input:not(:checked)").prop("disabled", true);
 			$("#message-max-choices").removeClass("hidden");
@@ -52,7 +52,7 @@
 	
 	// Fill in ballot with previous selections
 	if (booth.answers[booth.questionNum]) {
-		for (var selection of booth.answers[booth.questionNum].value.choices) { // Answer already serialised
+		for (var selection of booth.answers.__getitem__(booth.questionNum).value.choices) { // Answer already serialised
 			$("#question-choice-" + selection).prop("checked", true);
 		}
 		choicesChanged();

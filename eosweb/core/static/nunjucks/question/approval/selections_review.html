@@ -20,7 +20,7 @@
 	{% for choice in booth.answers[loop.index0].value.choices %}
 		<div class="item">
 			<i class="checkmark icon"></i>
-			<div class="content">{{ question.choices[choice] }}</div>
+			<div class="content">{{ question.choices.__getitem__(choice) }}</div>
 		</div>
 	{% else %}
 		<div class="item">

@@ -27,6 +27,8 @@
 			}
 			booth.ballot = eosjs.eos.base.election.__all__.Ballot();
 			booth.ballot.encrypted_answers = encryptedAnswers;
+			booth.ballot.election_id = election._id;
+			booth.ballot.election_hash = eosjs.eos.core.hashing.__all__.SHA256().update_obj(election).hash_as_b64();
 			
 			nextTemplate();
 		} catch (err) {

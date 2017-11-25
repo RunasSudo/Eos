@@ -21,9 +21,9 @@
 {% block content %}
 	<p>Your vote has <b>not yet been cast</b>. Your selections are shown below. Please review your selections and ensure you are happy with them before continuing.</p>
 	
-	{% for question in election.questions %}
+	{% for question in election.questions.impl %}
 		<h2>{{ loop.index }}. {{ question.prompt }}</h2>
-		{% include templates[selection_model_view_map[election.questions[loop.index0]._name]["selections_review"]] %}
+		{% include templates[selection_model_view_map[election.questions.__getitem__(loop.index0)._name]["selections_review"]] %}
 	{% endfor %}
 	
 	<p>If you are happy with your selections, then make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>

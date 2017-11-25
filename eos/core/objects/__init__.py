@@ -149,7 +149,7 @@ class DateTimeField(Field):
 		if is_python:
 			return datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
 		else:
-			return Date.parse(value)
+			return __pragma__('js', '{}', 'new Date(value)')
 	
 	@staticmethod
 	def now():

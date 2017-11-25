@@ -62,7 +62,9 @@ def main(app):
 		user.oauth_token = resp['access_token']
 		flask.session['user'] = user
 		
-		me = reddit.get('https://oauth.reddit.com/api/v1/me')
+		me = reddit.get('https://oauth.reddit.com/api/v1/me', headers={
+			'User-Agent': app.config['REDDIT_USER_AGENT']
+		})
 		user.username = me.data['name']
 		
 		return flask.redirect(flask.url_for('login_complete'))

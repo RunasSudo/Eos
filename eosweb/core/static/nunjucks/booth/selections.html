@@ -33,7 +33,7 @@
 			boothError("Question template unable to save selections");
 		}
 		
-		showTemplate(selection_model_view_map[election.questions[booth.questionNum]._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+		showTemplate(selection_model_view_map[election.questions.__getitem__(booth.questionNum)._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
 		
 		function previousQuestion() {
 			saveSelections();
@@ -41,17 +41,17 @@
 				prevTemplate();
 			} else {
 				booth.questionNum--;
-				showTemplate(selection_model_view_map[election.questions[booth.questionNum]._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+				showTemplate(selection_model_view_map[election.questions.__getitem__(booth.questionNum)._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
 			}
 		}
 		
 		function nextQuestion() {
 			saveSelections();
-			if (booth.questionNum == election.questions.length - 1) {
+			if (booth.questionNum == election.questions.__len__() - 1) {
 				nextTemplate();
 			} else {
 				booth.questionNum++;
-				showTemplate(selection_model_view_map[election.questions[booth.questionNum]._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+				showTemplate(selection_model_view_map[election.questions.__getitem__(booth.questionNum)._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
 			}
 		}
 	</script>

@@ -96,6 +96,7 @@ def setup_test_election():
 	election.voters.append(Voter(name='Alice'))
 	election.voters.append(Voter(name='Bob'))
 	election.voters.append(Voter(name='Charlie'))
+	election.voters.append(Voter(name='RunasSudo'))
 	
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
@@ -172,8 +173,9 @@ def election_view(election):
 @using_election
 def election_booth(election):
 	selection_model_view_map = EosObject.to_json({key._name: val for key, val in model_view_map.items()}) # ewww
+	auth_methods = EosObject.to_json(app.config['AUTH_METHODS'])
 	
-	return flask.render_template('election/booth.html', election=election, selection_model_view_map=selection_model_view_map)
+	return flask.render_template('election/booth.html', election=election, selection_model_view_map=selection_model_view_map, auth_methods=auth_methods)
 
 @app.route('/election/<election_id>/view/questions')
 @using_election
@@ -193,20 +195,24 @@ def election_view_trustees(election):
 @app.route('/election/<election_id>/cast_ballot', methods=['POST'])
 @using_election
 def election_api_cast_vote(election):
-	if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status >= WorkflowTask.Status.EXITED or election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status <= WorkflowTask.Status.READY:
+	if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status < WorkflowTask.Status.EXITED or election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status > WorkflowTask.Status.READY:
 		# Voting is not yet open or has closed
-		return flask.Response('Voting is not yet open or has closed', 405)
+		return flask.Response('Voting is not yet open or has closed', 409)
 	
 	data = json.loads(flask.request.data)
 	
+	if 'user' not in flask.session:
+		# User is not authenticated
+		return flask.Response('Not authenticated', 403)
+	
 	voter = None
 	for election_voter in election.voters:
-		if election_voter.name == data['auth']['username']:
+		if election_voter.name == flask.session['user'].username:
 			voter = election_voter
 			break
 	
 	if voter is None:
-		# User is not authenticated
+		# Invalid user
 		return flask.Response('Invalid credentials', 403)
 	
 	# Cast the vote

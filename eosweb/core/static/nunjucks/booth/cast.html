@@ -21,17 +21,24 @@
 {% block content %}
 	<div id="cast_prompt">
 		<p>Your vote has <b>not yet been cast</b>. If you have not already done so, please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
-		<p>This election requires you to log in to vote. Please enter your name below, then click ‘Cast ballot’ to cast your ballot.</p>
-		<div class="ui form">
-			<div class="inline field">
-				<label for="booth_login_name">Name</label>
-				<input type="text" id="booth_login_name">
-			</div>
-			<div class="ui error message" id="error_invalid_id">
-				<i class="close icon"></i>
-				<div class="header">Error</div>
-				<p>The log in details you entered are not valid for this election. Please check your username and password and try again. If the issue persists, contact your election administrator.</p>
-			</div>
+		<p>This election requires you to log in to vote. If you disconnected your internet connection earlier, you must now reconnect it before proceeding.</p>
+		
+		{% if username %}
+			<p>You are currently logged in as {{ username }}. Please select an option from the list below if you would like to switch accounts. Otherwise, click ‘Cast ballot’ to continue.</p>
+		{% else %}
+			<p>You are not currently logged in. Please select an option from the list below to log in. Your ballot will be automatically cast once you have logged in.</p>
+		{% endif %}
+		
+		<ul class="ui list">
+			{% for auth_method in auth_methods %}
+				<li><a href="/auth/{{ auth_method[0] }}/login" target="_blank" onclick="login(this);return false;">{{ auth_method[1] }}</a></li>
+			{% endfor %}
+		</ul>
+		
+		<div class="ui hidden error message" id="error_invalid_id">
+			<i class="close icon"></i>
+			<div class="header">Error</div>
+			<p>The log in details you entered are not valid for this election. Please check your username and password and try again. If the issue persists, contact your election administrator.</p>
 		</div>
 		
 		<div class="ui hidden error message" id="error_unknown">
@@ -48,7 +55,7 @@
 
 {% block buttons %}
 	<button class="ui left floated button" onclick="prevTemplate(2);">Back</a>
-	<button class="ui right floated primary button" onclick="castBallot();">Cast ballot</button>
+	<button class="ui right floated primary{% if not username %} hidden{% endif %} button" id="cast_button" onclick="castBallot();">Cast ballot</button>
 {% endblock %}
 
 {% block after %}
@@ -56,6 +63,14 @@
 		$(".message .close").on("click", function() {
 			$(this).closest(".message").addClass("hidden");
 		});
+		
+		function login(el) {
+			window.open(el.getAttribute("href"), "eos_login_window", "width=400,height=600");
+		}
+		function callback_complete() {
+			$("#cast_button").removeClass("hidden");
+			castBallot();
+		}
 		
 		function castBallot() {
 			$("#cast_prompt").hide();
@@ -65,8 +80,7 @@
 				url: "{{ election_base_url }}cast_ballot",
 				type: "POST",
 				data: eosjs.eos.core.objects.__all__.EosObject.to_json({
-					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(booth.ballot, null),
-					"auth": { "username": $("#booth_login_name").val() }
+					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(booth.ballot, null)
 				}),
 				contentType: "application/json",
 				dataType: "text"
@@ -83,14 +97,14 @@
 				})
 				.fail(function(xhr, status, err) {
 					if (xhr.status === 403) { // Forbidden
-						$("#error_invalid_id").addClass("visible");
+						$("#error_invalid_id").removeClass("hidden");
 						
 						$("#error_unknown").addClass("hidden");
 					} else {
-						$("#error_unknown_tech").text("Technical details: " + err);
+						$("#error_unknown_tech").text("Technical details: " + err + " – " + xhr.responseText);
 						$("#error_unknown").removeClass("hidden");
 						
-						$("#error_invalid_id").removeClass("visible");
+						$("#error_invalid_id").addClass("hidden");
 					}
 					
 					$("#casting").hide();
