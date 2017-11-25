@@ -50,6 +50,28 @@ if 'EOSWEB_SETTINGS' in os.environ:
 # Connect to database
 db_connect(app.config['DB_NAME'], app.config['MONGO_URI'])
 
+# Make Flask's serialisation, e.g. for sessions, EosObject aware
+class EosObjectJSONEncoder(flask.json.JSONEncoder):
+	def default(self, obj):
+		if isinstance(obj, EosObject):
+			return EosObject.serialise_and_wrap(obj)
+		return super().default(obj)
+class EosObjectJSONDecoder(flask.json.JSONDecoder):
+	def __init__(self, *args, **kwargs):
+		self.super_object_hook = kwargs.get('object_hook', None)
+		kwargs['object_hook'] = self.my_object_hook
+		super().__init__(*args, **kwargs)
+	
+	def my_object_hook(self, val):
+		if 'type' in val:
+			if val['type'] in EosObject.objects:
+				return EosObject.deserialise_and_unwrap(val)
+		if self.super_object_hook:
+			return self.super_object_hook(val)
+		return val
+app.json_encoder = EosObjectJSONEncoder
+app.json_decoder = EosObjectJSONDecoder
+
 @app.cli.command('test')
 @click.option('--prefix', default=None)
 @click.option('--lang', default=None)
@@ -122,6 +144,8 @@ def count_test_election():
 @app.context_processor
 def inject_globals():
 	return {'eos': eos, 'eosweb': eosweb, 'SHA256': eos.core.hashing.SHA256}
+
+# === Views ===
 
 @app.route('/')
 def index():
@@ -196,6 +220,35 @@ def election_api_cast_vote(election):
 		'voter': EosObject.serialise_and_wrap(voter),
 		'vote': EosObject.serialise_and_wrap(vote)
 	}), mimetype='application/json')
+
+@app.route('/debug')
+def debug():
+	assert False
+
+@app.route('/auth/login')
+def login():
+	return flask.render_template('auth/login.html')
+
+@app.route('/auth/logout')
+def logout():
+	flask.session['user'] = None
+	#return flask.redirect(flask.request.args['next'] if 'next' in flask.request.args else '/')
+	# I feel like there's some kind of exploit here, so we'll leave this for now
+	return flask.redirect('/')
+
+@app.route('/auth/login_complete')
+def login_complete():
+	return flask.render_template('auth/login_complete.html')
+
+@app.route('/auth/login_cancelled')
+def login_cancelled():
+	return flask.render_template('auth/login_cancelled.html')
+
+# === Apps ===
+
+for app_name in app.config['APPS']:
+	app_main = importlib.import_module(app_name + '.main')
+	app_main.main(app)
 
 # === Model-Views ===
 

@@ -18,28 +18,23 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-{% block head %}
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" type="text/css">
-{% endblock %}
+{% block title %}Login{% endblock %}
 
 {% block basecontent %}
-	<div class="ui fixed inverted menu" style="margin-right: 1.5em;">
-		<div class="ui container">
-			<a href="/" class="header item">Eos Voting</a>
-			{% if session.user %}
-				<div class="ui simple dropdown item right">
-					{{ session.user.username }} <i class="dropdown icon"></i>
-					<div class="menu">
-						<a href="{{ url_for('logout') }}?next={{ request.full_path|urlencode }}" class="item">Log out</a>
-					</div>
-				</div>
-			{% else %}
-				<a href="{{ url_for('login') }}" class="item right">Log in</a>
-			{% endif %}
+	<div class="ui middle aligned center aligned grid" style="height: 100%;">
+		<div class="column" style="max-width: 400px;">
+			<div class="ui success message">
+				<div class="header">Log in successful</div>
+				<p>You have successfully logged in to your account.</p>
+				<p>You may now close this window and return to your previous page.</p>
+			</div>
 		</div>
 	</div>
-	<div class="ui main text container" id="main_container">
-		{% block content %}
-		{% endblock content %}
-	</div>
+	
+	<script>
+		window.setTimeout(function() {
+			window.close();
+			window.opener.callback_complete();
+		}, 1000);
+	</script>
 {% endblock %}
