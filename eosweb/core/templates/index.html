@@ -21,6 +21,8 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+	<h1>Eos Voting for {{ eosweb.app.config['ORG_NAME'] }}</h1>
+	
 	<p>Please choose an election from the list below:</p>
 	<ul>
 		{% for election in eos.base.election.Election.get_all() %}

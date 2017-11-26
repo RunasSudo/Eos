@@ -25,7 +25,8 @@
 {% block basecontent %}
 	<div class="ui fixed inverted menu" style="margin-right: 1.5em;">
 		<div class="ui container">
-			<a href="/" class="header item">Eos Voting</a>
+			<a href="/" class="header item">Eos Voting for {{ eosweb.app.config['ORG_NAME'] }}</a>
+			<a href="https://github.com/RunasSudo/Eos" class="item">Source Code</a>
 			{% if session.user %}
 				<div class="ui simple dropdown item right">
 					{{ session.user.username }} <i class="dropdown icon"></i>

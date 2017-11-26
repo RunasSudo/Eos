@@ -14,6 +14,8 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+ORG_NAME = 'FIXME'
+
 BASE_URI = 'http://localhost:5000'
 
 MONGO_URI = 'mongodb://localhost:27017/'
