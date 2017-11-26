@@ -18,14 +18,10 @@ from flask_oauthlib.client import OAuth
 
 import flask
 
-from eos.core.objects import *
+from eos.redditauth.election import *
 
 import base64
 import uuid
-
-class RedditUser(DocumentObject):
-	oauth_token = StringField(is_protected=True)
-	username = StringField()
 
 def main(app):
 	oauth = OAuth()

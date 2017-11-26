@@ -41,11 +41,17 @@ class Vote(EmbeddedObject):
 
 class Voter(EmbeddedObject):
 	_id = UUIDField()
-	name = StringField()
 	votes = EmbeddedObjectListField()
 
-class EmailVoter(Voter):
-	email = StringField()
+class User(EmbeddedObject):
+	pass
+
+class UserVoter(Voter):
+	user = EmbeddedObjectField()
+	
+	@property
+	def name(self):
+		return self.user.name
 
 class Question(EmbeddedObject):
 	prompt = StringField()

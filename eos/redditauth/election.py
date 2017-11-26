@@ -14,17 +14,18 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos.core.objects
-import eos.core.bigint
-import eos.core.hashing
+from eos.base.election import *
+from eos.core.objects import *
 
-import eos.base.election
-import eos.base.workflow
-
-import eos.psr.bitstream
-import eos.psr.crypto
-import eos.psr.election
-import eos.psr.mixnet
-import eos.psr.workflow
-
-import eos.redditauth.election
+class RedditUser(User):
+	oauth_token = StringField(is_protected=True)
+	username = StringField()
+	
+	@property
+	def name(self):
+		return self.username
+	
+	def matched_by(self, other):
+		if not isinstance(other, RedditUser):
+			return False
+		return other.username == self.username

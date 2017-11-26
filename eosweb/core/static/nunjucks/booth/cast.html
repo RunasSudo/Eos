@@ -24,9 +24,9 @@
 		<p>This election requires you to log in to vote. If you disconnected your internet connection earlier, you must now reconnect it before proceeding.</p>
 		
 		{% if username %}
-			<p>You are currently logged in as {{ username }}. Please select an option from the list below if you would like to switch accounts. Otherwise, click ‘Cast ballot’ to continue.</p>
+			<p><span id="booth_logged_in_as">You are currently logged in as {{ username }}.</span> Please select an option from the list below if you would like to switch accounts. Otherwise, click ‘Cast ballot’ to continue.</p>
 		{% else %}
-			<p>You are not currently logged in. Please select an option from the list below to log in. Your ballot will be automatically cast once you have logged in.</p>
+			<p><span id="booth_logged_in_as">You are not currently logged in.</a> Please select an option from the list below to log in. Your ballot will be automatically cast once you have logged in.</p>
 		{% endif %}
 		
 		<ul class="ui list">
@@ -69,6 +69,7 @@
 		}
 		function callback_complete() {
 			$("#cast_button").removeClass("hidden");
+			$("#booth_logged_in_as").text("You are currently logged in.");
 			castBallot();
 		}
 		
@@ -101,7 +102,11 @@
 						
 						$("#error_unknown").addClass("hidden");
 					} else {
-						$("#error_unknown_tech").text("Technical details: " + err + " – " + xhr.responseText);
+						if (xhr.responseText && xhr.responseText.length < 100) {
+							$("#error_unknown_tech").text("Technical details: " + err + " – " + xhr.responseText);
+						} else {
+							$("#error_unknown_tech").text("Technical details: " + err);
+						}
 						$("#error_unknown").removeClass("hidden");
 						
 						$("#error_invalid_id").addClass("hidden");
@@ -110,6 +115,7 @@
 					$("#casting").hide();
 					$("#cast_prompt").show();
 					
+					console.error(xhr);
 					throw err;
 				});
 		}

@@ -92,11 +92,8 @@ def setup_test_election():
 	# Set election details
 	election.name = 'Test Election'
 	
-	voter = Voter()
-	election.voters.append(Voter(name='Alice'))
-	election.voters.append(Voter(name='Bob'))
-	election.voters.append(Voter(name='Charlie'))
-	election.voters.append(Voter(name='RunasSudo'))
+	from eos.redditauth.election import RedditUser
+	election.voters.append(UserVoter(user=RedditUser(username='RunasSudo')))
 	
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
@@ -207,7 +204,7 @@ def election_api_cast_vote(election):
 	
 	voter = None
 	for election_voter in election.voters:
-		if election_voter.name == flask.session['user'].username:
+		if election_voter.user.matched_by(flask.session['user']):
 			voter = election_voter
 			break
 	
@@ -223,8 +220,8 @@ def election_api_cast_vote(election):
 	election.save()
 	
 	return flask.Response(json.dumps({
-		'voter': EosObject.serialise_and_wrap(voter),
-		'vote': EosObject.serialise_and_wrap(vote)
+		'voter': EosObject.serialise_and_wrap(voter, should_protect=True),
+		'vote': EosObject.serialise_and_wrap(vote, should_protect=True)
 	}), mimetype='application/json')
 
 @app.route('/debug')

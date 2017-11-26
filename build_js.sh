@@ -38,6 +38,7 @@ for f in eos.js_tests; do
 	
 	# Transcrypt bug
 	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__impl__(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
+	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__implpy_(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
 done
 
 cp eos/__javascript__/eos.js_tests.js eosweb/core/static/js/eosjs.js
