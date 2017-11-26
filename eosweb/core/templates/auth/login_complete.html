@@ -18,7 +18,7 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-{% block title %}Login{% endblock %}
+{% block title %}Log in{% endblock %}
 
 {% block basecontent %}
 	<div class="ui middle aligned center aligned grid" style="height: 100%;">
@@ -34,7 +34,7 @@
 	<script>
 		window.setTimeout(function() {
 			window.close();
-			window.opener.callback_complete();
+			window.opener.callback_complete("{{ session.user.name }}");
 		}, 1000);
 	</script>
 {% endblock %}

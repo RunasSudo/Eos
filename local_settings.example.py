@@ -1,12 +1,20 @@
 ORG_NAME = 'Your Organisation Here'
 
-REDDIT_OAUTH_CLIENT_ID = 'xxxxxxxxxxxxxx'
-REDDIT_OAUTH_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxx'
-
 SECRET_KEY = 'xxxxxxxxxxxxxxxxxxxxxxxx'
 
-REDDIT_USER_AGENT = 'Application Title by /u/Your_Username'
-
 AUTH_METHODS = [
+	('email', 'Email'),
 	('reddit', 'Reddit')
 ]
+
+# Email
+
+SMTP_HOST, SMTP_PORT = 'localhost', 25
+SMTP_USER, SMTP_PASS = None, None
+SMTP_FROM = 'eos@localhost'
+
+# Reddit
+
+REDDIT_OAUTH_CLIENT_ID = 'xxxxxxxxxxxxxx'
+REDDIT_OAUTH_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxx'
+REDDIT_USER_AGENT = 'Application Title by /u/Your_Username'

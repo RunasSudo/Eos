@@ -21,10 +21,16 @@ BASE_URI = 'http://localhost:5000'
 MONGO_URI = 'mongodb://localhost:27017/'
 DB_NAME = 'eos'
 
+SECRET_KEY = 'FIXME'
+
 APPS = [
 	'eosweb.redditauth'
 ]
 
-AUTH_METHODS = []
+AUTH_METHODS = [
+	('email', 'Email')
+]
 
-SECRET_KEY = 'FIXME'
+SMTP_HOST, SMTP_PORT = 'localhost', 25
+SMTP_USER, SMTP_PASS = None, None
+SMTP_FROM = 'eos@localhost'

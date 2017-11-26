@@ -33,10 +33,10 @@ for f in eos.js_tests; do
 	# Disable handling of special attributes
 	perl -0777 -pi -e 's/var __specialattrib__ = function \(attrib\) \{/var __specialattrib__ = function (attrib) { return false;/g' eos/__javascript__/$f.js
 	
-	# Fix handling of properties
+	# Fix handling of properties, Transcrypt bug #407
 	perl -077 -pi -e 's/var __get__ = function \(self, func, quotedFuncName\) \{/var __get__ = function (self, func, quotedFuncName) { if(typeof(func) != "function"){return func;}/g' eos/__javascript__/$f.js
 	
-	# Transcrypt bug
+	# Transcrypt bug #407
 	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__impl__(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
 	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__implpy_(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
 done

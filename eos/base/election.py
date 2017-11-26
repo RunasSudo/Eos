@@ -46,6 +46,37 @@ class Voter(EmbeddedObject):
 class User(EmbeddedObject):
 	pass
 
+def generate_password():
+	if is_python:
+		#__pragma__('skip')
+		import random
+		return ''.join(random.SystemRandom().choices('23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz', k=12))
+		#__pragma__('noskip')
+	else:
+		return None
+
+class EmailUser(User):
+	name = StringField()
+	email = StringField(is_protected=True)
+	password = StringField(is_protected=True, default=generate_password)
+	
+	def matched_by(self, other):
+		if not isinstance(other, EmailUser):
+			return False
+		return self.email == other.email and self.password == other.password
+	
+	def send_email(self, host, port, username, password, from_email, content):
+		#__pragma__('skip')
+		import smtplib
+		#__pragma__('noskip')
+		with smtplib.SMTP(host, port) as smtp:
+			if username is not None:
+				smtp.login(username, password)
+			smtp.sendmail(from_email, [self.email], content)
+	
+	def email_password(self, host, port, username, password, from_email):
+		self.send_email(host, port, username, password, from_email, 'Subject: Registered to vote in {1}\nFrom: {4}\nTo: {2}\n\nDear {0},\n\nYou are registered to vote in the election {1}. Your log in details are as follows:\n\nEmail: {2}\nPassword: {3}'.format(self.name, self.recurse_parents(Election).name, self.email, self.password, from_email))
+
 class UserVoter(Voter):
 	user = EmbeddedObjectField()
 	

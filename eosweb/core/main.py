@@ -93,7 +93,15 @@ def setup_test_election():
 	election.name = 'Test Election'
 	
 	from eos.redditauth.election import RedditUser
+	election.voters.append(UserVoter(user=EmailUser(name='Alice', email='alice@localhost')))
+	election.voters.append(UserVoter(user=EmailUser(name='Bob', email='bob@localhost')))
+	election.voters.append(UserVoter(user=EmailUser(name='Carol', email='carol@localhost')))
 	election.voters.append(UserVoter(user=RedditUser(username='RunasSudo')))
+	
+	for voter in election.voters:
+		if isinstance(voter, UserVoter):
+			if isinstance(voter.user, EmailUser):
+				voter.user.email_password(app.config['SMTP_HOST'], app.config['SMTP_PORT'], app.config['SMTP_USER'], app.config['SMTP_PASS'], app.config['SMTP_FROM'])
 	
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
@@ -246,6 +254,29 @@ def login_complete():
 @app.route('/auth/login_cancelled')
 def login_cancelled():
 	return flask.render_template('auth/login_cancelled.html')
+
+@app.route('/auth/email/login')
+def email_login():
+	return flask.render_template('auth/email/login.html')
+
+@app.route('/auth/email/authenticate', methods=['POST'])
+def email_authenticate():
+	user = None
+	
+	for election in Election.get_all():
+		for voter in election.voters:
+			if isinstance(voter.user, EmailUser):
+				if voter.user.email == flask.request.form['email']:
+					if voter.user.password == flask.request.form['password']:
+						user = voter.user
+						break
+	
+	if user is None:
+		return flask.render_template('auth/email/login.html', error='The email or password you entered was invalid. Please check your details and try again. If the issue persists, contact the election administrator.')
+	
+	flask.session['user'] = user
+	
+	return flask.redirect(flask.url_for('login_complete'))
 
 # === Apps ===
 

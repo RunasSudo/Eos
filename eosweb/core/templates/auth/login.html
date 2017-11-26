@@ -18,11 +18,11 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-{% block title %}Login{% endblock %}
+{% block title %}Log in{% endblock %}
 
 {% block content %}
 	{% if session.user %}
-		<p>You are currently logged in as {{ session.user.username }}. Please select an option from the list below to switch accounts.</p>
+		<p>You are currently logged in as {{ session.user.name }}. Please select an option from the list below to switch accounts.</p>
 	{% else %}
 		<p>You are not currently logged in. Please select an option from the list below to log in.</p>
 	{% endif %}
@@ -40,7 +40,7 @@
 			window.open(el.getAttribute("href"), "eos_login_window", "width=400,height=600");
 		}
 		
-		function callback_complete() {
+		function callback_complete(name) {
 			window.location = "/";
 		}
 	</script>

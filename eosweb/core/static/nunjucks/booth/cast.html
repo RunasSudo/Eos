@@ -55,7 +55,7 @@
 
 {% block buttons %}
 	<button class="ui left floated button" onclick="prevTemplate(2);">Back</a>
-	<button class="ui right floated primary{% if not username %} hidden{% endif %} button" id="cast_button" onclick="castBallot();">Cast ballot</button>
+	<button class="ui right floated primary button" id="cast_button" onclick="castBallot();"{% if not username %} style="display: none;"{% endif %}>Cast ballot</button>
 {% endblock %}
 
 {% block after %}
@@ -67,9 +67,9 @@
 		function login(el) {
 			window.open(el.getAttribute("href"), "eos_login_window", "width=400,height=600");
 		}
-		function callback_complete() {
-			$("#cast_button").removeClass("hidden");
-			$("#booth_logged_in_as").text("You are currently logged in.");
+		function callback_complete(username) {
+			$("#cast_button").show();
+			$("#booth_logged_in_as").text("You are currently logged in as " + username + ".");
 			castBallot();
 		}
 		
