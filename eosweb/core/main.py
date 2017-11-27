@@ -48,7 +48,7 @@ if 'EOSWEB_SETTINGS' in os.environ:
 	app.config.from_envvar('EOSWEB_SETTINGS')
 
 # Connect to database
-db_connect(app.config['DB_NAME'], app.config['MONGO_URI'])
+db_connect(app.config['DB_NAME'], app.config['DB_URI'], app.config['DB_TYPE'])
 
 # Make Flask's serialisation, e.g. for sessions, EosObject aware
 class EosObjectJSONEncoder(flask.json.JSONEncoder):
@@ -83,7 +83,7 @@ def run_tests(prefix, lang):
 @app.cli.command('drop_db_and_setup')
 def setup_test_election():
 	# DANGER!
-	dbinfo.client.drop_database(app.config['DB_NAME'])
+	dbinfo.provider.reset_db()
 	
 	# Set up election
 	election = PSRElection()

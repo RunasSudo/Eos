@@ -7,6 +7,12 @@ AUTH_METHODS = [
 	('reddit', 'Reddit')
 ]
 
+# MongoDB
+
+DB_TYPE = 'mongodb'
+DB_URI = 'mongodb://localhost:27017/'
+DB_NAME = 'eos'
+
 # Email
 
 SMTP_HOST, SMTP_PORT = 'localhost', 25

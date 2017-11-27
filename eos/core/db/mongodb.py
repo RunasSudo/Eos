@@ -14,24 +14,25 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ORG_NAME = 'FIXME'
+import pymongo
 
-BASE_URI = 'http://localhost:5000'
+import eos.core.db
 
-DB_TYPE = 'mongodb'
-DB_URI = 'mongodb://localhost:27017/'
-DB_NAME = 'eos'
+class MongoDBProvider(eos.core.db.DBProvider):
+	def connect(self):
+		self.client = pymongo.MongoClient(self.db_uri)
+		self.db = self.client[self.db_name]
+	
+	def get_all(self, collection):
+		return self.db[collection].find()
+	
+	def get_by_id(self, collection, _id):
+		return self.db[collection].find_one(_id)
+	
+	def update_by_id(self, collection, _id, value):
+		self.db[collection].replace_one({'_id': _id}, value, upsert=True)
+	
+	def reset_db(self):
+		self.client.drop_database(self.db_name)
 
-SECRET_KEY = 'FIXME'
-
-APPS = [
-	'eosweb.redditauth'
-]
-
-AUTH_METHODS = [
-	('email', 'Email')
-]
-
-SMTP_HOST, SMTP_PORT = 'localhost', 25
-SMTP_USER, SMTP_PASS = None, None
-SMTP_FROM = 'eos@localhost'
+eos.core.db.db_providers['mongodb'] = MongoDBProvider

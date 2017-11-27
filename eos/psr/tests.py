@@ -213,7 +213,7 @@ class ElectionTestCase(EosTestCase):
 	@classmethod
 	def setUpClass(cls):
 		db_connect('test')
-		dbinfo.client.drop_database('test')
+		dbinfo.provider.reset_db()
 	
 	def do_task_assert(self, election, task, next_task):
 		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)

@@ -24,7 +24,7 @@ class ElectionTestCase(EosTestCase):
 	@classmethod
 	def setUpClass(cls):
 		db_connect('test')
-		dbinfo.client.drop_database('test')
+		dbinfo.provider.reset_db()
 	
 	def do_task_assert(self, election, task, next_task):
 		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)
@@ -66,8 +66,7 @@ class ElectionTestCase(EosTestCase):
 		election.save()
 		
 		# Check that it saved
-		self.assertEqual(dbinfo.db[Election._db_name].find_one()['value'], election.serialise())
-		self.assertEqual(EosObject.deserialise_and_unwrap(dbinfo.db[Election._db_name].find_one()).serialise(), election.serialise())
+		self.assertEqual(Election.get_all()[0], election)
 		
 		self.assertEqualJSON(EosObject.deserialise_and_unwrap(EosObject.serialise_and_wrap(election)).serialise(), election.serialise())
 		

@@ -14,24 +14,9 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ORG_NAME = 'FIXME'
+db_providers = {}
 
-BASE_URI = 'http://localhost:5000'
-
-DB_TYPE = 'mongodb'
-DB_URI = 'mongodb://localhost:27017/'
-DB_NAME = 'eos'
-
-SECRET_KEY = 'FIXME'
-
-APPS = [
-	'eosweb.redditauth'
-]
-
-AUTH_METHODS = [
-	('email', 'Email')
-]
-
-SMTP_HOST, SMTP_PORT = 'localhost', 25
-SMTP_USER, SMTP_PASS = None, None
-SMTP_FROM = 'eos@localhost'
+class DBProvider:
+	def __init__(self, db_name, db_uri):
+		self.db_name = db_name
+		self.db_uri = db_uri
