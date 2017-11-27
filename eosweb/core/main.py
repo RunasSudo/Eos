@@ -266,7 +266,7 @@ def email_authenticate():
 	for election in Election.get_all():
 		for voter in election.voters:
 			if isinstance(voter.user, EmailUser):
-				if voter.user.email == flask.request.form['email']:
+				if voter.user.email.lower() == flask.request.form['email'].lower():
 					if voter.user.password == flask.request.form['password']:
 						user = voter.user
 						break

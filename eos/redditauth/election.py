@@ -28,4 +28,4 @@ class RedditUser(User):
 	def matched_by(self, other):
 		if not isinstance(other, RedditUser):
 			return False
-		return other.username == self.username
+		return other.username.lower() == self.username.lower()

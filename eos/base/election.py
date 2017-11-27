@@ -63,7 +63,7 @@ class EmailUser(User):
 	def matched_by(self, other):
 		if not isinstance(other, EmailUser):
 			return False
-		return self.email == other.email and self.password == other.password
+		return self.email.lower() == other.email.lower() and self.password == other.password
 	
 	def send_email(self, host, port, username, password, from_email, content):
 		#__pragma__('skip')

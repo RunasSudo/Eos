@@ -50,7 +50,6 @@
 }
 
 .preferential-choices .dragarea-hint:first-child:last-child {
-	content: "";
 	width: calc(100% - 1em);
 	height: 3em;
 	box-sizing: border-box;
@@ -77,12 +76,16 @@
 	margin-top: 0;
 }
 
-#question-choices-selected .preferential-choice {
+#question-choices-selected .preferential-choice, #question-choices-selected .dragarea-hint:first-child:last-child {
 	background-color: #e6f1fc;
 }
 
 #question-choices-remaining {
 	border: 1px solid #555;
+}
+
+#question-choices-remaining .dragarea-hint:first-child:last-child {
+	background-color: #eee;
 }
 
 .preferential-choice .number, .preferential-choice .name {
