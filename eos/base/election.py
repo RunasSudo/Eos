@@ -101,6 +101,17 @@ class ApprovalQuestion(Question):
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
 
+class PreferentialQuestion(Question):
+	choices = ListField(StringField())
+	min_choices = IntField()
+	max_choices = IntField()
+	
+	def pretty_answer(self, answer):
+		return ', '.join([self.choices[choice] for choice in answer.choices])
+
+class PreferentialAnswer(Answer):
+	choices = ListField(IntField())
+
 class RawResult(Result):
 	answers = EmbeddedObjectListField()
 	

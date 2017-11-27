@@ -27,6 +27,12 @@ model_view_map = {
 	Election: {
 		'tabs': 'election/core/tabs.html'
 	},
+	PreferentialQuestion: {
+		'view': 'question/preferential/view.html',
+		'result_raw': 'question/preferential/result_raw.html',
+		'selections_make': 'question/preferential/selections_make.html',
+		'selections_review': 'question/preferential/selections_review.html'
+	},
 	PSRElection: {
 		'tabs': 'election/psr/tabs.html'
 	}

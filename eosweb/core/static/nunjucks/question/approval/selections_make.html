@@ -18,7 +18,7 @@
 
 <h2>{{ questionNum + 1 }}. {{ election.questions.__getitem__(questionNum).prompt }}</h2>
 
-<p><small>Vote for between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }} candidates. Click the check-boxes to the left of the candidates' names to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.</small></p>
+<p><small>Vote for between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }} choices. Click the check-boxes to the left of the choices to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.</small></p>
 
 <div id="question-choices" class="ui form" style="margin-bottom: 1em;">
 	<div class="grouped fields">
@@ -34,7 +34,7 @@
 </div>
 
 <div class="ui hidden message" id="message-max-choices">
-	<p>You have now selected the maximum allowed number of candidates. If you wish to change your selections, you must first use the check-boxes to deselect a candidate.</p>
+	<p>You have now selected the maximum allowed number of choices. If you wish to change your selections, you must first use the check-boxes to deselect a choice.</p>
 </div>
 
 <script>
@@ -52,7 +52,7 @@
 	
 	// Fill in ballot with previous selections
 	if (booth.answers[booth.questionNum]) {
-		for (var selection of booth.answers.__getitem__(booth.questionNum).value.choices) { // Answer already serialised
+		for (var selection of booth.answers[booth.questionNum].value.choices) { // Answer already serialised
 			$("#question-choice-" + selection).prop("checked", true);
 		}
 		choicesChanged();
@@ -61,7 +61,7 @@
 	function saveSelections() {
 		selections = [];
 		$("#question-choices input:checked").each(function(i, el) {
-			selections.push(parseInt(el.id.substring("question-choice-".length)))
+			selections.push(parseInt(el.id.substring("question-choice-".length)));
 		});
 		answer = eosjs.eos.base.election.__all__.ApprovalAnswer(eosjs.__kwargtrans__({choices: selections}));
 		booth.answers[booth.questionNum] = eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(answer);

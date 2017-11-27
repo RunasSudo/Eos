@@ -20,6 +20,11 @@
 
 {% block title %}{{ election.name }} – Voting booth{% endblock %}
 
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ url_for('static', filename='bower_components/dragula.js/dist/dragula.min.css') }}" type="text/css">
+{% endblock %}
+
 {% block content %}
 	<div class="ui container" id="booth-content">
 		<div class="ui active text loader">Loading voting booth. Please wait.</div>
@@ -28,8 +33,12 @@
 
 {% block basecontent %}
 	{{ super() }}
+	
 	<script src="{{ url_for('static', filename='bower_components/nunjucks/browser/nunjucks.min.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/eosjs.js') }}"></script>
+	
+	<script src="{{ url_for('static', filename='bower_components/dragula.js/dist/dragula.min.js') }}"></script>
+	
 	<script>
 		var templates = {};
 		var election = null;

@@ -16,10 +16,11 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-<p><small>Approval voting. Vote for between {{ question.min_choices }} and {{ question.max_choices }} choices.</small></p>
-
-<ul class="ui list">
-	{% for choice in question.choices %}
-		<li>{{ choice }}</li>
+<table class="ui celled table">
+	{% for answer, num in election.results[loop.index0].count() %}
+		<tr>
+			<td>{{ question.pretty_answer(answer) }}</td>
+			<td>{{ num }}</td>
+		</tr>
 	{% endfor %}
-</ul>
+</table>
