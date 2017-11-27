@@ -29,6 +29,7 @@ if is_python:
 	__pragma__('skip')
 	import eos.core.db
 	import eos.core.db.mongodb
+	import eos.core.db.postgresql
 	
 	from bson.binary import UUIDLegacy
 	

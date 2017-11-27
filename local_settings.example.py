@@ -13,6 +13,12 @@ DB_TYPE = 'mongodb'
 DB_URI = 'mongodb://localhost:27017/'
 DB_NAME = 'eos'
 
+# PostgreSQL
+
+#DB_TYPE = 'postgresql'
+#DB_URI = 'postgresql://'
+#DB_NAME = 'eos'
+
 # Email
 
 SMTP_HOST, SMTP_PORT = 'localhost', 25
