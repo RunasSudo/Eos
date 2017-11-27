@@ -27,6 +27,10 @@
 	</div>
 </div>
 
+<div class="ui hidden message" id="message-max-choices">
+	<p>You have now selected the maximum allowed number of choices. If you wish to add different choices, you must deselect some choices by dragging them from the blue box back to the grey box.</p>
+</div>
+
 <div id="question-choices-remaining" class="preferential-choices">
 	<div>Options not yet voted for:</div>
 	<div class="dragarea">
@@ -40,19 +44,26 @@
 	</div>
 </div>
 
-<div class="ui hidden message" id="message-max-choices">
-	<p>You have now selected the maximum allowed number of choices. If you wish to change your selections, you must first use the check-boxes to deselect a choice.</p>
-</div>
-
 <script>
+	var allowAdding = true;
+	
 	function choicesChanged() {
 		// Recalculate numbers
 		$(".preferential-choices .preferential-choice .number").each(function(i, el) {
 			$(el).text("");
 		});
-		$("#question-choices-selected .preferential-choice .number").each(function(i, el) {
+		var selectedChoices = $("#question-choices-selected .preferential-choice .number");
+		selectedChoices.each(function(i, el) {
 			$(el).text(i + 1);
 		});
+		if (selectedChoices.length >= election.questions.__getitem__(booth.questionNum).max_choices) {
+			// Prevent making any more selections
+			allowAdding = false;
+			$("#message-max-choices").removeClass("hidden");
+		} else {
+			allowAdding = true;
+			$("#message-max-choices").addClass("hidden");
+		}
 	}
 	
 	// Fill in ballot with previous selections
@@ -63,7 +74,20 @@
 		choicesChanged();
 	}
 	
-	var dragulaChoices = dragula([document.querySelector("#question-choices-selected .dragarea"), document.querySelector("#question-choices-remaining .dragarea")], { moves: function(el, source, handle, sibling) { return !("dragarea-hint" in el.classList); } });
+	var dragulaChoices = dragula(
+		[document.querySelector("#question-choices-selected .dragarea"), document.querySelector("#question-choices-remaining .dragarea")],
+		{
+			moves: function(el, source, handle, sibling) {
+				if ("dragarea-hint" in el.classList) {
+					return false;
+				}
+				if ($.contains(document.querySelector("#question-choices-remaining"), el)) {
+					return allowAdding;
+				}
+				return true;
+			}
+		}
+	);
 	
 	dragulaChoices.on("drop", function(el, target, source, sibling) {
 		choicesChanged();
