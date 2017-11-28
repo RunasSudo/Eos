@@ -45,6 +45,14 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 		obj = EosObject.deserialise_and_unwrap(EosObject.from_json(m))
 		
 		return obj
+	
+	def deaudit(self):
+		blocks_deaudit = EosList()
+		
+		for i in range(len(self.blocks)):
+			blocks_deaudit.append(self.blocks[i].deaudit())
+		
+		return BlockEncryptedAnswer(blocks=blocks_deaudit)
 
 class Trustee(EmbeddedObject):
 	name = StringField()

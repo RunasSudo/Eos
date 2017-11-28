@@ -242,6 +242,10 @@ def election_api_cast_vote(election):
 		'vote': EosObject.serialise_and_wrap(vote, should_protect=True)
 	}), mimetype='application/json')
 
+@app.route('/auditor')
+def auditor():
+	return flask.render_template('election/auditor.html')
+
 @app.route('/debug')
 def debug():
 	assert False

@@ -19,10 +19,25 @@
 #}
 
 {% block content %}
-	TODO
+	<h2>Ready to audit your ballot</h2>
+	
+	<div class="ui negative message">
+		<p>Your vote has <span class="superem">not</span> yet been cast. Please follow the instructions to continue.</p>
+	</div>
+	
+	<p>The following is your ballot with fingerprint <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>, decrypted and ready for auditing.</p>
+	
+	<div class="ui form">
+		{# For some reason nunjucks doesn't like calling this the normal way #}
+		<textarea>{{ ballot.to_json(ballot.serialise_and_wrap(ballot)) }}</textarea>
+	</div>
+	
+	<p>You may provide the above data to a trusted third-party, or use the <a href="/auditor?electionUrl={{ election_base_url }}" target="_blank">Eos auditor</a> to verify that your ballot was prepared correctly.</p>
+	
+	<p>Once you are satisfied that your ballot has been prepared correctly, click ‘Continue’. Your ballot will be prepared again, to protect your secrecy, and you may choose to audit your ballot again, or proceed to cast your ballot.</p>
 {% endblock %}
 
 {% block buttons %}
-	<button class="ui left floated button" onclick="prevTemplate();">Back</a>
-	<button class="ui right floated primary button" onclick="nextTemplate();">Continue</button>
+	{# Dirty trick to go back to the encryption step #}
+	<button class="ui right floated primary button" onclick="nextTemplate(-2);">Continue</button>
 {% endblock %}

@@ -56,36 +56,48 @@ class EGPublicKey(EmbeddedObject):
 		return self.group.q.nbits() - 1
 	
 	# HAC 8.18
-	def _encrypt(self, message):
+	def _encrypt(self, message, randomness=None):
 		if message <= ZERO:
 			raise Exception('Invalid message')
 		if message >= self.group.p:
 			raise Exception('Invalid message')
 		
-		# Choose an element 1 <= k <= p - 2
-		k = BigInt.crypto_random(ONE, self.group.p - TWO)
+		if randomness is None:
+			# Choose an element 1 <= k <= p - 2
+			k = BigInt.crypto_random(ONE, self.group.p - TWO)
+		else:
+			k = randomness
 		
 		gamma = pow(self.group.g, k, self.group.p)
 		delta = (message * pow(self.X, k, self.group.p)) % self.group.p
 		
-		return EGCiphertext(public_key=self, gamma=gamma, delta=delta)
+		return EGCiphertext(public_key=self, gamma=gamma, delta=delta, m0=message, randomness=k)
 	
 	# Adida 2008
-	def encrypt(self, message):
+	def message_to_m0(self, message):
+		m0 = message + ONE
+		
+		if pow(m0, self.group.q, self.group.p) == ONE:
+			# m0 is already in G_q
+			return m0
+		else:
+			# For the life of me I can't find any reputable references for this aside from Adida 2008...
+			m0 = (-m0) % self.group.p
+			return m0
+	
+	def m0_to_message(self, m0):
+		if m0 < self.group.q:
+			return m0 - ONE
+		else:
+			return ((-m0) % self.group.p) - ONE
+	
+	def encrypt(self, message, randomness=None):
 		if message < ZERO:
 			raise Exception('Invalid message')
 		if message >= self.group.q:
 			raise Exception('Invalid message')
 		
-		m0 = message + ONE
-		
-		if pow(m0, self.group.q, self.group.p) == ONE:
-			# m0 is already in G_q
-			return self._encrypt(m0)
-		else:
-			# For the life of me I can't find any reputable references for this aside from Adida 2008...
-			m0 = (-m0) % self.group.p
-			return self._encrypt(m0)
+		return self._encrypt(self.message_to_m0(message), randomness)
 
 class EGPrivateKey(EmbeddedObject):
 	pk_class = EGPublicKey
@@ -118,15 +130,15 @@ class EGPrivateKey(EmbeddedObject):
 		pt = (gamma_inv * ciphertext.delta) % self.public_key.group.p
 		
 		# Undo the encryption mapping
-		if pt < self.public_key.group.q:
-			return pt - ONE
-		else:
-			return ((-pt) % self.public_key.group.p) - ONE
+		return self.public_key.m0_to_message(pt)
 
 class EGCiphertext(EmbeddedObject):
 	public_key = EmbeddedObjectField(EGPublicKey)
 	gamma = EmbeddedObjectField(BigInt) # G^k
 	delta = EmbeddedObjectField(BigInt) # M X^k
+	
+	randomness = EmbeddedObjectField(BigInt, is_hashed=False)
+	m0 = EmbeddedObjectField(BigInt, is_hashed=False)
 	
 	def reencrypt(self, k=None):
 		# Generate an encryption of one
@@ -136,12 +148,22 @@ class EGCiphertext(EmbeddedObject):
 		delta = pow(self.public_key.X, k, self.public_key.group.p)
 		
 		return EGCiphertext(public_key=self.public_key, gamma=((self.gamma * gamma) % self.public_key.group.p), delta=((self.delta * delta) % self.public_key.group.p)), k
+	
+	def deaudit(self):
+		return EGCiphertext(public_key=self.public_key, gamma=self.gamma, delta=self.delta)
+	
+	def is_randomness_valid(self):
+		ct = self.public_key._encrypt(self.m0, self.randomness)
+		return ct.gamma == self.gamma and ct.delta == self.delta
 
 # Signed ElGamal per Schnorr & Jakobssen
 class SEGPublicKey(EGPublicKey):
-	def _encrypt(self, message):
-		# Choose an element 1 <= k <= p - 2
-		r = BigInt.crypto_random(ONE, self.group.p - TWO)
+	def _encrypt(self, message, randomness=None):
+		if randomness is None:
+			# Choose an element 1 <= k <= p - 2
+			r = BigInt.crypto_random(ONE, self.group.p - TWO)
+		else:
+			r = randomness
 		s = BigInt.crypto_random(ONE, self.group.p - TWO)
 		
 		gamma = pow(self.group.g, r, self.group.p) # h
@@ -151,7 +173,7 @@ class SEGPublicKey(EGPublicKey):
 		
 		z = s + c*r
 		
-		return SEGCiphertext(public_key=self, gamma=gamma, delta=delta, c=c, z=z)
+		return SEGCiphertext(public_key=self, gamma=gamma, delta=delta, c=c, z=z, m0=message, randomness=r)
 
 class SEGPrivateKey(EGPrivateKey):
 	pk_class = SEGPublicKey
@@ -166,6 +188,9 @@ class SEGCiphertext(EGCiphertext):
 		c = SHA256().update_bigint(gs, self.gamma, self.delta).hash_as_bigint()
 		
 		return self.c == c
+	
+	def deaudit(self):
+		return SEGCiphertext(public_key=self.public_key, gamma=self.gamma, delta=self.delta, c=self.c, z=self.z)
 
 class Polynomial(EmbeddedObject):
 	coefficients = EmbeddedObjectListField(BigInt) # x^0, x^1, ... x^n

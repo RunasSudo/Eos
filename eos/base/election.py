@@ -34,6 +34,16 @@ class Ballot(EmbeddedObject):
 	encrypted_answers = EmbeddedObjectListField()
 	election_id = UUIDField()
 	election_hash = StringField()
+	
+	answers = EmbeddedObjectListField(is_hashed=False)
+	
+	def deaudit(self):
+		encrypted_answers_deaudit = EosList()
+		
+		for i in range(len(self.encrypted_answers)):
+			encrypted_answers_deaudit.append(self.encrypted_answers[i].deaudit())
+		
+		return Ballot(encrypted_answers=encrypted_answers_deaudit, election_id=self.election_id, election_hash=self.election_hash)
 
 class Vote(EmbeddedObject):
 	ballot = EmbeddedObjectField()
@@ -96,7 +106,7 @@ class ApprovalQuestion(Question):
 	max_choices = IntField()
 	
 	def pretty_answer(self, answer):
-		return ', '.join([self.choices[choice] for choice in answer.choices])
+		return ', '.join([self.choices[answer.choices[i]] for i in range(len(answer.choices))])
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
@@ -107,7 +117,7 @@ class PreferentialQuestion(Question):
 	max_choices = IntField()
 	
 	def pretty_answer(self, answer):
-		return ', '.join([self.choices[choice] for choice in answer.choices])
+		return ', '.join([self.choices[answer.choices[i]] for i in range(len(answer.choices))])
 
 class PreferentialAnswer(Answer):
 	choices = ListField(IntField())

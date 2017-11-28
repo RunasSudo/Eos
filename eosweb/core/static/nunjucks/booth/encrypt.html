@@ -21,11 +21,18 @@
 <script>
 	boothWorker.onmessage = function(msg) {
 		try {
+			rawAnswers = [];
+			for (var answer_json of booth.answers) {
+				rawAnswers.push(eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(answer_json, null));
+			}
+			
 			encryptedAnswers = [];
 			for (var encrypted_answer_json of msg.data) {
 				encryptedAnswers.push(eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(encrypted_answer_json, null));
 			}
+			
 			booth.ballot = eosjs.eos.base.election.__all__.Ballot();
+			booth.ballot.answers = rawAnswers;
 			booth.ballot.encrypted_answers = encryptedAnswers;
 			booth.ballot.election_id = election._id;
 			booth.ballot.election_hash = eosjs.eos.core.hashing.__all__.SHA256().update_obj(election).hash_as_b64();

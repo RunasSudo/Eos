@@ -83,6 +83,9 @@
 			$("#cast_prompt").hide();
 			$("#casting").show();
 			
+			// Prepare ballot
+			booth.ballot = booth.ballot.deaudit();
+			
 			$.ajax({
 				url: "{{ election_base_url }}cast_ballot",
 				type: "POST",

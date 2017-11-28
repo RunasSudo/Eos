@@ -51,6 +51,8 @@ class BigInt(EosObject):
 	
 	@classmethod
 	def deserialise(cls, value):
+		if value is None:
+			return None
 		return cls(value)
 	
 	# Returns a random BigInt from lower_bound to upper_bound, both inclusive
