@@ -36,6 +36,10 @@ Access Eos at http://localhost:5000/.
 
 Add a MongoDB (recommended) or PostgreSQL resource to your Heroku app.
 
+Set up the Heroku app.
+
+    heroku git:remote -a your-app-12345
+
 Create *local_settings.py*.
 
     cd /path/to/Eos
@@ -43,9 +47,12 @@ Create *local_settings.py*.
 
 Modify *local_settings.py* as required. Take special note of `BASE_URI` and the database information.
 
+Set environment variables.
+
+    heroku config:set EOSWEB_SETTINGS=/app/local_settings.py
+
 Push the changes to the Heroku app.
 
-    heroku git:remote -a your-app-12345
     git add .
     git commit -m 'For Heroku'
     git push heroku master
