@@ -19,10 +19,10 @@
 #}
 
 {% block content %}
-	<p>Your vote has <b>not</b> yet been cast. Your selections are shown below. Please review your selections and ensure you are happy with them before continuing.</p>
+	<p>Your vote has <span class="superem">not</span> yet been cast. Your selections are shown below. Please review your selections and ensure you are happy with them before continuing.</p>
 	
 	<div class="ui negative message">
-		<p>Your vote has <b>not</b> yet been cast. Please follow the instructions to continue.</p>
+		<p>Your vote has <span class="superem">not</span> yet been cast. Please follow the instructions to continue.</p>
 	</div>
 	
 	{% for question in election.questions.impl %}

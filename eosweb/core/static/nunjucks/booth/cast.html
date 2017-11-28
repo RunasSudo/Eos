@@ -20,10 +20,10 @@
 
 {% block content %}
 	<div id="cast_prompt">
-		<p>Your vote has <b>not</b> yet been cast. If you have not already done so, please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
+		<p>Your vote has <span class="superem">not</span> yet been cast. If you have not already done so, please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
 		
 		<div class="ui negative message">
-			<p>Your vote has <b>not</b> yet been cast. Please follow the instructions to continue.</p>
+			<p>Your vote has <span class="superem">not</span> yet been cast. Please follow the instructions to continue.</p>
 		</div>
 		
 		<p>This election requires you to log in to vote. If you disconnected your internet connection earlier, you must now reconnect it before proceeding.</p>

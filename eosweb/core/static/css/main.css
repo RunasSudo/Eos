@@ -26,6 +26,12 @@
 	word-wrap: break-word;
 }
 
+.superem {
+	font-weight: bold;
+	font-style: italic;
+	text-decoration: underline;
+}
+
 @media print {
 	body, html {
 		/* Default height: 100% causes blank pages */
