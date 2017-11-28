@@ -98,8 +98,7 @@
 				(function(templateUrl) {
 					$.ajax({
 						url: "{{ url_for('static', filename='nunjucks') }}/" + templateUrl,
-						dataType: "text",
-						cache: {% if eosweb.app.debug %}false{% else %}true{% endif %}
+						dataType: "text"
 					})
 						.done(function(data) {
 							try {

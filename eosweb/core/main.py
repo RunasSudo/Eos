@@ -34,7 +34,7 @@ import importlib
 import json
 import os
 
-app = flask.Flask(__name__)
+app = flask.Flask(__name__, static_folder=None)
 
 # Load config
 app.config.from_object('eosweb.core.settings')
@@ -71,6 +71,16 @@ class EosObjectJSONDecoder(flask.json.JSONDecoder):
 		return val
 app.json_encoder = EosObjectJSONEncoder
 app.json_decoder = EosObjectJSONDecoder
+
+# Patch Flask's static file sending to add no-cache
+# Allow "caching", but require revalidation via 304 Not Modified
+@app.route('/static/<path:filename>')
+def static(filename):
+	cache_timeout = app.get_send_file_max_age(filename)
+	val = flask.send_from_directory('static', filename, cache_timeout=cache_timeout)
+	val.headers['Cache-Control'] = val.headers['Cache-Control'].replace('public', 'no-cache')
+	#import pdb; pdb.set_trace()
+	return val
 
 @app.cli.command('test')
 @click.option('--prefix', default=None)
