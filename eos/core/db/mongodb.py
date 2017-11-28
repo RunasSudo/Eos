@@ -20,7 +20,7 @@ import eos.core.db
 
 class MongoDBProvider(eos.core.db.DBProvider):
 	def connect(self):
-		self.client = pymongo.MongoClient(self.db_uri)
+		self.client = pymongo.MongoClient(self.db_uri, fsync=True)
 		self.db = self.client[self.db_name]
 	
 	def get_all(self, collection):
