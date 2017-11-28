@@ -21,6 +21,10 @@
 {% block content %}
 	<p>Your vote has <b>not yet been cast</b>. Your selections are shown below. Please review your selections and ensure you are happy with them before continuing.</p>
 	
+	<div class="ui negative message">
+		<p>Your vote has <b>not yet been cast</b>. Please follow the instructions to continue.</p>
+	</div>
+	
 	{% for question in election.questions.impl %}
 		<h2>{{ loop.index }}. {{ question.prompt }}</h2>
 		{% include templates[selection_model_view_map[election.questions.__getitem__(loop.index0)._name]["selections_review"]] %}
