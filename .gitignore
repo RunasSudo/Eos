@@ -5,9 +5,6 @@
 __javascript__
 __pycache__
 refs
-bower_components
-eosjs.js
-local_settings.py
 
 \#*
 .#*

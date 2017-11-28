@@ -1,5 +1,7 @@
 ORG_NAME = 'Your Organisation Here'
 
+BASE_URI = 'http://localhost:5000'
+
 SECRET_KEY = 'xxxxxxxxxxxxxxxxxxxxxxxx'
 
 AUTH_METHODS = [
