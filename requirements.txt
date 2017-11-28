@@ -4,6 +4,7 @@ click==6.7
 coverage==4.4.1
 Flask==0.12.2
 Flask-OAuthlib==0.9.4
+gunicorn==19.7.1
 idna==2.6
 itsdangerous==0.24
 Jinja2==2.10

@@ -1,1 +1,1 @@
-web: python -m flask run --host 0.0.0.0 --port $PORT
+web: gunicorn -b 0.0.0.0:$PORT eosweb:app
