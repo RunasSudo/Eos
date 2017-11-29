@@ -197,7 +197,7 @@ def using_election(func):
 @app.route('/election/<election_id>/')
 @using_election
 def election_api_json(election):
-	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, should_protect=True)), mimetype='application/json')
+	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, should_protect=True, for_hash=('full' not in flask.request.args))), mimetype='application/json')
 
 @app.route('/election/<election_id>/view')
 @using_election
