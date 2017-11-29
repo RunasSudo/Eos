@@ -166,6 +166,17 @@ def count_election(electionid):
 	
 	election.save()
 
+@app.cli.command('verify_election')
+@click.option('--electionid', default=None)
+def verify_election(electionid):
+	if electionid is None:
+		election = Election.get_all()[0]
+	else:
+		election = Election.get_by_id(electionid)
+	
+	election.verify()
+	print('The election has passed validation')
+
 @app.context_processor
 def inject_globals():
 	return {'eos': eos, 'eosweb': eosweb, 'SHA256': eos.core.hashing.SHA256}

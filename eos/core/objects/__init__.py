@@ -111,9 +111,13 @@ class EmbeddedObjectListField(Field):
 	
 	def serialise(self, value, for_hash=False, should_protect=False):
 		# TNYI: Doesn't know how to deal with iterators like EosList
+		if value is None:
+			return None
 		return [EosObject.serialise_and_wrap(x, self.object_type, for_hash, should_protect) for x in (value.impl if isinstance(value, EosList) else value)]
 	
 	def deserialise(self, value):
+		if value is None:
+			return None
 		return EosList([EosObject.deserialise_and_unwrap(x, self.object_type) for x in value])
 
 if is_python:

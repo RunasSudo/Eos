@@ -131,6 +131,24 @@ class EGPrivateKey(EmbeddedObject):
 		
 		# Undo the encryption mapping
 		return self.public_key.m0_to_message(pt)
+	
+	def decrypt_and_prove(self, ciphertext):
+		result = EGProvedPlaintext()
+		result.ciphertext = ciphertext
+		
+		result.message = self.decrypt(ciphertext)
+		
+		# Adida 2008
+		
+		w = BigInt.crypto_random(ZERO, self.public_key.group.q - ONE) # random element in Z_q
+		result.commitmentA = pow(self.public_key.group.g, w, self.public_key.group.p)
+		result.commitmentB = pow(ciphertext.gamma, w, self.public_key.group.p)
+		
+		result.challenge = SHA256().update_obj(ciphertext).update_obj(result.commitmentA).update_obj(result.commitmentB).hash_as_bigint()
+		
+		result.response = w + self.x * result.challenge
+		
+		return result
 
 class EGCiphertext(EmbeddedObject):
 	public_key = EmbeddedObjectField(EGPublicKey)
@@ -155,6 +173,31 @@ class EGCiphertext(EmbeddedObject):
 	def is_randomness_valid(self):
 		ct = self.public_key._encrypt(self.m0, self.randomness)
 		return ct.gamma == self.gamma and ct.delta == self.delta
+
+class EGProvedPlaintext(EmbeddedObject):
+	message = EmbeddedObjectField(BigInt)
+	
+	ciphertext = EmbeddedObjectField()
+	
+	commitmentA = EmbeddedObjectField(BigInt)
+	commitmentB = EmbeddedObjectField(BigInt)
+	challenge = EmbeddedObjectField(BigInt)
+	response = EmbeddedObjectField(BigInt)
+	
+	def is_proof_valid(self):
+		gt = pow(self.ciphertext.public_key.group.g, self.response, self.ciphertext.public_key.group.p)
+		Ayc = (self.commitmentA * pow(self.ciphertext.public_key.X, self.challenge, self.ciphertext.public_key.group.p)) % self.ciphertext.public_key.group.p
+		if gt != Ayc:
+			return False
+		
+		at = pow(self.ciphertext.gamma, self.response, self.ciphertext.public_key.group.p)
+		m0 = self.ciphertext.public_key.message_to_m0(self.message)
+		m_inv = pow(m0, self.ciphertext.public_key.group.p - TWO, self.ciphertext.public_key.group.p)
+		Bbmc = (self.commitmentB * pow(self.ciphertext.delta * m_inv, self.challenge, self.ciphertext.public_key.group.p)) % self.ciphertext.public_key.group.p
+		if at != Bbmc:
+			return False
+		
+		return True
 
 # Signed ElGamal per Schnorr & Jakobssen
 class SEGPublicKey(EGPublicKey):

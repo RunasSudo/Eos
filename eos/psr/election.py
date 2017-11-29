@@ -40,11 +40,13 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 		if sk is None:
 			sk = self.recurse_parents(PSRElection).sk
 		
-		bs = BitStream.unmap(self.blocks, sk.decrypt, sk.public_key.nbits())
+		plaintexts = EosList([sk.decrypt_and_prove(self.blocks[i]) for i in range(len(self.blocks))])
+		
+		bs = BitStream.unmap(plaintexts, lambda plaintext: plaintext.message, sk.public_key.nbits())
 		m = bs.read_string()
 		obj = EosObject.deserialise_and_unwrap(EosObject.from_json(m))
 		
-		return obj
+		return plaintexts, obj
 	
 	def deaudit(self):
 		blocks_deaudit = EosList()
@@ -227,3 +229,39 @@ class PSRElection(Election):
 	
 	public_key = EmbeddedObjectField(SEGPublicKey)
 	mixing_trustees = EmbeddedObjectListField()
+	
+	def verify(self):
+		# Verify ballots
+		super().verify()
+		
+		# Verify mixes
+		for i in range(len(self.questions)):
+			for j in range(len(self.mixing_trustees)):
+				self.mixing_trustees[j].verify(i)
+		
+		# Verify decryption proofs
+		for q_num in range(len(self.questions)):
+			raw_result = self.results[q_num]
+			for answer_num in range(len(raw_result.plaintexts)):
+				# Input and output blocks:
+				plaintexts = raw_result.plaintexts[answer_num]
+				ciphertexts = self.mixing_trustees[-1].mixed_questions[q_num][answer_num].blocks
+				
+				# Verify ciphertexts
+				if len(plaintexts) != len(ciphertexts):
+					raise Exception('Different number of plaintexts and ciphertexts')
+				for i in range(len(ciphertexts)):
+					if ciphertexts[i] != plaintexts[i].ciphertext:
+						raise Exception('Ciphertext does not match mixnet output')
+				
+				# Verify decryption
+				for plaintext in plaintexts:
+					if not plaintext.is_proof_valid():
+						raise Exception('Proof of decryption is not valid')
+				
+				# Verify block combination
+				bs = BitStream.unmap(plaintexts, lambda plaintext: plaintext.message, self.public_key.nbits())
+				m = bs.read_string()
+				answer = EosObject.deserialise_and_unwrap(EosObject.from_json(m))
+				if answer != raw_result.answers[answer_num]:
+					raise Exception('Result does not match claimed decryption')

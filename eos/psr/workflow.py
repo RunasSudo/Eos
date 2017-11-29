@@ -68,7 +68,8 @@ class TaskDecryptVotes(eos.base.workflow.TaskDecryptVotes):
 		
 		for i in range(len(election.mixing_trustees[-1].mixed_questions)):
 			for encrypted_answer in election.mixing_trustees[-1].mixed_questions[i]:
-				answer = encrypted_answer.decrypt()
+				plaintexts, answer = encrypted_answer.decrypt()
+				election.results[i].plaintexts.append(plaintexts)
 				election.results[i].answers.append(answer)
 		
 		self.exit()

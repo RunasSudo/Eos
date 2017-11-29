@@ -27,7 +27,7 @@ class NullEncryptedAnswer(EncryptedAnswer):
 	answer = EmbeddedObjectField()
 	
 	def decrypt(self):
-		return self.answer
+		return None, self.answer
 
 class Ballot(EmbeddedObject):
 	#_id = UUIDField()
@@ -123,6 +123,9 @@ class PreferentialAnswer(Answer):
 	choices = ListField(IntField())
 
 class RawResult(Result):
+	_ver = StringField(default='0.2')
+	
+	plaintexts = ListField(EmbeddedObjectListField())
 	answers = EmbeddedObjectListField()
 	
 	def count(self):
@@ -143,3 +146,16 @@ class Election(TopLevelObject):
 	voters = EmbeddedObjectListField(is_hashed=False)
 	questions = EmbeddedObjectListField()
 	results = EmbeddedObjectListField(is_hashed=False)
+	
+	def verify(self):
+		#__pragma__('skip')
+		from eos.core.hashing import SHA256
+		#__pragma__('noskip')
+		election_hash = SHA256().update_obj(self).hash_as_b64()
+		
+		for voter in self.voters:
+			for vote in voter.votes:
+				if vote.ballot.election_id != self._id:
+					raise Exception('Invalid election ID on ballot')
+				if vote.ballot.election_hash != election_hash:
+					raise Exception('Invalid election hash on ballot')

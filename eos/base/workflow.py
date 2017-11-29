@@ -142,7 +142,8 @@ class TaskDecryptVotes(WorkflowTask):
 				vote = voter.votes[-1]
 				ballot = vote.ballot
 				for i in range(len(ballot.encrypted_answers)):
-					answer = ballot.encrypted_answers[i].decrypt()
+					plaintexts, answer = ballot.encrypted_answers[i].decrypt()
+					election.results[i].plaintexts.append(plaintexts)
 					election.results[i].answers.append(answer)
 		
 		self.exit()

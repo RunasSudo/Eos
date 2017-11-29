@@ -69,8 +69,12 @@ class EGTestCase(EosTestCase):
 		pt = DEFAULT_GROUP.random_Zq_element()
 		sk = EGPrivateKey.generate()
 		ct = sk.public_key.encrypt(pt)
-		m = sk.decrypt(ct)
+		proved_pt = sk.decrypt_and_prove(ct)
+		
+		m = proved_pt.message
 		self.assertEqualJSON(pt, m)
+		
+		self.assertTrue(proved_pt.is_proof_valid())
 
 class SEGTestCase(EosTestCase):
 	def test_eg(self):
@@ -148,7 +152,7 @@ class BlockEGTestCase(EosTestCase):
 		obj = self.Person(name='John Smith')
 		
 		ct = BlockEncryptedAnswer.encrypt(self.sk.public_key, obj)
-		m = ct.decrypt(self.sk)
+		_, m = ct.decrypt(self.sk)
 		
 		self.assertEqualJSON(obj, m)
 
@@ -309,6 +313,9 @@ class ElectionTestCase(EosTestCase):
 		
 		# Check the hash hasn't changed during that
 		self.assertEqual(SHA256().update_obj(election).hash_as_b64(), election_hash)
+		
+		# Check the election verifies
+		election.verify()
 
 class PVSSTestCase(EosTestCase):
 	@py_only
