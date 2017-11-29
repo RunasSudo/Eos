@@ -135,16 +135,25 @@ def setup_test_election():
 	
 	election.save()
 
-@app.cli.command('close_test_election')
-def close_test_election():
-	election = Election.get_all()[0]
+@app.cli.command('close_election')
+@click.option('--electionid', default=None)
+def close_election(electionid):
+	if electionid is None:
+		election = Election.get_all()[0]
+	else:
+		election = Election.get_by_id(electionid)
+	
 	election.workflow.get_task('eos.base.workflow.TaskCloseVoting').enter()
 	
 	election.save()
 
-@app.cli.command('count_test_election')
-def count_test_election():
-	election = Election.get_all()[0]
+@app.cli.command('count_election')
+@click.option('--electionid', default=None)
+def count_election(electionid):
+	if electionid is None:
+		election = Election.get_all()[0]
+	else:
+		election = Election.get_by_id(electionid)
 	
 	# Mix votes
 	election.workflow.get_task('eos.psr.workflow.TaskMixVotes').enter()
