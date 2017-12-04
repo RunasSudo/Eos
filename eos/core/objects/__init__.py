@@ -170,7 +170,7 @@ class DateTimeField(Field):
 class EosObjectType(type):
 	def __new__(meta, name, bases, attrs):
 		cls = type.__new__(meta, name, bases, attrs)
-		cls._name = ((cls.__module__ if is_python else meta.__next_class_module__) + '.' + cls.__name__).replace('.js.', '.').replace('.python.', '.') #TNYI: module and qualname
+		cls._name = (cls.__module__ + '.' + cls.__name__).replace('.js.', '.').replace('.python.', '.') #TNYI: qualname
 		if name != 'EosObject':
 			EosObject.objects[cls._name] = cls
 		if '_db_name' not in attrs:

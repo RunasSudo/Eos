@@ -39,6 +39,10 @@ for f in eos.js_tests; do
 	# Transcrypt bug #407
 	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__impl__(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
 	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__implpy_(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
+	
+	# Transcrypt bug #387
+	perl -0777 -pi -e 's/var __nest__ = function \(headObject, tailNames, value\) \{/var __nest__ = function (headObject, tailNames, value) { if (headObject === __all__ && value.__all__) { value.__all__.__module__ = tailNames; }/g' eos/__javascript__/$f.js
+	perl -0777 -pi -e "s/var (.*?) = __class__ \('\g1', \[(.*?)\], \{/var "'$1'" = __class__ ('"'$1'"', ["'$2'"], { __module__: __all__.__module__,/g" eos/__javascript__/$f.js
 done
 
 cp eos/__javascript__/eos.js_tests.js eosweb/core/static/js/eosjs.js
