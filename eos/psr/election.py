@@ -40,7 +40,7 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 		if sk is None:
 			sk = self.recurse_parents(PSRElection).sk
 		
-		plaintexts = EosList([sk.decrypt_and_prove(self.blocks[i]) for i in range(len(self.blocks))])
+		plaintexts = EosList([sk.decrypt_and_prove(block) for block in self.blocks])
 		
 		bs = BitStream.unmap(plaintexts, lambda plaintext: plaintext.message, sk.public_key.nbits())
 		m = bs.read_string()
@@ -51,8 +51,8 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 	def deaudit(self):
 		blocks_deaudit = EosList()
 		
-		for i in range(len(self.blocks)):
-			blocks_deaudit.append(self.blocks[i].deaudit())
+		for block in self.blocks:
+			blocks_deaudit.append(block.deaudit())
 		
 		return BlockEncryptedAnswer(blocks=blocks_deaudit)
 
@@ -78,8 +78,8 @@ class MixingTrustee(Trustee):
 		
 		sha = SHA256()
 		trustees = self.recurse_parents(Election).mixing_trustees
-		for i in range(len(trustees)):
-			sha.update_text(EosObject.to_json(MixingTrustee._fields['mixed_questions'].element_field.serialise(trustees[i].mixed_questions[question_num])))
+		for trustee in trustees:
+			sha.update_text(EosObject.to_json(MixingTrustee._fields['mixed_questions'].element_field.serialise(trustee.mixed_questions[question_num])))
 		for i in range(self._instance[1]):
 			sha.update_text(EosObject.to_json(MixingTrustee._fields['response'].element_field.serialise(trustees[i].response[question_num])))
 		return sha.hash_as_bigint()

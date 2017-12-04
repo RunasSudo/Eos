@@ -103,8 +103,7 @@ class Workflow(EmbeddedObject):
 	
 	def get_tasks(self, descriptor):
 		#yield from (task for task in self.tasks if task.satisfies(descriptor))
-		for i in range(len(self.tasks)):
-			task = self.tasks[i]
+		for task in self.tasks:
 			if task.satisfies(descriptor):
 				yield task
 	
@@ -141,10 +140,10 @@ class TaskDecryptVotes(WorkflowTask):
 			if len(voter.votes) > 0:
 				vote = voter.votes[-1]
 				ballot = vote.ballot
-				for i in range(len(ballot.encrypted_answers)):
-					plaintexts, answer = ballot.encrypted_answers[i].decrypt()
-					election.results[i].plaintexts.append(plaintexts)
-					election.results[i].answers.append(answer)
+				for q_num in range(len(ballot.encrypted_answers)):
+					plaintexts, answer = ballot.encrypted_answers[q_num].decrypt()
+					election.results[q_num].plaintexts.append(plaintexts)
+					election.results[q_num].answers.append(answer)
 		
 		self.exit()
 

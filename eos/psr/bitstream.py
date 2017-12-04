@@ -137,8 +137,8 @@ class BitStream(EosObject):
 	@classmethod
 	def unmap(cls, value, func, block_size):
 		bs = cls()
-		for i in range(len(value)):
-			bs.write(func(value[i]), block_size)
+		for item in value:
+			bs.write(func(item), block_size)
 		bs.seek(0)
 		return bs
 	
