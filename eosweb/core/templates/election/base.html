@@ -27,7 +27,7 @@
 {% block content %}
 	<h1>{{ election.name }}</h1>
 	
-	<p><small><b>Election fingerprint:</b> <span class="hash">{{ SHA256().update_obj(election).hash_as_b64() }}</span></small></p>
+	<p><small><b>{{ election.kind|title }} fingerprint:</b> <span class="hash">{{ SHA256().update_obj(election).hash_as_b64() }}</span></small></p>
 	
 	<div class="ui secondary pointing menu" id="election-tab-menu">
 		{% include eosweb.core.main.model_view_map[election.__class__]['tabs'] %}

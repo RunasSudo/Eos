@@ -140,9 +140,12 @@ class RawResult(Result):
 		return combined
 
 class Election(TopLevelObject):
+	_ver = StringField(default='0.2')
+	
 	_id = UUIDField()
 	workflow = EmbeddedObjectField(Workflow) # Once saved, we don't care what kind of workflow it is
 	name = StringField()
+	kind = StringField(default='election')
 	voters = EmbeddedObjectListField(is_hashed=False)
 	questions = EmbeddedObjectListField()
 	results = EmbeddedObjectListField(is_hashed=False)
