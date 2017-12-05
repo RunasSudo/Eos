@@ -73,7 +73,7 @@ class ObjectTestCase(EosTestCase):
 	def setUpClass(cls):
 		class Person(TopLevelObject):
 			name = StringField()
-			address = StringField(default=None)
+			address = StringField(default='Default address')
 			def say_hi(self):
 				return 'Hello! My name is ' + self.name
 		
@@ -81,10 +81,10 @@ class ObjectTestCase(EosTestCase):
 	
 	def test_basic(self):
 		person1 = self.Person(name='John', address='Address 1')
-		person2 = self.Person(name='James', address='Address 2')
+		person2 = self.Person(name='James')
 		
 		self.assertEqual(person1.address, 'Address 1')
-		self.assertEqual(person2.address, 'Address 2')
+		self.assertEqual(person2.address, 'Default address')
 		self.assertEqual(person1.say_hi(), 'Hello! My name is John')
 		self.assertEqual(person2.say_hi(), 'Hello! My name is James')
 	
