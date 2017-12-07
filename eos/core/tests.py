@@ -96,7 +96,7 @@ class ObjectTestCase(EosTestCase):
 	
 	def test_serialise(self):
 		person1 = self.Person(name='John', address='Address 1')
-		expect1 = {'_ver': '0.1', 'name': 'John', 'address': 'Address 1'}
+		expect1 = {'_ver': person1._ver, 'name': 'John', 'address': 'Address 1'}
 		#expect1a = {'type': 'eos.core.tests.ObjectTestCase.setUpClass.<locals>.Person', 'value': expect1}
 		expect1a = {'type': 'eos.core.tests.Person', 'value': expect1}
 		

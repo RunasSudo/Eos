@@ -132,8 +132,6 @@ class PreferentialAnswer(Answer):
 	choices = ListField(IntField())
 
 class RawResult(Result):
-	_ver = StringField(default='0.2')
-	
 	plaintexts = ListField(EmbeddedObjectListField())
 	answers = EmbeddedObjectListField()
 	
@@ -149,8 +147,6 @@ class RawResult(Result):
 		return combined
 
 class Election(TopLevelObject):
-	_ver = StringField(default='0.2')
-	
 	_id = UUIDField()
 	workflow = EmbeddedObjectField(Workflow) # Once saved, we don't care what kind of workflow it is
 	name = StringField()

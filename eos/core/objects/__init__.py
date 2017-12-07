@@ -222,7 +222,7 @@ class EosObject(metaclass=EosObjectType):
 	@staticmethod
 	def to_json(value):
 		if is_python:
-			return json.dumps(value, sort_keys=True)
+			return json.dumps(value, sort_keys=True, separators=(',', ':'))
 		else:
 			return lib.stringify(value)
 	
@@ -337,7 +337,7 @@ class DocumentObjectType(EosObjectType):
 		return cls
 
 class DocumentObject(EosObject, metaclass=DocumentObjectType):
-	_ver = StringField(default='0.1')
+	_ver = StringField(default='0.3')
 	
 	def __init__(self, *args, **kwargs):
 		super().__init__()
