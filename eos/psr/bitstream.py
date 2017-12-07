@@ -111,18 +111,29 @@ class BitStream(EosObject):
 		
 		return self
 	
+	def pad_by(self, padding_size, pad_at_end=False):
+		if padding_size > 0:
+			if pad_at_end:
+				# Suitable for structured data
+				self.seek(self.nbits)
+				self.write(ZERO, padding_size)
+			else:
+				# Suitable for raw numbers
+				self.nbits += padding_size
+		return self # For convenient chaining
+	
+	def pad_to(self, target_size, pad_at_end=False):
+		if self.nbits < target_size:
+			diff = target_size - self.nbits
+			self.pad_by(diff, pad_at_end)
+		return self
+	
 	# Make the size of this BitStream a multiple of the block_size
 	def multiple_of(self, block_size, pad_at_end=False):
 		if self.nbits % block_size != 0:
 			diff = block_size - (self.nbits % block_size)
-			if pad_at_end:
-				# Suitable for structured data
-				self.seek(self.nbits)
-				self.write(ZERO, diff)
-			else:
-				# Suitable for raw numbers
-				self.nbits += diff
-		return self # For convenient chaining
+			self.pad_by(diff, pad_at_end)
+		return self
 	
 	def map(self, func, block_size):
 		if self.nbits % block_size != 0:

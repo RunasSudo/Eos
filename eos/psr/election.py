@@ -27,10 +27,14 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 	blocks = EmbeddedObjectListField()
 	
 	@classmethod
-	def encrypt(cls, pk, obj):
+	def encrypt(cls, pk, obj, nbits=None):
 		pt = EosObject.to_json(EosObject.serialise_and_wrap(obj))
 		bs = BitStream()
 		bs.write_string(pt)
+		if nbits is not None:
+			if bs.nbits > nbits:
+				raise Exception('Message is too big')
+			bs.pad_to(nbits, True)
 		bs.multiple_of(pk.nbits(), True)
 		ct = bs.map(pk.encrypt, pk.nbits())
 		

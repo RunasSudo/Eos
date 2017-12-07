@@ -153,7 +153,12 @@ class BlockEGTestCase(EosTestCase):
 		
 		ct = BlockEncryptedAnswer.encrypt(self.sk.public_key, obj)
 		_, m = ct.decrypt(self.sk)
+		self.assertEqualJSON(obj, m)
 		
+		# Force another block
+		ct2 = BlockEncryptedAnswer.encrypt(self.sk.public_key, obj, (len(ct.blocks) * self.sk.public_key.nbits()) + 1)
+		self.assertEqual(len(ct2.blocks), len(ct.blocks) + 1)
+		_, m = ct2.decrypt(self.sk)
 		self.assertEqualJSON(obj, m)
 
 class MixnetTestCase(EosTestCase):
@@ -177,7 +182,7 @@ class MixnetTestCase(EosTestCase):
 		
 		def do_mixnet(mix_order):
 			# Set up mixnet
-			mixnet = RPCMixnet(mix_order)
+			mixnet = RPCMixnet(mix_order=mix_order)
 			
 			# Mix answers
 			shuffled_answers, commitments = mixnet.shuffle(answers)

@@ -35,7 +35,7 @@ class Ballot(EmbeddedObject):
 	election_id = UUIDField()
 	election_hash = StringField()
 	
-	answers = EmbeddedObjectListField(is_hashed=False)
+	answers = EmbeddedObjectListField(is_hashed=False) # Used for ballots to be audited
 	
 	def deaudit(self):
 		encrypted_answers_deaudit = EosList()
@@ -118,18 +118,22 @@ class ListChoiceQuestion(Question):
 		if len(answer.choices) == 0:
 			return '(blank votes)'
 		return ', '.join([self.choices[choice] for choice in answer.choices])
-
-class ApprovalQuestion(ListChoiceQuestion):
-	pass
+	
+	def max_bits(self):
+		answer = self.answer_type(choices=list(range(len(self.choices))))
+		return len(EosObject.to_json(EosObject.serialise_and_wrap(answer))) * 8
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
 
-class PreferentialQuestion(ListChoiceQuestion):
-	pass
+class ApprovalQuestion(ListChoiceQuestion):
+	answer_type = ApprovalAnswer
 
 class PreferentialAnswer(Answer):
 	choices = ListField(IntField())
+
+class PreferentialQuestion(ListChoiceQuestion):
+	answer_type = PreferentialAnswer
 
 class RawResult(Result):
 	plaintexts = ListField(EmbeddedObjectListField())

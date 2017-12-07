@@ -60,8 +60,9 @@ class DBInfo:
 dbinfo = DBInfo()
 
 def db_connect(db_name, db_uri='mongodb://localhost:27017/', db_type='mongodb'):
-	dbinfo.provider = eos.core.db.db_providers[db_type](db_name, db_uri)
-	dbinfo.provider.connect()
+	if is_python:
+		dbinfo.provider = eos.core.db.db_providers[db_type](db_name, db_uri)
+		dbinfo.provider.connect()
 
 # Fields
 # ======
