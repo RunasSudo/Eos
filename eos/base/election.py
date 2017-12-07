@@ -54,7 +54,16 @@ class Voter(EmbeddedObject):
 	votes = EmbeddedObjectListField()
 
 class User(EmbeddedObject):
-	pass
+	admins = []
+	
+	def matched_by(self, other):
+		return self == other
+	
+	def is_admin(self):
+		for admin in User.admins:
+			if admin.matched_by(self):
+				return True
+		return False
 
 def generate_password():
 	if is_python:

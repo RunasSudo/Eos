@@ -117,17 +117,21 @@ class Workflow(EmbeddedObject):
 # ==============
 
 class TaskConfigureElection(WorkflowTask):
+	label = 'Configure the election and freeze the election'
+	
 	#def on_enter(self):
 	#	self.status = WorkflowTask.Status.COMPLETE
-	pass
 
 class TaskOpenVoting(WorkflowTask):
+	label = 'Open voting'
 	depends_on = ['eos.base.workflow.TaskConfigureElection']
 
 class TaskCloseVoting(WorkflowTask):
+	label = 'Close voting'
 	depends_on = ['eos.base.workflow.TaskOpenVoting']
 
 class TaskDecryptVotes(WorkflowTask):
+	label = 'Decrypt the votes'
 	depends_on = ['eos.base.workflow.TaskCloseVoting']
 	
 	def on_enter(self):
@@ -148,6 +152,7 @@ class TaskDecryptVotes(WorkflowTask):
 		self.exit()
 
 class TaskReleaseResults(WorkflowTask):
+	label = 'Release the results'
 	depends_on = ['eos.base.workflow.TaskDecryptVotes']
 
 # Concrete workflows

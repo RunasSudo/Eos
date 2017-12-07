@@ -9,6 +9,11 @@ AUTH_METHODS = [
 	('reddit', 'Reddit')
 ]
 
+import eos.redditauth.election
+ADMINS = [
+	#eos.redditauth.election.RedditUser(username='xxxxxxxx')
+]
+
 # MongoDB
 
 DB_TYPE = 'mongodb'

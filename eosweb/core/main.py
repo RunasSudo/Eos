@@ -33,6 +33,7 @@ import functools
 import importlib
 import json
 import os
+import subprocess
 
 app = flask.Flask(__name__, static_folder=None)
 
@@ -49,6 +50,9 @@ if 'EOSWEB_SETTINGS' in os.environ:
 
 # Connect to database
 db_connect(app.config['DB_NAME'], app.config['DB_URI'], app.config['DB_TYPE'])
+
+# Set configs
+User.admins = app.config['ADMINS']
 
 # Make Flask's serialisation, e.g. for sessions, EosObject aware
 class EosObjectJSONEncoder(flask.json.JSONEncoder):
@@ -126,14 +130,6 @@ def setup_test_election():
 	election.questions.append(question)
 	
 	election.save()
-	
-	# Freeze election
-	election.workflow.get_task('eos.base.workflow.TaskConfigureElection').enter()
-	
-	# Open voting
-	election.workflow.get_task('eos.base.workflow.TaskOpenVoting').enter()
-	
-	election.save()
 
 @app.cli.command('close_election')
 @click.option('--electionid', default=None)
@@ -194,6 +190,15 @@ def using_election(func):
 		return func(election)
 	return wrapped
 
+def election_admin(func):
+	@functools.wraps(func)
+	def wrapped(election):
+		if 'user' in flask.session and flask.session['user'].is_admin():
+			return func(election)
+		else:
+			return flask.Response('Administrator credentials required', 403)
+	return wrapped
+
 @app.route('/election/<election_id>/')
 @using_election
 def election_api_json(election):
@@ -202,7 +207,7 @@ def election_api_json(election):
 @app.route('/election/<election_id>/view')
 @using_election
 def election_view(election):
-	return flask.render_template('election/view.html', election=election)
+	return flask.render_template('election/view/view.html', election=election)
 
 @app.route('/election/<election_id>/booth')
 @using_election
@@ -210,22 +215,28 @@ def election_booth(election):
 	selection_model_view_map = EosObject.to_json({key._name: val for key, val in model_view_map.items()}) # ewww
 	auth_methods = EosObject.to_json(app.config['AUTH_METHODS'])
 	
-	return flask.render_template('election/booth.html', election=election, selection_model_view_map=selection_model_view_map, auth_methods=auth_methods)
+	return flask.render_template('election/view/booth.html', election=election, selection_model_view_map=selection_model_view_map, auth_methods=auth_methods)
 
 @app.route('/election/<election_id>/view/questions')
 @using_election
 def election_view_questions(election):
-	return flask.render_template('election/questions.html', election=election)
+	return flask.render_template('election/view/questions.html', election=election)
 
 @app.route('/election/<election_id>/view/ballots')
 @using_election
 def election_view_ballots(election):
-	return flask.render_template('election/ballots.html', election=election)
+	return flask.render_template('election/view/ballots.html', election=election)
 
 @app.route('/election/<election_id>/view/trustees')
 @using_election
 def election_view_trustees(election):
-	return flask.render_template('election/trustees.html', election=election)
+	return flask.render_template('election/view/trustees.html', election=election)
+
+@app.route('/election/<election_id>/admin')
+@using_election
+@election_admin
+def election_admin_summary(election):
+	return flask.render_template('election/admin/admin.html', election=election)
 
 @app.route('/election/<election_id>/cast_ballot', methods=['POST'])
 @using_election

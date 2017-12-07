@@ -22,6 +22,7 @@ import eos.base.workflow
 # ==============
 
 class TaskMixVotes(WorkflowTask):
+	label = 'Mix the votes'
 	depends_on = ['eos.base.workflow.TaskCloseVoting']
 	
 	def on_enter(self):
@@ -40,6 +41,7 @@ class TaskMixVotes(WorkflowTask):
 			self.exit()
 
 class TaskProveMixes(WorkflowTask):
+	label = 'Prove the mixes'
 	depends_on = ['eos.psr.workflow.TaskMixVotes']
 	
 	def on_enter(self):
