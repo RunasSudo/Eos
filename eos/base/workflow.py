@@ -117,7 +117,7 @@ class Workflow(EmbeddedObject):
 # ==============
 
 class TaskConfigureElection(WorkflowTask):
-	label = 'Configure the election and freeze the election'
+	label = 'Freeze the election'
 	
 	#def on_enter(self):
 	#	self.status = WorkflowTask.Status.COMPLETE

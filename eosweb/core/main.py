@@ -131,37 +131,6 @@ def setup_test_election():
 	
 	election.save()
 
-@app.cli.command('close_election')
-@click.option('--electionid', default=None)
-def close_election(electionid):
-	if electionid is None:
-		election = Election.get_all()[0]
-	else:
-		election = Election.get_by_id(electionid)
-	
-	election.workflow.get_task('eos.base.workflow.TaskCloseVoting').enter()
-	
-	election.save()
-
-@app.cli.command('count_election')
-@click.option('--electionid', default=None)
-def count_election(electionid):
-	if electionid is None:
-		election = Election.get_all()[0]
-	else:
-		election = Election.get_by_id(electionid)
-	
-	# Mix votes
-	election.workflow.get_task('eos.psr.workflow.TaskMixVotes').enter()
-	# Prove mixes
-	election.workflow.get_task('eos.psr.workflow.TaskProveMixes').enter()
-	# Decrypt votes, for realsies
-	election.workflow.get_task('eos.psr.workflow.TaskDecryptVotes').enter()
-	# Release result
-	election.workflow.get_task('eos.base.workflow.TaskReleaseResults').enter()
-	
-	election.save()
-
 @app.cli.command('verify_election')
 @click.option('--electionid', default=None)
 def verify_election(electionid):
@@ -185,16 +154,16 @@ def index():
 
 def using_election(func):
 	@functools.wraps(func)
-	def wrapped(election_id):
+	def wrapped(election_id, **kwargs):
 		election = Election.get_by_id(election_id)
-		return func(election)
+		return func(election, **kwargs)
 	return wrapped
 
 def election_admin(func):
 	@functools.wraps(func)
-	def wrapped(election):
+	def wrapped(election, **kwargs):
 		if 'user' in flask.session and flask.session['user'].is_admin():
-			return func(election)
+			return func(election, **kwargs)
 		else:
 			return flask.Response('Administrator credentials required', 403)
 	return wrapped
@@ -237,6 +206,19 @@ def election_view_trustees(election):
 @election_admin
 def election_admin_summary(election):
 	return flask.render_template('election/admin/admin.html', election=election)
+
+@app.route('/election/<election_id>/admin/enter_task')
+@using_election
+@election_admin
+def election_admin_enter_task(election):
+	task = election.workflow.get_task(flask.request.args['task_name'])
+	if task.status != WorkflowTask.Status.READY:
+		return flask.Response('Task is not yet ready or has already exited', 409)
+	
+	task.enter()
+	election.save()
+	
+	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
 
 @app.route('/election/<election_id>/cast_ballot', methods=['POST'])
 @using_election

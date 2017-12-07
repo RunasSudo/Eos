@@ -55,10 +55,16 @@
 		<p>The administrator of this {{ election.kind }} has not yet finished setting the election parameters. The details of the {{ election.kind }} may change at any time.</p>
 	{% endif %}
 	
-	{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
+	{% if (session.user and session.user.is_admin()) or election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
 		<h2>Results</h2>
 		
-		<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.</p>
+		{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
+			<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.</p>
+		{% else %}
+			<div class="ui warning message">
+				This is a preview of the election results, shown only to you, the election administrator. To publicly release the results, you must do so from the <a href="{{ url_for('election_admin_summary', election_id=election._id) }}">‘Administrate this election’</a> tab.
+			</div>
+		{% endif %}
 		
 		{% for question in election.questions %}
 			<h3>{{ loop.index }}. {{ question.prompt }}</h2>

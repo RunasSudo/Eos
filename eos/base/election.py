@@ -109,24 +109,24 @@ class Question(EmbeddedObject):
 class Result(EmbeddedObject):
 	pass
 
-class ApprovalQuestion(Question):
+class ListChoiceQuestion(Question):
 	choices = ListField(StringField())
 	min_choices = IntField()
 	max_choices = IntField()
 	
 	def pretty_answer(self, answer):
+		if len(answer.choices) == 0:
+			return '(blank votes)'
 		return ', '.join([self.choices[choice] for choice in answer.choices])
+
+class ApprovalQuestion(ListChoiceQuestion):
+	pass
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
 
-class PreferentialQuestion(Question):
-	choices = ListField(StringField())
-	min_choices = IntField()
-	max_choices = IntField()
-	
-	def pretty_answer(self, answer):
-		return ', '.join([self.choices[choice] for choice in answer.choices])
+class PreferentialQuestion(ListChoiceQuestion):
+	pass
 
 class PreferentialAnswer(Answer):
 	choices = ListField(IntField())

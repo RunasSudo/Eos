@@ -32,7 +32,7 @@
 	<div class="ui secondary pointing menu" id="election-tab-menu">
 		{% include eosweb.core.main.model_view_map[election.__class__]['tabs'] %}
 		{% if session.user and session.user.is_admin() %}
-			<a href="{{ url_for('election_admin_summary', election_id=election._id) }}" class="election-tab-ajax item{% if request.endpoint == 'election_admin' %} active{% endif %} right"><i class="configure icon"></i> Administrate this election</a>
+			<a href="{{ url_for('election_admin_summary', election_id=election._id) }}" class="election-tab-ajax item{% if request.endpoint == 'election_admin_summary' %} active{% endif %} right"><i class="configure icon"></i> Administrate this election</a>
 		{% endif %}
 	</div>
 	<div class="ui container" id="election-tab-content">

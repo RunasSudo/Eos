@@ -126,20 +126,6 @@ You should now be able to see the election in the web interface.
 
 Exit the Flask shell by pressing Ctrl+D.
 
-## Closing and counting an election
+## Administrating an election
 
-To close an election, helper commands are available, so use of the Flask shell is not required. Locally, run:
-
-    FLASK_APP=eosweb EOSWEB_SETTINGS=$PWD/local_settings.py python -m flask close_election
-
-On Heroku, run:
-
-    heroku run FLASK_APP=eosweb python -m flask close_election
-
-This will close the first election found. If there are multiple elections, you can select which one to close by passing the `--electionid` flag, for example:
-
-    FLASK_APP=eosweb EOSWEB_SETTINGS=$PWD/local_settings.py python -m flask close_election --electionid 01234567-89ab-cdef-ghij-klmnopqrstuv
-
-Repeat this process, but substitute `count_election` for `close_election` to count the ballots and release the results.
-
-You should now be able to see the results in the web interface.
+Provided that you are logged in using an administrator account (defined using the `ADMINS` option in *local_settings.py*), you will be able to further administer the election from the ‘Administrate this election’ tab in the web interface.

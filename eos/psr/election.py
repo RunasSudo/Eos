@@ -175,9 +175,7 @@ class MixingTrustee(Trustee):
 		return False
 
 class InternalMixingTrustee(MixingTrustee):
-	def __init__(self, **kwargs):
-		super().__init__(**kwargs)
-		self.mixnets = []
+	mixnets = EmbeddedObjectListField(is_protected=True)
 	
 	def mix_votes(self, question=0):
 		__pragma__('skip')
@@ -187,7 +185,7 @@ class InternalMixingTrustee(MixingTrustee):
 		election = self.recurse_parents('eos.base.election.Election')
 		index = self._instance[1]
 		
-		self.mixnets.append(RPCMixnet(index))
+		self.mixnets.append(RPCMixnet(mix_order=index))
 		if index > 0:
 			orig_answers = election.mixing_trustees[index - 1].mixed_questions[question]
 		else:
