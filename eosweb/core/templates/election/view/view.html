@@ -55,7 +55,7 @@
 		<p>The administrator of this {{ election.kind }} has not yet finished setting the election parameters. The details of the {{ election.kind }} may change at any time.</p>
 	{% endif %}
 	
-	{% if (session.user and session.user.is_admin()) or election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
+	{% if (session.user and session.user.is_admin() and election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.READY) or election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
 		<h2>Results</h2>
 		
 		{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
