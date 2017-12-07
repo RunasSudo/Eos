@@ -216,8 +216,7 @@ class MixnetTestCase(EosTestCase):
 class ElectionTestCase(EosTestCase):
 	@classmethod
 	def setUpClass(cls):
-		db_connect('test')
-		dbinfo.provider.reset_db()
+		cls.db_connect_and_reset()
 	
 	def do_task_assert(self, election, task, next_task):
 		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)

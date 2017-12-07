@@ -17,6 +17,7 @@
 from eos.core.bigint import *
 from eos.core.objects import *
 from eos.core.hashing import *
+from eos.core.tasks import *
 
 # Common library things
 # ===================
@@ -25,6 +26,11 @@ class EosTestCase:
 	@classmethod
 	def setUpClass(cls):
 		pass
+	
+	@classmethod
+	def db_connect_and_reset(cls):
+		db_connect('test')
+		dbinfo.provider.reset_db()
 	
 	def assertTrue(self, a):
 		if is_python:
@@ -120,3 +126,37 @@ class BigIntTestCase(EosTestCase):
 		self.assertEqual(pow(bigint1, bigint2), 5**10)
 		self.assertEqual(pow(bigint1, bigint2, bigint3), (5**10)%15)
 		self.assertEqual(pow(bigint1, 10, 15), (5**10)%15)
+
+class TaskTestCase(EosTestCase):
+	@classmethod
+	def setUpClass(cls):
+		cls.db_connect_and_reset()
+	
+	def test_normal(self):
+		class TaskNormal(Task):
+			result = StringField()
+			def _run(self):
+				self.messages.append('Hello World')
+				self.result = 'Success'
+		
+		task = TaskNormal(run_strategy=DirectRunStrategy())
+		task.save()
+		task.run()
+		
+		self.assertEqual(task.status, Task.Status.COMPLETE)
+		self.assertEqual(len(task.messages), 1)
+		self.assertEqual(task.messages[0], 'Hello World')
+		self.assertEqual(task.result, 'Success')
+	
+	def test_error(self):
+		class TaskError(Task):
+			def _run(self):
+				raise Exception('Test exception')
+		
+		task = TaskError(run_strategy=DirectRunStrategy())
+		task.save()
+		task.run()
+		
+		self.assertEqual(task.status, Task.Status.FAILED)
+		self.assertEqual(len(task.messages), 1)
+		self.assertTrue('Test exception' in task.messages[0])

@@ -25,9 +25,10 @@ except:
 # Libraries
 # =========
 
+import eos.core.db
+
 if is_python:
 	__pragma__('skip')
-	import eos.core.db
 	import eos.core.db.mongodb
 	import eos.core.db.postgresql
 	
@@ -54,7 +55,7 @@ else:
 
 class DBInfo:
 	def __init__(self):
-		self.provider = None
+		self.provider = eos.core.db.DummyProvider(None, None)
 
 dbinfo = DBInfo()
 
