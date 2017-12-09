@@ -35,13 +35,13 @@ class Ballot(EmbeddedObject):
 	election_id = UUIDField()
 	election_hash = StringField()
 	
-	answers = EmbeddedObjectListField(is_hashed=False)
+	answers = EmbeddedObjectListField(is_hashed=False) # Used for ballots to be audited
 	
 	def deaudit(self):
 		encrypted_answers_deaudit = EosList()
 		
-		for i in range(len(self.encrypted_answers)):
-			encrypted_answers_deaudit.append(self.encrypted_answers[i].deaudit())
+		for encrypted_answer in self.encrypted_answers:
+			encrypted_answers_deaudit.append(encrypted_answer.deaudit())
 		
 		return Ballot(encrypted_answers=encrypted_answers_deaudit, election_id=self.election_id, election_hash=self.election_hash)
 
@@ -54,7 +54,16 @@ class Voter(EmbeddedObject):
 	votes = EmbeddedObjectListField()
 
 class User(EmbeddedObject):
-	pass
+	admins = []
+	
+	def matched_by(self, other):
+		return self == other
+	
+	def is_admin(self):
+		for admin in User.admins:
+			if admin.matched_by(self):
+				return True
+		return False
 
 def generate_password():
 	if is_python:
@@ -100,31 +109,33 @@ class Question(EmbeddedObject):
 class Result(EmbeddedObject):
 	pass
 
-class ApprovalQuestion(Question):
+class ListChoiceQuestion(Question):
 	choices = ListField(StringField())
 	min_choices = IntField()
 	max_choices = IntField()
 	
 	def pretty_answer(self, answer):
-		return ', '.join([self.choices[answer.choices[i]] for i in range(len(answer.choices))])
+		if len(answer.choices) == 0:
+			return '(blank votes)'
+		return ', '.join([self.choices[choice] for choice in answer.choices])
+	
+	def max_bits(self):
+		answer = self.answer_type(choices=list(range(len(self.choices))))
+		return len(EosObject.to_json(EosObject.serialise_and_wrap(answer))) * 8
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
 
-class PreferentialQuestion(Question):
-	choices = ListField(StringField())
-	min_choices = IntField()
-	max_choices = IntField()
-	
-	def pretty_answer(self, answer):
-		return ', '.join([self.choices[answer.choices[i]] for i in range(len(answer.choices))])
+class ApprovalQuestion(ListChoiceQuestion):
+	answer_type = ApprovalAnswer
 
 class PreferentialAnswer(Answer):
 	choices = ListField(IntField())
 
+class PreferentialQuestion(ListChoiceQuestion):
+	answer_type = PreferentialAnswer
+
 class RawResult(Result):
-	_ver = StringField(default='0.2')
-	
 	plaintexts = ListField(EmbeddedObjectListField())
 	answers = EmbeddedObjectListField()
 	
@@ -143,6 +154,7 @@ class Election(TopLevelObject):
 	_id = UUIDField()
 	workflow = EmbeddedObjectField(Workflow) # Once saved, we don't care what kind of workflow it is
 	name = StringField()
+	kind = StringField(default='election')
 	voters = EmbeddedObjectListField(is_hashed=False)
 	questions = EmbeddedObjectListField()
 	results = EmbeddedObjectListField(is_hashed=False)

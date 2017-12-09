@@ -25,9 +25,10 @@ except:
 # Libraries
 # =========
 
+import eos.core.db
+
 if is_python:
 	__pragma__('skip')
-	import eos.core.db
 	import eos.core.db.mongodb
 	import eos.core.db.postgresql
 	
@@ -54,13 +55,14 @@ else:
 
 class DBInfo:
 	def __init__(self):
-		self.provider = None
+		self.provider = eos.core.db.DummyProvider(None, None)
 
 dbinfo = DBInfo()
 
 def db_connect(db_name, db_uri='mongodb://localhost:27017/', db_type='mongodb'):
-	dbinfo.provider = eos.core.db.db_providers[db_type](db_name, db_uri)
-	dbinfo.provider.connect()
+	if is_python:
+		dbinfo.provider = eos.core.db.db_providers[db_type](db_name, db_uri)
+		dbinfo.provider.connect()
 
 # Fields
 # ======
@@ -170,7 +172,7 @@ class DateTimeField(Field):
 class EosObjectType(type):
 	def __new__(meta, name, bases, attrs):
 		cls = type.__new__(meta, name, bases, attrs)
-		cls._name = ((cls.__module__ if is_python else meta.__next_class_module__) + '.' + cls.__name__).replace('.js.', '.').replace('.python.', '.') #TNYI: module and qualname
+		cls._name = (cls.__module__ + '.' + cls.__name__).replace('.js.', '.').replace('.python.', '.') #TNYI: qualname
 		if name != 'EosObject':
 			EosObject.objects[cls._name] = cls
 		if '_db_name' not in attrs:
@@ -221,7 +223,7 @@ class EosObject(metaclass=EosObjectType):
 	@staticmethod
 	def to_json(value):
 		if is_python:
-			return json.dumps(value, sort_keys=True)
+			return json.dumps(value, sort_keys=True, separators=(',', ':'))
 		else:
 			return lib.stringify(value)
 	
@@ -297,7 +299,17 @@ class DocumentObjectType(EosObjectType):
 			val = getattr(cls, attr)
 			if isinstance(val, Field):
 				val._instance = (cls, name)
-				fields[attr] = val
+				
+				# Transcrypt does funky things with aliases, which are usually helpful, but not here
+				if not is_python and attr.startswith('py_'):
+					real_attr = attr[3:]
+				else:
+					real_attr = attr
+				
+				val.real_name = real_attr # The JSON/Python name
+				val.internal_name = attr # The name that gets passed in as kwargs in Javascript
+				
+				fields[real_attr] = val
 				delattr(cls, attr)
 		cls._fields = fields
 		
@@ -316,7 +328,9 @@ class DocumentObjectType(EosObjectType):
 				return property(field_getter, field_setter)
 			
 			for attr, val in fields.items():
-				setattr(cls, attr, make_property(attr, val))
+				setattr(cls, val.real_name, make_property(val.real_name, val))
+				#if val.real_name != val.internal_name:
+				#	setattr(cls, val.internal_name, make_property(val.real_name, val))
 		else:
 			# Handled at instance level
 			pass
@@ -324,7 +338,7 @@ class DocumentObjectType(EosObjectType):
 		return cls
 
 class DocumentObject(EosObject, metaclass=DocumentObjectType):
-	_ver = StringField(default='0.1')
+	_ver = StringField(default='0.3')
 	
 	def __init__(self, *args, **kwargs):
 		super().__init__()
@@ -348,24 +362,29 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 							if not value._inited:
 								value.post_init()
 					return (field_getter, field_setter)
-				prop = make_property(attr, val)
+				prop = make_property(val.real_name, val)
 				# TNYI: No support for property()
-				Object.defineProperty(self, attr, {
+				Object.defineProperty(self, val.real_name, {
 					'get': prop[0],
 					'set': prop[1]
 				})
+				if val.real_name != val.internal_name:
+					# Allow reference as e.g. both obj.py_name (from Python code) and obj.name (from JS templates)
+					Object.defineProperty(self, val.internal_name, {
+						'get': prop[0],
+						'set': prop[1]
+					})
 			
-			if attr in kwargs:
-				setattr(self, attr, kwargs[attr])
+			if val.internal_name in kwargs:
+				setattr(self, val.real_name, kwargs[val.internal_name])
 			else:
 				default = val.default
 				if default is not None and callable(default):
 					default = default()
-				setattr(self, attr, default)
+				setattr(self, val.real_name, default)
 	
-	# TNYI: Strange things happen with py_ attributes
 	def serialise(self, for_hash=False, should_protect=False):
-		return {(attr[3:] if attr.startswith('py_') else attr): val.serialise(getattr(self, attr), for_hash, should_protect) for attr, val in self._fields.items() if ((val.is_hashed or not for_hash) and (not should_protect or not val.is_protected))}
+		return {val.real_name: val.serialise(getattr(self, val.real_name), for_hash, should_protect) for attr, val in self._fields.items() if ((val.is_hashed or not for_hash) and (not should_protect or not val.is_protected))}
 	
 	@classmethod
 	def deserialise(cls, value):
@@ -374,9 +393,8 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 		
 		attrs = {}
 		for attr, val in cls._fields.items():
-			json_attr = attr[3:] if attr.startswith('py_') else attr
-			if json_attr in value:
-				attrs[attr] = val.deserialise(value[json_attr])
+			if attr in value:
+				attrs[val.internal_name] = val.deserialise(value[val.real_name])
 		return cls(**attrs)
 
 class TopLevelObject(DocumentObject):

@@ -43,13 +43,13 @@
 		<div class="ui hidden error message" id="error_invalid_id">
 			<i class="close icon"></i>
 			<div class="header">Error</div>
-			<p>The log in details you entered are not valid for this election. Please check your username and password and try again. If the issue persists, contact your election administrator.</p>
+			<p>The log in details you entered are not valid for this {{ election.kind }}. Please check your username and password and try again. If the issue persists, contact your {{ election.kind }} administrator.</p>
 		</div>
 		
 		<div class="ui hidden error message" id="error_unknown">
 			<i class="close icon"></i>
 			<div class="header">Error</div>
-			<p>An unknown error occurred while attempting to cast your ballot. You may click the ‘Cast ballot’ button below to try again. If the issue persists, contact your election administrator.</p>
+			<p>An unknown error occurred while attempting to cast your ballot. You may click the ‘Cast ballot’ button below to try again. If the issue persists, contact your {{ election.kind }} administrator.</p>
 			<p id="error_unknown_tech"></p>
 		</div>
 	</div>

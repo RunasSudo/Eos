@@ -27,10 +27,14 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 	blocks = EmbeddedObjectListField()
 	
 	@classmethod
-	def encrypt(cls, pk, obj):
+	def encrypt(cls, pk, obj, nbits=None):
 		pt = EosObject.to_json(EosObject.serialise_and_wrap(obj))
 		bs = BitStream()
 		bs.write_string(pt)
+		if nbits is not None:
+			if bs.nbits > nbits:
+				raise Exception('Message is too big')
+			bs.pad_to(nbits, True)
 		bs.multiple_of(pk.nbits(), True)
 		ct = bs.map(pk.encrypt, pk.nbits())
 		
@@ -40,7 +44,7 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 		if sk is None:
 			sk = self.recurse_parents(PSRElection).sk
 		
-		plaintexts = EosList([sk.decrypt_and_prove(self.blocks[i]) for i in range(len(self.blocks))])
+		plaintexts = EosList([sk.decrypt_and_prove(block) for block in self.blocks])
 		
 		bs = BitStream.unmap(plaintexts, lambda plaintext: plaintext.message, sk.public_key.nbits())
 		m = bs.read_string()
@@ -51,8 +55,8 @@ class BlockEncryptedAnswer(EncryptedAnswer):
 	def deaudit(self):
 		blocks_deaudit = EosList()
 		
-		for i in range(len(self.blocks)):
-			blocks_deaudit.append(self.blocks[i].deaudit())
+		for block in self.blocks:
+			blocks_deaudit.append(block.deaudit())
 		
 		return BlockEncryptedAnswer(blocks=blocks_deaudit)
 
@@ -78,8 +82,8 @@ class MixingTrustee(Trustee):
 		
 		sha = SHA256()
 		trustees = self.recurse_parents(Election).mixing_trustees
-		for i in range(len(trustees)):
-			sha.update_text(EosObject.to_json(MixingTrustee._fields['mixed_questions'].element_field.serialise(trustees[i].mixed_questions[question_num])))
+		for trustee in trustees:
+			sha.update_text(EosObject.to_json(MixingTrustee._fields['mixed_questions'].element_field.serialise(trustee.mixed_questions[question_num])))
 		for i in range(self._instance[1]):
 			sha.update_text(EosObject.to_json(MixingTrustee._fields['response'].element_field.serialise(trustees[i].response[question_num])))
 		return sha.hash_as_bigint()
@@ -175,9 +179,7 @@ class MixingTrustee(Trustee):
 		return False
 
 class InternalMixingTrustee(MixingTrustee):
-	def __init__(self, **kwargs):
-		super().__init__(**kwargs)
-		self.mixnets = []
+	mixnets = EmbeddedObjectListField(is_protected=True)
 	
 	def mix_votes(self, question=0):
 		__pragma__('skip')
@@ -187,7 +189,7 @@ class InternalMixingTrustee(MixingTrustee):
 		election = self.recurse_parents('eos.base.election.Election')
 		index = self._instance[1]
 		
-		self.mixnets.append(RPCMixnet(index))
+		self.mixnets.append(RPCMixnet(mix_order=index))
 		if index > 0:
 			orig_answers = election.mixing_trustees[index - 1].mixed_questions[question]
 		else:

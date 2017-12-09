@@ -25,17 +25,17 @@
 		{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
 			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
 				{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status < Status.EXITED %}
-					<p><button class="ui huge button">Voting in this election has closed</button></p>
+					<p><button class="ui huge button">Voting in this {{ election.kind }} has closed</button></p>
 				{% endif %}
 			{% else %}
-				<p><a href="{{ url_for('election_booth', election_id=election._id) }}" class="ui huge primary button">Click here to vote in this election</a></p>
+				<p><a href="{{ url_for('election_booth', election_id=election._id) }}" class="ui huge primary button">Click here to vote in this {{ election.kind }}</a></p>
 			{% endif %}
 		{% else %}
-			<p><button class="ui huge button">Voting in this election has not yet opened</button></p>
+			<p><button class="ui huge button">Voting in this {{ election.kind }} has not yet opened</button></p>
 		{% endif %}
 		
 		<p>
-			Voting in this election
+			Voting in this {{ election.kind }}
 			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
 				opened at {{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
 			{% else %}
@@ -50,15 +50,21 @@
 			at the administrators' discretion.
 		</p>
 	{% else %}
-		<p><button class="ui huge button">This election is not yet ready for voting</button></p>
+		<p><button class="ui huge button">This {{ election.kind }} is not yet ready for voting</button></p>
 		
-		<p>The administrator of this election has not yet finished setting the election parameters. The details of the election may change at any time.</p>
+		<p>The administrator of this {{ election.kind }} has not yet finished setting the election parameters. The details of the {{ election.kind }} may change at any time.</p>
 	{% endif %}
 	
-	{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
+	{% if (session.user and session.user.is_admin() and election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.READY) or election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
 		<h2>Results</h2>
 		
-		<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.</p>
+		{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
+			<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.</p>
+		{% else %}
+			<div class="ui warning message">
+				This is a preview of the election results, shown only to you, the election administrator. To publicly release the results, you must do so from the <a href="{{ url_for('election_admin_summary', election_id=election._id) }}">‘Administrate this election’</a> tab.
+			</div>
+		{% endif %}
 		
 		{% for question in election.questions %}
 			<h3>{{ loop.index }}. {{ question.prompt }}</h2>
@@ -69,10 +75,10 @@
 	{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status < Status.EXITED %}
 		<h2>Voting booth</h2>
 		
-		<p>Voting in this election has not yet begun. If you would like to preview the voting booth, <a href="{{ url_for('election_booth', election_id=election._id) }}">click here</a>. Note that you will not be able to cast any ballots until voting opens.</p>
+		<p>Voting in this {{ election.kind }} has not yet begun. If you would like to preview the voting booth, <a href="{{ url_for('election_booth', election_id=election._id) }}">click here</a>. Note that you will not be able to cast any ballots until voting opens.</p>
 	{% elif election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
 		<h2>Voting booth</h2>
 		
-		<p>Voting in this election has concluded. If you would like to review the voting booth, <a href="{{ url_for('election_booth', election_id=election._id) }}">click here</a>. Note that you will no longer be able to cast any ballots.</p>
+		<p>Voting in this {{ election.kind }} has concluded. If you would like to review the voting booth, <a href="{{ url_for('election_booth', election_id=election._id) }}">click here</a>. Note that you will no longer be able to cast any ballots.</p>
 	{% endif %}
 {% endblock %}

@@ -103,8 +103,7 @@ class Workflow(EmbeddedObject):
 	
 	def get_tasks(self, descriptor):
 		#yield from (task for task in self.tasks if task.satisfies(descriptor))
-		for i in range(len(self.tasks)):
-			task = self.tasks[i]
+		for task in self.tasks:
 			if task.satisfies(descriptor):
 				yield task
 	
@@ -118,17 +117,21 @@ class Workflow(EmbeddedObject):
 # ==============
 
 class TaskConfigureElection(WorkflowTask):
+	label = 'Freeze the election'
+	
 	#def on_enter(self):
 	#	self.status = WorkflowTask.Status.COMPLETE
-	pass
 
 class TaskOpenVoting(WorkflowTask):
+	label = 'Open voting'
 	depends_on = ['eos.base.workflow.TaskConfigureElection']
 
 class TaskCloseVoting(WorkflowTask):
+	label = 'Close voting'
 	depends_on = ['eos.base.workflow.TaskOpenVoting']
 
 class TaskDecryptVotes(WorkflowTask):
+	label = 'Decrypt the votes'
 	depends_on = ['eos.base.workflow.TaskCloseVoting']
 	
 	def on_enter(self):
@@ -141,14 +144,15 @@ class TaskDecryptVotes(WorkflowTask):
 			if len(voter.votes) > 0:
 				vote = voter.votes[-1]
 				ballot = vote.ballot
-				for i in range(len(ballot.encrypted_answers)):
-					plaintexts, answer = ballot.encrypted_answers[i].decrypt()
-					election.results[i].plaintexts.append(plaintexts)
-					election.results[i].answers.append(answer)
+				for q_num in range(len(ballot.encrypted_answers)):
+					plaintexts, answer = ballot.encrypted_answers[q_num].decrypt()
+					election.results[q_num].plaintexts.append(plaintexts)
+					election.results[q_num].answers.append(answer)
 		
 		self.exit()
 
 class TaskReleaseResults(WorkflowTask):
+	label = 'Release the results'
 	depends_on = ['eos.base.workflow.TaskDecryptVotes']
 
 # Concrete workflows

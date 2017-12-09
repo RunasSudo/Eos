@@ -23,13 +23,13 @@
 	
 	<div class="ui success message">
 		<div class="header">Smart ballot tracker</div>
-		<p>This smart ballot tracker confirms that {{ voter.py_name }} cast a vote in the election {{ election.py_name }} at {{ vote.cast_at }}.</p>
+		<p>This smart ballot tracker confirms that {{ voter.name }} cast a vote in the election {{ election.py_name }} at {{ vote.cast_at }}.</p>
 		<p>Ballot fingerprint: <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span></p>
 	</div>
 	
 	<p>Please check that the ballot fingerprint above matches the ballot fingerprint you recorded earlier.</p>
 	
-	<p>To confirm that your ballot was cast correctly, please go to the <a href="{{ election_base_url }}view/ballots">‘Voters and ballots’ page</a> for the election or click ‘Finish’, and confirm that the above ballot fingerprint appears next to your name.</p>
+	<p>To confirm that your ballot was cast correctly, please go to the <a href="{{ election_base_url }}view/ballots">‘Voters and ballots’ page</a> for the {{ election.kind }} or click ‘Finish’, and confirm that the above ballot fingerprint appears next to your name.</p>
 {% endblock %}
 
 {% block buttons %}

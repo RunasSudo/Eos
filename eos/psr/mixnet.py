@@ -19,13 +19,19 @@ from eos.core.objects import *
 from eos.core.hashing import *
 from eos.psr.election import *
 
-class RPCMixnet:
-	def __init__(self, mix_order):
-		self.mix_order = mix_order
-		
-		self.is_left = (self.mix_order % 2 == 0)
-		
-		self.params = []
+class RPCMixnetParam(EmbeddedObject):
+	permutation = IntField()
+	reencryption = EmbeddedObjectListField(BigInt)
+	rand_a = EmbeddedObjectField(BigInt)
+	rand_b = EmbeddedObjectField(BigInt)
+
+class RPCMixnet(EmbeddedObject):
+	mix_order = IntField()
+	params = EmbeddedObjectListField(RPCMixnetParam)
+	
+	@property
+	def is_left(self):
+		return (self.mix_order % 2 == 0)
 	
 	def random_permutation(self, n):
 		permutation = list(range(n))
@@ -57,21 +63,21 @@ class RPCMixnet:
 			# And shuffle it to the new position
 			shuffled_answers[permutations[i]] = BlockEncryptedAnswer(blocks=shuffled_blocks)
 			# Record the parameters
-			permutations_and_reenc.append([permutations[i], block_reencryptions, block.public_key.group.random_Zq_element(), block.public_key.group.random_Zq_element()])
+			permutations_and_reenc.append(RPCMixnetParam(permutation=permutations[i], reencryption=block_reencryptions, rand_a=block.public_key.group.random_Zq_element(), rand_b=block.public_key.group.random_Zq_element()))
 		
 		commitments = []
 		if self.is_left:
 			for i in range(len(permutations_and_reenc)):
 				val = permutations_and_reenc[i]
-				val_obj = MixChallengeResponse(challenge_index=i, response_index=val[0], reenc=val[1], rand=val[2])
+				val_obj = MixChallengeResponse(challenge_index=i, response_index=val.permutation, reenc=val.reencryption, rand=val.rand_a)
 				commitments.append(SHA256().update_obj(val_obj).hash_as_bigint())
 		else:
 			for i in range(len(permutations_and_reenc)):
 				# Find the answer that went to 'i'
-				idx = next(idx for idx in range(len(permutations_and_reenc)) if permutations_and_reenc[idx][0] == i)
+				idx = next(idx for idx in range(len(permutations_and_reenc)) if permutations_and_reenc[idx].permutation == i)
 				val = permutations_and_reenc[idx]
 				
-				val_obj = MixChallengeResponse(challenge_index=i, response_index=idx, reenc=val[1], rand=val[3])
+				val_obj = MixChallengeResponse(challenge_index=i, response_index=idx, reenc=val.reencryption, rand=val.rand_b)
 				commitments.append(SHA256().update_obj(val_obj).hash_as_bigint())
 		
 		self.params = permutations_and_reenc
@@ -80,8 +86,8 @@ class RPCMixnet:
 	def challenge(self, i):
 		if self.is_left:
 			val = self.params[i]
-			return MixChallengeResponse(challenge_index=i, response_index=val[0], reenc=val[1], rand=val[2])
+			return MixChallengeResponse(challenge_index=i, response_index=val.permutation, reenc=val.reencryption, rand=val.rand_a)
 		else:
-			idx = next(idx for idx in range(len(self.params)) if self.params[idx][0] == i)
+			idx = next(idx for idx in range(len(self.params)) if self.params[idx].permutation == i)
 			val = self.params[idx]
-			return MixChallengeResponse(challenge_index=i, response_index=idx, reenc=val[1], rand=val[3])
+			return MixChallengeResponse(challenge_index=i, response_index=idx, reenc=val.reencryption, rand=val.rand_b)

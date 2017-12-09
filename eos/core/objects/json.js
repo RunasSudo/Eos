@@ -53,7 +53,7 @@ function stringify(parent, key, node, level) {
 			var item = stringify(node, i, node[i], level+1) || JSON.stringify(null);
 			out.push(item);
 		}
-		return '[' + out.join(', ') + ']';
+		return '[' + out.join(',') + ']';
 	} else {
 		if (seen.indexOf(node) !== -1) {
 			throw new TypeError('Converting circular structure to JSON');
@@ -71,11 +71,11 @@ function stringify(parent, key, node, level) {
 				continue;
 			}
 			
-			var keyValue = JSON.stringify(key) + ': ' + value;
+			var keyValue = JSON.stringify(key) + ':' + value;
 			out.push(keyValue);
 		}
 		seen.splice(seen.indexOf(node), 1);
-		return '{' + out.join(', ') + '}';
+		return '{' + out.join(',') + '}';
 	}
 };
 

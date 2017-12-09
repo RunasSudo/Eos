@@ -29,7 +29,7 @@
 			<a href="https://github.com/RunasSudo/Eos" class="item">Source Code</a>
 			{% if session.user %}
 				<div class="ui simple dropdown item right">
-					{{ session.user.name }} <i class="dropdown icon"></i>
+					<i class="{% if session.user.is_admin() %}legal{% else %}user circle{% endif %} icon"></i> {{ session.user.name }} <i class="dropdown icon"></i>
 					<div class="menu">
 						<a href="{{ url_for('logout') }}?next={{ request.full_path|urlencode }}" class="item">Log out</a>
 					</div>

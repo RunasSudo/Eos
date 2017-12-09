@@ -1,3 +1,5 @@
+{% extends 'election/base.html' %}
+
 {#
 	Eos - Verifiable elections
 	Copyright © 2017  RunasSudo (Yingtong Li)
@@ -16,11 +18,20 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-<table class="ui celled table">
-	{% for answer, num in election.results[loop.index0].count() %}
-		<tr>
-			<td class="fourteen wide">{{ question.pretty_answer(answer) }}</td>
-			<td class="two wide">{{ num }}</td>
-		</tr>
-	{% endfor %}
-</table>
+{% block electioncontent %}
+	<h2>Next tasks</h2>
+	
+	<ul>
+		{% for task in election.workflow.tasks %}
+			{% if task.status == eos.base.workflow.WorkflowTask.Status.READY %}
+				<li><a href="{{ url_for('election_admin_enter_task', election_id=election._id, task_name=task._name) }}" onclick="return confirmTask(this);">{{ task.label }}</a></li>
+			{% endif %}
+		{% endfor %}
+	</ul>
+	
+	<script>
+		function confirmTask(taskLink) {
+			return window.confirm("Are you sure you want to execute the task \"" + taskLink.innerText + "\"? This action is irreversible.");
+		}
+	</script>
+{% endblock %}

@@ -19,8 +19,8 @@
 <table class="ui celled table">
 	{% for answer, num in election.results[loop.index0].count() %}
 		<tr>
-			<td>{{ question.pretty_answer(answer) }}</td>
-			<td>{{ num }}</td>
+			<td class="fourteen wide">{{ question.pretty_answer(answer) }}</td>
+			<td class="two wide">{{ num }}</td>
 		</tr>
 	{% endfor %}
 </table>

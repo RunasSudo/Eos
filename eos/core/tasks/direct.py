@@ -14,42 +14,6 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-db_providers = {}
+from eos.core.tasks import *
 
-class DBProvider:
-	def __init__(self, db_name, db_uri):
-		self.db_name = db_name
-		self.db_uri = db_uri
-	
-	def connect(self):
-		raise Exception('Not implemented')
-	
-	def get_all(self, collection):
-		raise Exception('Not implemented')
-	
-	def get_by_id(self, collection, _id):
-		raise Exception('Not implemented')
-	
-	def update_by_id(self, collection, _id, value):
-		raise Exception('Not implemented')
-	
-	def reset_db(self):
-		raise Exception('Not implemented')
 
-class DummyProvider(DBProvider):
-	def connect(self):
-		pass
-	
-	def get_all(self, collection):
-		pass
-	
-	def get_by_id(self, collection, _id):
-		pass
-	
-	def update_by_id(self, collection, _id, value):
-		pass
-	
-	def reset_db(self):
-		pass
-
-db_providers['dummy'] = DummyProvider

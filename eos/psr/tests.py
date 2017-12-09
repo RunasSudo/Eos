@@ -142,9 +142,9 @@ class BlockEGTestCase(EosTestCase):
 	def test_basic(self):
 		pt = BigInt('11010010011111010100101', 2)
 		ct = BitStream(pt).multiple_of(self.sk.public_key.nbits()).map(self.sk.public_key.encrypt, self.sk.public_key.nbits())
-		for i in range(len(ct)):
-			self.assertTrue(ct[i].gamma < self.test_group.p)
-			self.assertTrue(ct[i].delta < self.test_group.p)
+		for ct_block in ct:
+			self.assertTrue(ct_block.gamma < self.test_group.p)
+			self.assertTrue(ct_block.delta < self.test_group.p)
 		m = BitStream.unmap(ct, self.sk.decrypt, self.sk.public_key.nbits()).read()
 		self.assertEqualJSON(pt, m)
 	
@@ -153,7 +153,12 @@ class BlockEGTestCase(EosTestCase):
 		
 		ct = BlockEncryptedAnswer.encrypt(self.sk.public_key, obj)
 		_, m = ct.decrypt(self.sk)
+		self.assertEqualJSON(obj, m)
 		
+		# Force another block
+		ct2 = BlockEncryptedAnswer.encrypt(self.sk.public_key, obj, (len(ct.blocks) * self.sk.public_key.nbits()) + 1)
+		self.assertEqual(len(ct2.blocks), len(ct.blocks) + 1)
+		_, m = ct2.decrypt(self.sk)
 		self.assertEqualJSON(obj, m)
 
 class MixnetTestCase(EosTestCase):
@@ -164,28 +169,28 @@ class MixnetTestCase(EosTestCase):
 		
 		# Generate plaintexts
 		pts = []
-		for i in range(4):
+		for _ in range(4):
 			pts.append(sk.public_key.group.random_Zq_element())
 		
 		# Encrypt plaintexts
 		answers = []
-		for i in range(len(pts)):
-			bs = BitStream(pts[i])
+		for pt in pts:
+			bs = BitStream(pt)
 			bs.multiple_of(sk.public_key.nbits())
 			ct = bs.map(sk.public_key.encrypt, sk.public_key.nbits())
 			answers.append(BlockEncryptedAnswer(blocks=ct))
 		
 		def do_mixnet(mix_order):
 			# Set up mixnet
-			mixnet = RPCMixnet(mix_order)
+			mixnet = RPCMixnet(mix_order=mix_order)
 			
 			# Mix answers
 			shuffled_answers, commitments = mixnet.shuffle(answers)
 			
 			# Decrypt shuffle
 			msgs = []
-			for i in range(len(shuffled_answers)):
-				bs = BitStream.unmap(shuffled_answers[i].blocks, sk.decrypt, sk.public_key.nbits())
+			for shuffled_answer in shuffled_answers:
+				bs = BitStream.unmap(shuffled_answer.blocks, sk.decrypt, sk.public_key.nbits())
 				m = bs.read()
 				msgs.append(m)
 			
@@ -216,8 +221,7 @@ class MixnetTestCase(EosTestCase):
 class ElectionTestCase(EosTestCase):
 	@classmethod
 	def setUpClass(cls):
-		db_connect('test')
-		dbinfo.provider.reset_db()
+		cls.db_connect_and_reset()
 	
 	def do_task_assert(self, election, task, next_task):
 		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)
@@ -241,7 +245,7 @@ class ElectionTestCase(EosTestCase):
 			voter = Voter(name=['Alice', 'Bob', 'Charlie'][i])
 			election.voters.append(voter)
 		
-		for i in range(3):
+		for _ in range(3):
 			mixing_trustee = InternalMixingTrustee()
 			election.mixing_trustees.append(mixing_trustee)
 		
@@ -339,8 +343,7 @@ class PVSSTestCase(EosTestCase):
 		# IRL: Send hi=F[0] commitments around
 		
 		# Send shares around
-		for i in range(len(setup.participants)):
-			participant = setup.participants[i]
+		for participant in setup.participants:
 			for j in range(len(setup.participants)):
 				other = setup.participants[j]
 				share = participant.get_share_for(j)
@@ -361,7 +364,7 @@ class PVSSTestCase(EosTestCase):
 				# Verify share received by other from participant
 				share_dec = other.shares_received[i]
 				g_share_dec_expected = ONE
-				for k in range(0, setup.threshold):
+				for k in range(setup.threshold):
 					g_share_dec_expected = (g_share_dec_expected * pow(participant.F[k], pow(j + 1, k), setup.group.p)) % setup.group.p
 				if pow(setup.group.g, share_dec, setup.group.p) != g_share_dec_expected:
 					raise Exception('Share not consistent with commitments')

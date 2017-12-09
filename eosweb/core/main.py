@@ -33,6 +33,7 @@ import functools
 import importlib
 import json
 import os
+import subprocess
 
 app = flask.Flask(__name__, static_folder=None)
 
@@ -49,6 +50,9 @@ if 'EOSWEB_SETTINGS' in os.environ:
 
 # Connect to database
 db_connect(app.config['DB_NAME'], app.config['DB_URI'], app.config['DB_TYPE'])
+
+# Set configs
+User.admins = app.config['ADMINS']
 
 # Make Flask's serialisation, e.g. for sessions, EosObject aware
 class EosObjectJSONEncoder(flask.json.JSONEncoder):
@@ -126,45 +130,6 @@ def setup_test_election():
 	election.questions.append(question)
 	
 	election.save()
-	
-	# Freeze election
-	election.workflow.get_task('eos.base.workflow.TaskConfigureElection').enter()
-	
-	# Open voting
-	election.workflow.get_task('eos.base.workflow.TaskOpenVoting').enter()
-	
-	election.save()
-
-@app.cli.command('close_election')
-@click.option('--electionid', default=None)
-def close_election(electionid):
-	if electionid is None:
-		election = Election.get_all()[0]
-	else:
-		election = Election.get_by_id(electionid)
-	
-	election.workflow.get_task('eos.base.workflow.TaskCloseVoting').enter()
-	
-	election.save()
-
-@app.cli.command('count_election')
-@click.option('--electionid', default=None)
-def count_election(electionid):
-	if electionid is None:
-		election = Election.get_all()[0]
-	else:
-		election = Election.get_by_id(electionid)
-	
-	# Mix votes
-	election.workflow.get_task('eos.psr.workflow.TaskMixVotes').enter()
-	# Prove mixes
-	election.workflow.get_task('eos.psr.workflow.TaskProveMixes').enter()
-	# Decrypt votes, for realsies
-	election.workflow.get_task('eos.psr.workflow.TaskDecryptVotes').enter()
-	# Release result
-	election.workflow.get_task('eos.base.workflow.TaskReleaseResults').enter()
-	
-	election.save()
 
 @app.cli.command('verify_election')
 @click.option('--electionid', default=None)
@@ -189,20 +154,29 @@ def index():
 
 def using_election(func):
 	@functools.wraps(func)
-	def wrapped(election_id):
+	def wrapped(election_id, **kwargs):
 		election = Election.get_by_id(election_id)
-		return func(election)
+		return func(election, **kwargs)
+	return wrapped
+
+def election_admin(func):
+	@functools.wraps(func)
+	def wrapped(election, **kwargs):
+		if 'user' in flask.session and flask.session['user'].is_admin():
+			return func(election, **kwargs)
+		else:
+			return flask.Response('Administrator credentials required', 403)
 	return wrapped
 
 @app.route('/election/<election_id>/')
 @using_election
 def election_api_json(election):
-	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, should_protect=True)), mimetype='application/json')
+	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, should_protect=True, for_hash=('full' not in flask.request.args))), mimetype='application/json')
 
 @app.route('/election/<election_id>/view')
 @using_election
 def election_view(election):
-	return flask.render_template('election/view.html', election=election)
+	return flask.render_template('election/view/view.html', election=election)
 
 @app.route('/election/<election_id>/booth')
 @using_election
@@ -210,22 +184,41 @@ def election_booth(election):
 	selection_model_view_map = EosObject.to_json({key._name: val for key, val in model_view_map.items()}) # ewww
 	auth_methods = EosObject.to_json(app.config['AUTH_METHODS'])
 	
-	return flask.render_template('election/booth.html', election=election, selection_model_view_map=selection_model_view_map, auth_methods=auth_methods)
+	return flask.render_template('election/view/booth.html', election=election, selection_model_view_map=selection_model_view_map, auth_methods=auth_methods)
 
 @app.route('/election/<election_id>/view/questions')
 @using_election
 def election_view_questions(election):
-	return flask.render_template('election/questions.html', election=election)
+	return flask.render_template('election/view/questions.html', election=election)
 
 @app.route('/election/<election_id>/view/ballots')
 @using_election
 def election_view_ballots(election):
-	return flask.render_template('election/ballots.html', election=election)
+	return flask.render_template('election/view/ballots.html', election=election)
 
 @app.route('/election/<election_id>/view/trustees')
 @using_election
 def election_view_trustees(election):
-	return flask.render_template('election/trustees.html', election=election)
+	return flask.render_template('election/view/trustees.html', election=election)
+
+@app.route('/election/<election_id>/admin')
+@using_election
+@election_admin
+def election_admin_summary(election):
+	return flask.render_template('election/admin/admin.html', election=election)
+
+@app.route('/election/<election_id>/admin/enter_task')
+@using_election
+@election_admin
+def election_admin_enter_task(election):
+	task = election.workflow.get_task(flask.request.args['task_name'])
+	if task.status != WorkflowTask.Status.READY:
+		return flask.Response('Task is not yet ready or has already exited', 409)
+	
+	task.enter()
+	election.save()
+	
+	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
 
 @app.route('/election/<election_id>/cast_ballot', methods=['POST'])
 @using_election
