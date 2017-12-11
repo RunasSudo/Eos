@@ -16,7 +16,7 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-<p><small>Preferential voting. Vote for between {{ question.min_choices }} and {{ question.max_choices }} choices.</small></p>
+<p><small>Preferential voting. Vote for between {{ question.min_choices }} and {{ question.max_choices }} choices.{% if question.randomise_choices %} Order of choices is randomised.{% endif %}</small></p>
 
 <ul class="ui list">
 	{% for choice in question.choices %}

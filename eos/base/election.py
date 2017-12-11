@@ -15,6 +15,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from eos.core.objects import *
+from eos.core.bigint import *
 from eos.base.workflow import *
 
 class Answer(EmbeddedObject):
@@ -110,11 +111,12 @@ class Result(EmbeddedObject):
 	pass
 
 class ListChoiceQuestion(Question):
-	_ver = StringField(default='0.4')
+	_ver = StringField(default='0.5')
 	
 	choices = EmbeddedObjectListField()
 	min_choices = IntField()
 	max_choices = IntField()
+	randomise_choices = BooleanField(default=False)
 	
 	def pretty_answer(self, answer):
 		if len(answer.choices) == 0:
@@ -136,6 +138,21 @@ class ListChoiceQuestion(Question):
 			else:
 				flat_choices.append(choice)
 		return flat_choices
+	
+	def randomised_choices(self):
+		if not self.randomise_choices:
+			return self.choices
+		else:
+			# Clone list
+			output = EosList([x for x in self.choices])
+			# Fisher-Yates shuffle
+			i = len(output)
+			while i != 0:
+				rnd = BigInt.noncrypto_random(0, i - 1)
+				rnd = rnd.__int__()
+				i -= 1
+				output[rnd], output[i] = output[i], output[rnd]
+			return output
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())

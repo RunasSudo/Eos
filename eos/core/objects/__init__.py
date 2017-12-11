@@ -83,6 +83,7 @@ class PrimitiveField(Field):
 DictField = PrimitiveField
 IntField = PrimitiveField
 StringField = PrimitiveField
+BooleanField = PrimitiveField
 
 class EmbeddedObjectField(Field):
 	def __init__(self, object_type=None, *args, **kwargs):

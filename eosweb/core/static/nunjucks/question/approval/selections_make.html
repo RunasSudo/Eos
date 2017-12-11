@@ -22,11 +22,11 @@
 
 <div id="question-choices" class="ui form" style="margin-bottom: 1em;">
 	<div class="grouped fields">
-		{% for choice in election.questions.__getitem__(questionNum).choices.impl %}
+		{% for choice in election.questions.__getitem__(questionNum).randomised_choices().impl %}
 			<div class="field">
 				<div class="ui checkbox">
-					<input type="checkbox" id="question-choice-{{ loop.index0 }}" onchange="choicesChanged();">
-					<label for="question-choice-{{ loop.index0 }}">{{ choice.name }}{% if choice.party %} – {{ choice.party }}{% endif %}</label>
+					<input type="checkbox" id="question-choice-{{ election.questions.__getitem__(questionNum).choices.impl.indexOf(choice) }}" onchange="choicesChanged();">
+					<label for="question-choice-{{ election.questions.__getitem__(questionNum).choices.impl.indexOf(choice) }}">{{ choice.name }}{% if choice.party %} – {{ choice.party }}{% endif %}</label>
 				</div>
 			</div>
 		{% endfor %}

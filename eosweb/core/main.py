@@ -129,7 +129,7 @@ def setup_test_election():
 			Choice(name='Joe Bloggs', party='Independent ACME')
 		]),
 		Choice(name='John Q. Public')
-	], min_choices=0, max_choices=3)
+	], min_choices=0, max_choices=3, randomise_choices=True)
 	election.questions.append(question)
 	
 	question = ApprovalQuestion(prompt='Chairman', choices=[Choice(name='John Doe'), Choice(name='Andrew Citizen')], min_choices=0, max_choices=1)

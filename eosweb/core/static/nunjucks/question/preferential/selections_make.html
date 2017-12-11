@@ -58,10 +58,10 @@
 	<div>Options not yet voted for:</div>
 	<div class="dragarea">
 		<div class="dragarea-hint"></div>
-		{% for choice in election.questions.__getitem__(questionNum).choices.impl %}
+		{% for choice in election.questions.__getitem__(questionNum).randomised_choices().impl %}
 			{% if choice.choices %}
 				{# Ticket #}
-				<div class="preferential-choice ticket" data-ticketno="{{ loop.index0 }}">
+				<div class="preferential-choice ticket">
 					<div class="number"></div>
 					<div class="content">
 						<div class="party-name">{{ choice.name }}</div>
