@@ -34,18 +34,25 @@ function generateEncryptedVote(election, answers, should_do_fingerprint) {
 }
 
 onmessage = function(msg) {
-	if (!isLibrariesLoaded) {
-		importScripts(
-			msg.data.static_base_url + "js/eosjs.js"
-		);
-		isLibrariesLoaded = true;
-	}
-	
-	if (msg.data.action === "generateEncryptedVote") {
-		msg.data.election = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(msg.data.election, null);
+	try {
+		if (!isLibrariesLoaded) {
+			importScripts(
+				msg.data.static_base_url + "js/eosjs.js"
+			);
+			isLibrariesLoaded = true;
+		}
 		
-		generateEncryptedVote(msg.data.election, msg.data.answers);
-	} else {
-		throw "Unknown action: " + msg.data.action;
+		if (msg.data.action === "generateEncryptedVote") {
+			msg.data.election = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(msg.data.election, null);
+			
+			generateEncryptedVote(msg.data.election, msg.data.answers);
+		} else {
+			throw "Unknown action: " + msg.data.action;
+		}
+	} catch (ex) {
+		if (ex.__repr__) {
+			throw ex.__repr__();
+		}
+		throw ex;
 	}
 }
