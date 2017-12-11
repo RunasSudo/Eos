@@ -76,12 +76,13 @@
 	min-height: 2em;
 }
 
-.ticket-choices .preferential-choice {
-	margin-top: 0em;
-}
-
 .preferential-choice:first-child {
 	margin-top: 0;
+}
+
+.ticket-choices .preferential-choice {
+	margin-top: 0.5em;
+	min-height: 0;
 }
 
 #question-choices-selected .preferential-choice, #question-choices-selected .dragarea-hint:first-child:last-child {
@@ -111,6 +112,7 @@
 
 .preferential-choice .party-name, .preferential-choice .ticket-party-name {
 	font-style: italic;
+	font-size: small;
 }
 
 .ticket .ticket-party-name {
@@ -118,5 +120,5 @@
 }
 
 .ticket > .content > .party-name {
-	min-height: 2em;
+	font-size: inherit;
 }
