@@ -19,7 +19,7 @@
 window = self; // Workaround for libraries
 isLibrariesLoaded = false;
 
-function generateEncryptedVote(election, answers) {
+function generateEncryptedVote(election, answers, should_do_fingerprint) {
 	encrypted_answers = [];
 	for (var q_num = 0; q_num < answers.length; q_num++) {
 		answer_json = answers[q_num];
@@ -28,7 +28,9 @@ function generateEncryptedVote(election, answers) {
 		encrypted_answers.push(eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(encrypted_answer, null));
 	}
 	
-	postMessage(encrypted_answers);
+	postMessage({
+		encrypted_answers: encrypted_answers
+	});
 }
 
 onmessage = function(msg) {

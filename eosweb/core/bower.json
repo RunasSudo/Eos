@@ -18,6 +18,7 @@
   "dependencies": {
     "semantic": "semantic-ui#^2.2.13",
     "nunjucks": "^3.0.1",
-    "dragula.js": "dragula#^3.7.2"
+    "dragula.js": "dragula#^3.7.2",
+    "fingerprintjs2": "^1.5.1"
   }
 }

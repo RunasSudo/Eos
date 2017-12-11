@@ -38,6 +38,9 @@
 	<script src="{{ url_for('static', filename='js/eosjs.js') }}"></script>
 	
 	<script src="{{ url_for('static', filename='bower_components/dragula.js/dist/dragula.min.js') }}"></script>
+	{% if eosweb.app.config['CAST_FINGERPRINT'] %}
+		<script src="{{ url_for('static', filename='bower_components/fingerprintjs2/dist/fingerprint2.min.js') }}"></script>
+	{% endif %}
 	
 	<script>
 		var templates = {};
@@ -50,12 +53,14 @@
 		
 		var username = {% if session.user %}"{{ session.user.name }}"{% else %}null{% endif %};
 		var auth_methods = {{ auth_methods|safe }};
+		var should_do_fingerprint = {{ 'true' if eosweb.app.config['CAST_FINGERPRINT'] else 'false' }};
 		
 		function resetBooth() {
 			booth = {
 				"questionNum": 0,
 				"answers": [],
-				"q_state": []
+				"q_state": [],
+				"fingerprint": []
 			};
 		}
 		resetBooth();

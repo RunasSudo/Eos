@@ -252,6 +252,16 @@ def election_api_cast_vote(election):
 	# Cast the vote
 	ballot = EosObject.deserialise_and_unwrap(data['ballot'])
 	vote = Vote(ballot=ballot, cast_at=DateTimeField.now())
+	
+	# Store data
+	if app.config['CAST_FINGERPRINT']:
+		vote.cast_fingerprint = data['fingerprint']
+	if app.config['CAST_IP']:
+		if os.path.exists('/app/.heroku'):
+			vote.cast_ip = flask.request.headers['X-Forwarded-For'].split(',')[-1]
+		else:
+			vote.cast_ip = flask.request.remote_addr
+	
 	voter.votes.append(vote)
 	
 	election.save()

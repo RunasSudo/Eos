@@ -90,7 +90,8 @@
 				url: "{{ election_base_url }}cast_ballot",
 				type: "POST",
 				data: eosjs.eos.core.objects.__all__.EosObject.to_json({
-					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(booth.ballot, null)
+					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(booth.ballot, null),
+					"fingerprint": booth.fingerprint || null
 				}),
 				contentType: "application/json",
 				dataType: "text"

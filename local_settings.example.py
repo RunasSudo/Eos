@@ -37,3 +37,8 @@ SMTP_FROM = 'eos@localhost'
 REDDIT_OAUTH_CLIENT_ID = 'xxxxxxxxxxxxxx'
 REDDIT_OAUTH_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxx'
 REDDIT_USER_AGENT = 'Application Title by /u/Your_Username'
+
+# Security
+
+CAST_IP = True
+CAST_FINGERPRINT = False

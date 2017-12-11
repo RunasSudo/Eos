@@ -47,8 +47,13 @@ class Ballot(EmbeddedObject):
 		return Ballot(encrypted_answers=encrypted_answers_deaudit, election_id=self.election_id, election_hash=self.election_hash)
 
 class Vote(EmbeddedObject):
+	_ver = StringField(default='0.4')
+	
 	ballot = EmbeddedObjectField()
 	cast_at = DateTimeField()
+	
+	cast_ip = StringField(is_protected=True)
+	cast_fingerprint = BlobField(is_protected=True)
 
 class Voter(EmbeddedObject):
 	_id = UUIDField()
