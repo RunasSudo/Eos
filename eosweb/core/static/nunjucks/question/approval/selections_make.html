@@ -26,7 +26,7 @@
 			<div class="field">
 				<div class="ui checkbox">
 					<input type="checkbox" id="question-choice-{{ loop.index0 }}" onchange="choicesChanged();">
-					<label for="question-choice-{{ loop.index0 }}">{{ choice }}</label>
+					<label for="question-choice-{{ loop.index0 }}">{{ choice.name }}{% if choice.party %} – {{ choice.party }}{% endif %}</label>
 				</div>
 			</div>
 		{% endfor %}

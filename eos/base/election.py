@@ -119,11 +119,23 @@ class ListChoiceQuestion(Question):
 	def pretty_answer(self, answer):
 		if len(answer.choices) == 0:
 			return '(blank votes)'
-		return ', '.join([self.choices[choice].name for choice in answer.choices])
+		flat_choices = self.flatten_choices()
+		return ', '.join([flat_choices[choice].name for choice in answer.choices])
 	
 	def max_bits(self):
 		answer = self.answer_type(choices=list(range(len(self.choices))))
 		return len(EosObject.to_json(EosObject.serialise_and_wrap(answer))) * 8
+	
+	def flatten_choices(self):
+		# Return a flat list of Choices, without Tickets
+		flat_choices = []
+		for choice in self.choices:
+			if isinstance(choice, Ticket):
+				for choice2 in choice.choices:
+					flat_choices.append(choice2)
+			else:
+				flat_choices.append(choice)
+		return flat_choices
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
@@ -140,6 +152,16 @@ class PreferentialQuestion(ListChoiceQuestion):
 class Choice(EmbeddedObject):
 	name = StringField()
 	party = StringField(default=None)
+	
+	@property
+	def party_or_ticket(self):
+		if self.party is not None:
+			return self.party
+		else:
+			ticket = self.recurse_parents(Ticket)
+			if ticket:
+				return ticket.name
+		return None
 
 class Ticket(EmbeddedObject):
 	name = StringField()

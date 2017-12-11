@@ -34,12 +34,22 @@
 	<p>You have selected more than the maximum allowed number of choices. To proceed, you must deselect some choices by dragging them from the blue box back to the grey box.</p>
 </div>
 
+{% set flat_choices = election.questions.__getitem__(questionNum).flatten_choices() %}
+
 {% macro printchoice(choice, ticket=None) %}
-	<div class="preferential-choice" data-choiceno="{{ loop.index0 }}">
+	<div class="preferential-choice" data-choiceno="{{ flat_choices.indexOf(choice) }}">
 		<div class="number"></div>
 		<div class="content">
 			<div class="candidate-name">{{ choice.name }}</div>
-			{% if (ticket and choice.party and choice.party != ticket.name) or (not ticket and choice.party) %}<div class="party-name">{{ choice.party }}</div>{% endif %}
+			{% if choice.party %}
+				{% if (ticket and choice.party != ticket.name) or not ticket %}
+					<div class="party-name">{{ choice.party }}</div>
+				{% else %}
+					<div class="ticket-party-name">{{ choice.party }}</div>
+				{% endif %}
+			{% elif ticket %}
+				<div class="ticket-party-name">{{ ticket.name }}</div>
+			{% endif %}
 		</div>
 	</div>
 {% endmacro %}
@@ -51,7 +61,7 @@
 		{% for choice in election.questions.__getitem__(questionNum).choices.impl %}
 			{% if choice.choices %}
 				{# Ticket #}
-				<div class="preferential-choice ticket" data-choiceno="{{ loop.index0 }}">
+				<div class="preferential-choice ticket" data-ticketno="{{ loop.index0 }}">
 					<div class="number"></div>
 					<div class="content">
 						<div class="party-name">{{ choice.name }}</div>
@@ -71,6 +81,7 @@
 
 <script>
 	var allowAdding = true;
+	var flat_choices = election.questions.__getitem__(booth.questionNum).flatten_choices();
 	
 	function choicesChanged() {
 		// Recalculate numbers
@@ -103,10 +114,9 @@
 	}
 	
 	// Fill in ballot with previous selections
-	if (booth.answers[booth.questionNum]) {
-		for (var selection of booth.answers[booth.questionNum].value.choices) { // Answer already serialised
-			$(".preferential-choice[data-choiceno=" + selection + "]").detach().appendTo("#question-choices-selected .dragarea");
-		}
+	if (booth.q_state[booth.questionNum]) {
+		$("#question-choices-selected .dragarea").html(booth.q_state[booth.questionNum][0]);
+		$("#question-choices-remaining .dragarea").html(booth.q_state[booth.questionNum][1]);
 		choicesChanged();
 	}
 	
@@ -117,9 +127,6 @@
 				if ("dragarea-hint" in el.classList) {
 					return false;
 				}
-				//if ("ticket" in el.classList && !("party-name" in handle.classList)) {
-				//	return false;
-				//}
 				if ($.contains(document.querySelector("#question-choices-remaining"), el)) {
 					return allowAdding;
 				}
@@ -129,16 +136,33 @@
 		}
 	);
 	
+	function breakTicket(ticket) {
+		ticket.find(".ticket-choices .preferential-choice").each(function(i, el) {
+			$(el).detach().insertAfter(ticket);
+		});
+		ticket.remove();
+	}
+	
 	dragulaChoices.on("drop", function(el, target, source, sibling) {
+		// If the source or target is a ticket, break the ticket
+		if ($(source).parents(".ticket").length > 0) {
+			breakTicket($(source).parents(".ticket").first())
+		}
+		if ($(target).parents(".ticket").length > 0) {
+			breakTicket($(target).parents(".ticket").first())
+		}
+		
 		choicesChanged();
 	});
 	
 	function saveSelections() {
 		selections = [];
-		$("#question-choices-selected .preferential-choice").each(function(i, el) {
+		$("#question-choices-selected .preferential-choice:not(.ticket)").each(function(i, el) {
 			selections.push(parseInt(el.dataset.choiceno));
 		});
 		answer = eosjs.eos.base.election.__all__.PreferentialAnswer(eosjs.__kwargtrans__({choices: selections}));
 		booth.answers[booth.questionNum] = eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(answer);
+		
+		booth.q_state[booth.questionNum] = [$("#question-choices-selected .dragarea").html(), $("#question-choices-remaining .dragarea").html()]; // wew lad
 	}
 </script>

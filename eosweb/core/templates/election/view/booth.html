@@ -55,6 +55,7 @@
 			booth = {
 				"questionNum": 0,
 				"answers": [],
+				"q_state": []
 			};
 		}
 		resetBooth();
@@ -136,6 +137,7 @@
 				techDetails = '<p>Technical details: ' + err + '</p>';
 			}
 			$("#booth-content").html('<div class="ui error message"><p>We were unable to display the next page of the voting booth. For your security, your ballot selections have been cleared. Please try again. If this problem persists, contact the {{ election.kind }} administrator.</p>' + techDetails + '</div>');
+			console.error(err);
 		}
 		
 		function showTemplate(template, opts, destination) {

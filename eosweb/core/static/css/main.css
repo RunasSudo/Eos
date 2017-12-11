@@ -109,8 +109,12 @@
 	text-align: center;
 }
 
-.preferential-choice .party-name {
+.preferential-choice .party-name, .preferential-choice .ticket-party-name {
 	font-style: italic;
+}
+
+.ticket .ticket-party-name {
+	display: none;
 }
 
 .ticket > .content > .party-name {
