@@ -41,11 +41,16 @@
 				// String.prototype.join confuses fingerprintjs2
 				var strjoin = String.prototype.join;
 				String.prototype.join = undefined;
-				new Fingerprint2().get(function(result, components) {
-					String.prototype.join = strjoin;
-					booth.fingerprint = components;
+				try {
+					new Fingerprint2().get(function(result, components) {
+						String.prototype.join = strjoin;
+						booth.fingerprint = components;
+						nextTemplate();
+					});
+				} catch (ex) {
+					console.error(ex);
 					nextTemplate();
-				});
+				}
 			} else {
 				nextTemplate();
 			}
