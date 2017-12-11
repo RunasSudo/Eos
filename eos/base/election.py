@@ -110,14 +110,16 @@ class Result(EmbeddedObject):
 	pass
 
 class ListChoiceQuestion(Question):
-	choices = ListField(StringField())
+	_ver = StringField(default='0.4')
+	
+	choices = EmbeddedObjectListField()
 	min_choices = IntField()
 	max_choices = IntField()
 	
 	def pretty_answer(self, answer):
 		if len(answer.choices) == 0:
 			return '(blank votes)'
-		return ', '.join([self.choices[choice] for choice in answer.choices])
+		return ', '.join([self.choices[choice].name for choice in answer.choices])
 	
 	def max_bits(self):
 		answer = self.answer_type(choices=list(range(len(self.choices))))
@@ -134,6 +136,14 @@ class PreferentialAnswer(Answer):
 
 class PreferentialQuestion(ListChoiceQuestion):
 	answer_type = PreferentialAnswer
+
+class Choice(EmbeddedObject):
+	name = StringField()
+	party = StringField(default=None)
+
+class Ticket(EmbeddedObject):
+	name = StringField()
+	choices = EmbeddedObjectListField()
 
 class RawResult(Result):
 	plaintexts = ListField(EmbeddedObjectListField())

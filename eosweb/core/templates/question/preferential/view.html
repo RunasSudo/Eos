@@ -20,6 +20,18 @@
 
 <ul class="ui list">
 	{% for choice in question.choices %}
-		<li>{{ choice }}</li>
+		{% if choice.choices %}
+			{# Ticket #}
+			<li>
+				{{ choice.name }}
+				<ul>
+					{% for choice2 in choice.choices %}
+						<li>{{ choice2.name }}{% if choice2.party and choice2.party != choice.name %} – {{ choice2.party }}{% endif %}</li>
+					{% endfor %}
+				</ul>
+			</li>
+		{% else %}
+			<li>{{ choice.name }}{% if choice.party %} – {{ choice.party }}{% endif %}</li>
+		{% endif %}
 	{% endfor %}
 </ul>

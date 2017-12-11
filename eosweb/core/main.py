@@ -123,10 +123,16 @@ def setup_test_election():
 	election.sk = EGPrivateKey.generate()
 	election.public_key = election.sk.public_key
 	
-	question = PreferentialQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'], min_choices=0, max_choices=3)
+	question = PreferentialQuestion(prompt='President', choices=[
+		Ticket(name='ACME Party', choices=[
+			Choice(name='John Smith'),
+			Choice(name='Joe Bloggs', party='Independent ACME')
+		]),
+		Choice(name='John Q. Public')
+	], min_choices=0, max_choices=3)
 	election.questions.append(question)
 	
-	question = ApprovalQuestion(prompt='Chairman', choices=['John Doe', 'Andrew Citizen'], min_choices=0, max_choices=1)
+	question = ApprovalQuestion(prompt='Chairman', choices=[Choice(name='John Doe'), Choice(name='Andrew Citizen')], min_choices=0, max_choices=1)
 	election.questions.append(question)
 	
 	election.save()

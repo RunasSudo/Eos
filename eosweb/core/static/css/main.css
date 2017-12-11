@@ -51,13 +51,13 @@
 }
 
 .preferential-choices .dragarea {
-	min-height: 3em;
+	min-height: 2em;
 	margin-top: 0.5em;
 }
 
 .preferential-choices .dragarea-hint:first-child:last-child {
 	width: calc(100% - 1em);
-	height: 3em;
+	height: 2em;
 	box-sizing: border-box;
 	z-index: -100;
 	border: 1px dashed #555;
@@ -71,11 +71,13 @@
 
 .preferential-choice {
 	background-color: #eee;
-	font-size: 1.1rem;
 	margin-top: 0.5em;
 	display: flex;
-	align-items: center;
-	min-height: 3em;
+	min-height: 2em;
+}
+
+.ticket-choices .preferential-choice {
+	margin-top: 0em;
 }
 
 .preferential-choice:first-child {
@@ -94,11 +96,23 @@
 	background-color: #eee;
 }
 
-.preferential-choice .number, .preferential-choice .name {
+.preferential-choice .number, .preferential-choice .content {
 	padding: 0.5em 0 0.5em 0.5em;
+}
+
+.ticket-choices .number, .ticket-choices .content {
+	padding: 0 0 0 0.5em;
 }
 
 .preferential-choice .number {
 	width: 2em;
 	text-align: center;
+}
+
+.preferential-choice .party-name {
+	font-style: italic;
+}
+
+.ticket > .content > .party-name {
+	min-height: 2em;
 }

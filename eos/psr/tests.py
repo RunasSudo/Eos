@@ -252,10 +252,10 @@ class ElectionTestCase(EosTestCase):
 		election.sk = EGPrivateKey.generate()
 		election.public_key = election.sk.public_key
 		
-		question = ApprovalQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'])
+		question = ApprovalQuestion(prompt='President', choices=[Choice(name='John Smith'), Choice(name='Joe Bloggs'), Choice(name='John Q. Public')])
 		election.questions.append(question)
 		
-		question = ApprovalQuestion(prompt='Chairman', choices=['John Doe', 'Andrew Citizen'])
+		question = ApprovalQuestion(prompt='Chairman', choices=[Choice(name='John Doe'), Choice(name='Andrew Citizen')])
 		election.questions.append(question)
 		
 		election.save()

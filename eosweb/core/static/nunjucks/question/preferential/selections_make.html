@@ -30,16 +30,41 @@
 <div class="ui hidden message" id="message-max-choices">
 	<p>You have now selected the maximum allowed number of choices. If you wish to add different choices, you must deselect some choices by dragging them from the blue box back to the grey box.</p>
 </div>
+<div class="ui hidden error message" id="message-too-many-choices">
+	<p>You have selected more than the maximum allowed number of choices. To proceed, you must deselect some choices by dragging them from the blue box back to the grey box.</p>
+</div>
+
+{% macro printchoice(choice, ticket=None) %}
+	<div class="preferential-choice" data-choiceno="{{ loop.index0 }}">
+		<div class="number"></div>
+		<div class="content">
+			<div class="candidate-name">{{ choice.name }}</div>
+			{% if (ticket and choice.party and choice.party != ticket.name) or (not ticket and choice.party) %}<div class="party-name">{{ choice.party }}</div>{% endif %}
+		</div>
+	</div>
+{% endmacro %}
 
 <div id="question-choices-remaining" class="preferential-choices">
 	<div>Options not yet voted for:</div>
 	<div class="dragarea">
 		<div class="dragarea-hint"></div>
 		{% for choice in election.questions.__getitem__(questionNum).choices.impl %}
-			<div class="preferential-choice" data-choiceno="{{ loop.index0 }}">
-				<div class="number"></div>
-				<div class="name">{{ choice }}</div>
-			</div>
+			{% if choice.choices %}
+				{# Ticket #}
+				<div class="preferential-choice ticket" data-choiceno="{{ loop.index0 }}">
+					<div class="number"></div>
+					<div class="content">
+						<div class="party-name">{{ choice.name }}</div>
+						<div class="ticket-choices">
+							{% for choice2 in choice.choices.impl %}
+								{{ printchoice(choice2, choice) }}
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			{% else %}
+				{{ printchoice(choice) }}
+			{% endif %}
 		{% endfor %}
 	</div>
 </div>
@@ -52,17 +77,28 @@
 		$(".preferential-choices .preferential-choice .number").each(function(i, el) {
 			$(el).text("");
 		});
-		var selectedChoices = $("#question-choices-selected .preferential-choice .number");
+		var selectedChoices = $("#question-choices-selected .dragarea > .preferential-choice > .number");
 		selectedChoices.each(function(i, el) {
 			$(el).text(i + 1);
 		});
-		if (selectedChoices.length >= election.questions.__getitem__(booth.questionNum).max_choices) {
+		var selectedCandidates = $("#question-choices-selected .preferential-choice:not(.ticket) .number");
+		if (selectedCandidates.length >= election.questions.__getitem__(booth.questionNum).max_choices) {
 			// Prevent making any more selections
 			allowAdding = false;
-			$("#message-max-choices").removeClass("hidden");
+			
+			if (selectedCandidates.length > election.questions.__getitem__(booth.questionNum).max_choices) {
+				// Prevent progression
+				$(".primary.button").addClass("disabled");
+				$("#message-too-many-choices").removeClass("hidden");
+			} else {
+				$(".primary.button").removeClass("disabled");
+				$("#message-max-choices").removeClass("hidden");
+			}
 		} else {
 			allowAdding = true;
 			$("#message-max-choices").addClass("hidden");
+			$("#message-too-many-choices").addClass("hidden");
+			$(".primary.button").removeClass("disabled");
 		}
 	}
 	
@@ -75,17 +111,21 @@
 	}
 	
 	var dragulaChoices = dragula(
-		[document.querySelector("#question-choices-selected .dragarea"), document.querySelector("#question-choices-remaining .dragarea")],
+		[document.querySelector("#question-choices-selected .dragarea"), document.querySelector("#question-choices-remaining .dragarea")].concat([].slice.apply(document.querySelectorAll(".ticket-choices"))),
 		{
 			moves: function(el, source, handle, sibling) {
 				if ("dragarea-hint" in el.classList) {
 					return false;
 				}
+				//if ("ticket" in el.classList && !("party-name" in handle.classList)) {
+				//	return false;
+				//}
 				if ($.contains(document.querySelector("#question-choices-remaining"), el)) {
 					return allowAdding;
 				}
 				return true;
-			}
+			},
+			mirrorContainer: document.querySelector("#question-choices-remaining")
 		}
 	);
 	
