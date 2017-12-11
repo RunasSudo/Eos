@@ -32,6 +32,14 @@
 	text-decoration: underline;
 }
 
+/* Default of 1.25rem is too small for our long lists… */
+.ui.ordered.list, .ui.ordered.list .list, ol.ui.list, ol.ui.list ol {
+	margin-left: 1.75rem;
+}
+.ui.ordered.list .list > .item::before, .ui.ordered.list > .item::before, ol.ui.list li::before {
+	margin-left: -1.75rem;
+}
+
 @media print {
 	body, html {
 		/* Default height: 100% causes blank pages */
