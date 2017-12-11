@@ -102,7 +102,7 @@ election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
 election.sk = EGPrivateKey.generate()
 election.public_key = election.sk.public_key
 
-election.questions.append(ApprovalQuestion(prompt='Pineapple on pizza?', choices=['Yes', 'No'], min_choices=0, max_choices=1))
+election.questions.append(ApprovalQuestion(prompt='Pineapple on pizza?', choices=[Choice(name='Yes'), Choice(name='No')], min_choices=0, max_choices=1))
 
 # Freeze election
 election.workflow.get_task('eos.base.workflow.TaskConfigureElection').enter()
