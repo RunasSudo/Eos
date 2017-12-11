@@ -24,7 +24,7 @@ function generateEncryptedVote(election, answers, should_do_fingerprint) {
 	for (var q_num = 0; q_num < answers.length; q_num++) {
 		answer_json = answers[q_num];
 		answer = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(answer_json, null);
-		encrypted_answer = eosjs.eos.psr.election.__all__.BlockEncryptedAnswer.encrypt(election.public_key, answer, election.questions.__getitem__(q_num).max_bits());
+		encrypted_answer = eosjs.eos.psr.election.__all__.BlockEncryptedAnswer.encrypt(election.public_key, answer, election.questions.__getitem__(q_num).max_bits() + 32); // +32 bits for the length
 		encrypted_answers.push(eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(encrypted_answer, null));
 	}
 	

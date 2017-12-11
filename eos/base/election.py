@@ -131,7 +131,7 @@ class ListChoiceQuestion(Question):
 		return ', '.join([flat_choices[choice].name for choice in answer.choices])
 	
 	def max_bits(self):
-		answer = self.answer_type(choices=list(range(len(self.choices))))
+		answer = self.answer_type(choices=list(range(self.max_choices)))
 		return len(EosObject.to_json(EosObject.serialise_and_wrap(answer))) * 8
 	
 	def flatten_choices(self):
