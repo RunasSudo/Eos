@@ -76,6 +76,8 @@
 		<h2>Voting booth</h2>
 		
 		<p>Voting in this {{ election.kind }} has not yet begun. If you would like to preview the voting booth, <a href="{{ url_for('election_booth', election_id=election._id) }}">click here</a>. Note that you will not be able to cast any ballots until voting opens.</p>
+		
+		<p><small>If you are a registered pre-poll voter, you may access the pre-poll voting booth <a href="{{ url_for('election_booth', election_id=election._id) }}?prepoll">here</a>.</small></p>
 	{% elif election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
 		<h2>Voting booth</h2>
 		

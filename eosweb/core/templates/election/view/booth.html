@@ -214,30 +214,54 @@
 			}
 		});
 		templates['booth/encrypt.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/review.html', {ballot: booth.ballot});
-			}
-		});
-		templates['booth/review.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/audit.html', {ballot: booth.ballot});
-			}
-		});
-		templates['booth/audit.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/cast.html', {ballot: booth.ballot});
-			}
-		});
-		templates['booth/cast.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/complete.html', {voter: booth.voter, vote: booth.vote});
-			}
-		});
-		templates['booth/complete.html'] = null;
+		
+		if (location.search.indexOf('?prepoll') >= 0) {
+			// Pre-poll
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/review_prepoll.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/review_prepoll.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/audit.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/audit.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/cast_prepoll.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/cast_prepoll.html'] = null;
+		} else {
+			// Real voting booth
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/review.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/review.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/audit.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/audit.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/cast.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/cast.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/complete.html', {voter: booth.voter, vote: booth.vote});
+				}
+			});
+			templates['booth/complete.html'] = null;
+		}
 		
 		// === END BOOTH TASKS ===
 		
