@@ -66,7 +66,7 @@ class TaskScheduler:
 		tasks = Task.get_all()
 		
 		for task in tasks:
-			if task.status == Task.Status.READY and task.run_at and task.run_at < DateTimeField.now():
+			if task.status == Task.Status.READY:
 				pending_tasks.append(task)
 		
 		return pending_tasks
@@ -100,4 +100,5 @@ class TaskScheduler:
 	@staticmethod
 	def tick():
 		for task in TaskScheduler.pending_tasks():
-			task.run()
+			if task.run_at and task.run_at < DateTimeField.now():
+				task.run()

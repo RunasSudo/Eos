@@ -37,17 +37,40 @@
 		<p>
 			Voting in this {{ election.kind }}
 			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
-				opened at {{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+				opened at
+				{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at %}
+					{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+					according to schedule,
+				{% else %}
+					{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+					at the administrator's discretion,
+				{% endif %}
 			{% else %}
-				is scheduled to open
+				is scheduled to open at
+				{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at %}
+					{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC,
+				{% else %}
+					the administrator's discretion,
+				{% endif %}
 			{% endif %}
-			at the administrators' discretion, and
+			and
 			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
-				closed at {{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+				closed at
+				{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at %}
+					{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+					according to schedule
+				{% else %}
+					{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+					at the administrator's discretion
+				{% endif %}
 			{% else %}
-				is scheduled to close
+				is scheduled to close at
+				{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at %}
+					{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.
+				{% else %}
+					the administrator's discretion.
+				{% endif %}
 			{% endif %}
-			at the administrators' discretion.
 		</p>
 	{% else %}
 		<p><button class="ui huge button">This {{ election.kind }} is not yet ready for voting</button></p>

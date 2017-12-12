@@ -92,6 +92,15 @@ class WorkflowTask(EmbeddedObject):
 		self.status = WorkflowTask.Status.EXITED
 		self.fire_event('exit')
 		self.on_exit()
+	
+	def get_entry_task(self):
+		election = self.recurse_parents('eos.base.election.Election')
+		
+		for task in WorkflowTaskEntryTask.get_all():
+			if task.election_id == election._id and task.workflow_task == self._name:
+				return task
+		
+		return None
 
 class Workflow(EmbeddedObject):
 	tasks = EmbeddedObjectListField()

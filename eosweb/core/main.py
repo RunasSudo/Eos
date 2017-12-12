@@ -229,8 +229,30 @@ def election_admin_enter_task(election):
 	if workflow_task.status != WorkflowTask.Status.READY:
 		return flask.Response('Task is not yet ready or has already exited', 409)
 	
-	task = WorkflowTaskEntryTask(election_id=election._id, workflow_task=workflow_task._name, status=Task.Status.READY, run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])())
+	task = WorkflowTaskEntryTask(
+		election_id=election._id,
+		workflow_task=workflow_task._name,
+		status=Task.Status.READY,
+		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
+	)
 	task.run()
+	
+	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
+
+@app.route('/election/<election_id>/admin/schedule_task', methods=['POST'])
+@using_election
+@election_admin
+def election_admin_schedule_task(election):
+	workflow_task = election.workflow.get_task(flask.request.form['task_name'])
+	
+	task = WorkflowTaskEntryTask(
+		election_id=election._id,
+		workflow_task=workflow_task._name,
+		run_at=DateTimeField().deserialise(flask.request.form['datetime']),
+		status=Task.Status.READY,
+		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
+	)
+	task.save()
 	
 	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
 

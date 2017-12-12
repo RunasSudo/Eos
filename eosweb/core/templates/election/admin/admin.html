@@ -28,4 +28,22 @@
 			{% endif %}
 		{% endfor %}
 	</ul>
+	
+	<h2>Schedule a task</h2>
+	
+	<form class="ui form" action="{{ url_for('election_admin_schedule_task', election_id=election._id) }}" method="post">
+		<div class="field">
+			<label>Task</label>
+			<select class="ui dropdown" name="task_name">
+				{% for task in election.workflow.tasks %}
+					<option value="{{ task._name }}">{{ task.label }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="field">
+			<label>UTC date and time (ISO 8601)</label>
+			<input name="datetime" value="{{ eos.core.objects.DateTimeField().serialise(eos.core.objects.DateTimeField.now()) }}" type="text">
+		</div>
+		<input type="submit" class="ui primary button" value="Schedule task">
+	</form>
 {% endblock %}
