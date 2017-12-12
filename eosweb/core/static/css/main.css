@@ -32,6 +32,10 @@
 	text-decoration: underline;
 }
 
+time[title] {
+	text-decoration: underline dotted;
+}
+
 /* Default of 1.25rem is too small for our long lists… */
 .ui.ordered.list, .ui.ordered.list .list, ol.ui.list, ol.ui.list ol {
 	margin-left: 1.75rem;

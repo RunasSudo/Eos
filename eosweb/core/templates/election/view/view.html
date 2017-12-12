@@ -33,56 +33,56 @@
 		{% else %}
 			<p><button class="ui huge button">Voting in this {{ election.kind }} has not yet opened</button></p>
 		{% endif %}
-		
-		<p>
-			Voting in this {{ election.kind }}
-			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
-				opened at
-				{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at %}
-					{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
-					according to schedule,
-				{% else %}
-					{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
-					at the administrator's discretion,
-				{% endif %}
-			{% else %}
-				is scheduled to open at
-				{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at %}
-					{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC,
-				{% else %}
-					the administrator's discretion,
-				{% endif %}
-			{% endif %}
-			and
-			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
-				closed at
-				{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at %}
-					{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
-					according to schedule
-				{% else %}
-					{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
-					at the administrator's discretion
-				{% endif %}
-			{% else %}
-				is scheduled to close at
-				{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at %}
-					{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.
-				{% else %}
-					the administrator's discretion.
-				{% endif %}
-			{% endif %}
-		</p>
 	{% else %}
 		<p><button class="ui huge button">This {{ election.kind }} is not yet ready for voting</button></p>
 		
 		<p>The administrator of this {{ election.kind }} has not yet finished setting the election parameters. The details of the {{ election.kind }} may change at any time.</p>
 	{% endif %}
 	
+	<p>
+		Voting in this {{ election.kind }}
+		{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
+			opened
+			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at|pretty_date }}
+				according to schedule,
+			{% else %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').exited_at|pretty_date }}
+				at the administrator's discretion,
+			{% endif %}
+		{% else %}
+			is scheduled to open
+			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at|pretty_date }},
+			{% else %}
+				the administrator's discretion,
+			{% endif %}
+		{% endif %}
+		and
+		{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
+			closed
+			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at|pretty_date }}
+				according to schedule.
+			{% else %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').exited_at|pretty_date }}
+				at the administrator's discretion.
+			{% endif %}
+		{% else %}
+			is scheduled to close
+			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at|pretty_date }}.
+			{% else %}
+				the administrator's discretion.
+			{% endif %}
+		{% endif %}
+	</p>
+	
 	{% if (session.user and session.user.is_admin() and election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.READY) or election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
 		<h2>Results</h2>
 		
 		{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
-			<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.</p>
+			<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at|pretty_date }}.</p>
 		{% else %}
 			<div class="ui warning message">
 				This is a preview of the election results, shown only to you, the election administrator. To publicly release the results, you must do so from the <a href="{{ url_for('election_admin_summary', election_id=election._id) }}">‘Administrate this election’</a> tab.

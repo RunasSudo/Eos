@@ -16,6 +16,7 @@
 
 import click
 import flask
+import timeago
 
 from eos.core.objects import *
 from eos.core.tasks import *
@@ -153,6 +154,10 @@ def verify_election(electionid):
 @app.context_processor
 def inject_globals():
 	return {'eos': eos, 'eosweb': eosweb, 'SHA256': eos.core.hashing.SHA256}
+
+@app.template_filter('pretty_date')
+def pretty_date(dt):
+	return flask.Markup('<time datetime="{}" title="{}">{}</time>'.format(dt.strftime('%Y-%m-%dT%H:%M:%SZ'), dt.strftime('%Y-%m-%d %H:%M:%S UTC'), timeago.format(dt, datetime.now())))
 
 # Tickle the plumbus every request
 @app.before_request
