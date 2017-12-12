@@ -14,6 +14,8 @@ ADMINS = [
 	#eos.redditauth.election.RedditUser(username='xxxxxxxx')
 ]
 
+TASK_RUN_STRATEGY = 'eos.core.tasks.direct.DirectRunStrategy'
+
 # MongoDB
 
 DB_TYPE = 'mongodb'

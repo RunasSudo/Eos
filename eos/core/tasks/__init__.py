@@ -28,8 +28,14 @@ class Task(TopLevelObject):
 		TIMEOUT = -20
 	
 	_id = UUIDField()
-	status = IntField(default=0)
 	run_strategy = EmbeddedObjectField()
+	
+	run_at = DateTimeField()
+	
+	started_at = DateTimeField()
+	completed_at = DateTimeField()
+	
+	status = IntField(default=0)
 	messages = ListField(StringField())
 	
 	def run(self):
@@ -38,26 +44,60 @@ class Task(TopLevelObject):
 	def _run(self):
 		pass
 
+class DummyTask(Task):
+	_db_name = Task._db_name
+	label = 'A dummy task'
+	
+	def _run(self):
+		if is_python:
+			#__pragma__('skip')
+			import time
+			#__pragma__('noskip')
+			time.sleep(15)
+
 class RunStrategy(DocumentObject):
 	def run(self, task):
 		raise Exception('Not implemented')
 
-class DirectRunStrategy(RunStrategy):
-	def run(self, task):
-		task.status = Task.Status.PROCESSING
-		task.save()
+class TaskScheduler:
+	@staticmethod
+	def pending_tasks():
+		pending_tasks = []
+		tasks = Task.get_all()
 		
-		try:
-			task._run()
-			task.status = Task.Status.COMPLETE
-			task.save()
-		except Exception as e:
-			task.status = Task.Status.FAILED
-			if is_python:
-				#__pragma__('skip')
-				import traceback
-				#__pragma__('noskip')
-				task.messages.append(traceback.format_exc())
-			else:
-				task.messages.append(repr(e))
-			task.save()
+		for task in tasks:
+			if task.status == Task.Status.READY and task.run_at and task.run_at < DateTimeField.now():
+				pending_tasks.append(task)
+		
+		return pending_tasks
+	
+	@staticmethod
+	def active_tasks():
+		active_tasks = []
+		tasks = Task.get_all()
+		
+		for task in tasks:
+			if task.status == Task.Status.PROCESSING:
+				active_tasks.append(task)
+		
+		return active_tasks
+	
+	@staticmethod
+	def completed_tasks(limit=None):
+		completed_tasks = []
+		tasks = Task.get_all()
+		
+		for task in tasks:
+			if task.status == Task.Status.COMPLETE or task.status < 0:
+				completed_tasks.append(task)
+		
+		if limit:
+			completed_tasks.sort(key=lambda x: x.completed_at)
+			completed_tasks = completed_tasks[-limit:]
+		
+		return completed_tasks
+	
+	@staticmethod
+	def tick():
+		for task in TaskScheduler.pending_tasks():
+			task.run()

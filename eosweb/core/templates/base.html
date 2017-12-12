@@ -28,6 +28,9 @@
 			<a href="/" class="header item">Eos Voting for {{ eosweb.app.config['ORG_NAME'] }}</a>
 			<a href="https://github.com/RunasSudo/Eos" class="item">Source Code</a>
 			{% if session.user %}
+				{% if session.user.is_admin() %}
+					{% include 'active_tasks_menu.html' %}
+				{% endif %}
 				<div class="ui simple dropdown item right">
 					<i class="{% if session.user.is_admin() %}legal{% else %}user circle{% endif %} icon"></i> {{ session.user.name }} <i class="dropdown icon"></i>
 					<div class="menu">

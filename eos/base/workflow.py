@@ -15,6 +15,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from eos.core.objects import *
+from eos.core.tasks import *
 
 class WorkflowTask(EmbeddedObject):
 	class Status:
@@ -64,7 +65,7 @@ class WorkflowTask(EmbeddedObject):
 	
 	@classmethod
 	def satisfies(cls, descriptor):
-		return cls._name == descriptor or descriptor in cls.provides or (descriptor in EosObject.objects and issubclass(cls, EosObject.objects[descriptor]))
+		return cls._name == descriptor or descriptor in cls.provides or (descriptor in EosObject.objects and issubclass(cls, EosObject.lookup(descriptor)))
 	
 	def on_enter(self):
 		self.exit()
@@ -113,6 +114,22 @@ class Workflow(EmbeddedObject):
 		except StopIteration:
 			return None
 
+class WorkflowTaskEntryTask(Task):
+	election_id = UUIDField()
+	workflow_task = StringField()
+	
+	def _run(self):
+		election = EosObject.lookup('eos.base.election.Election').get_by_id(self.election_id)
+		task = election.workflow.get_task(self.workflow_task)
+		task.enter()
+		election.save()
+	
+	@property
+	def label(self):
+		election = EosObject.lookup('eos.base.election.Election').get_by_id(self.election_id)
+		task = election.workflow.get_task(self.workflow_task)
+		return task.label + ' – ' + election.name
+
 # Concrete tasks
 # ==============
 
@@ -138,7 +155,7 @@ class TaskDecryptVotes(WorkflowTask):
 		election = self.recurse_parents('eos.base.election.Election')
 		
 		for _ in range(len(election.questions)):
-			election.results.append(EosObject.objects['eos.base.election.RawResult']())
+			election.results.append(EosObject.lookup('eos.base.election.RawResult')())
 		
 		for voter in election.voters:
 			if len(voter.votes) > 0:

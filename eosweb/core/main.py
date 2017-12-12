@@ -18,7 +18,9 @@ import click
 import flask
 
 from eos.core.objects import *
+from eos.core.tasks import *
 from eos.base.election import *
+from eos.base.workflow import *
 from eos.psr.crypto import *
 from eos.psr.election import *
 from eos.psr.mixnet import *
@@ -152,6 +154,12 @@ def verify_election(electionid):
 def inject_globals():
 	return {'eos': eos, 'eosweb': eosweb, 'SHA256': eos.core.hashing.SHA256}
 
+# Tickle the plumbus every request
+@app.before_request
+def tick_scheduler():
+	# Process pending tasks
+	TaskScheduler.tick()
+
 # === Views ===
 
 @app.route('/')
@@ -217,12 +225,12 @@ def election_admin_summary(election):
 @using_election
 @election_admin
 def election_admin_enter_task(election):
-	task = election.workflow.get_task(flask.request.args['task_name'])
-	if task.status != WorkflowTask.Status.READY:
+	workflow_task = election.workflow.get_task(flask.request.args['task_name'])
+	if workflow_task.status != WorkflowTask.Status.READY:
 		return flask.Response('Task is not yet ready or has already exited', 409)
 	
-	task.enter()
-	election.save()
+	task = WorkflowTaskEntryTask(election_id=election._id, workflow_task=workflow_task._name, status=Task.Status.READY, run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])())
+	task.run()
 	
 	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
 

@@ -40,6 +40,11 @@
 	margin-left: -1.75rem;
 }
 
+/* Fix display of multiple right-aligned menu items */
+.ui.menu:not(.vertical) .right.item ~ .right.item {
+	margin-left: 0 !important;
+}
+
 @media print {
 	body, html {
 		/* Default height: 100% causes blank pages */

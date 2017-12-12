@@ -1,0 +1,42 @@
+{#
+	Eos - Verifiable elections
+	Copyright © 2017  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+<div class="ui simple dropdown item right" id="active_tasks_menu">
+	<div class="ui{% if eos.core.tasks.TaskScheduler.active_tasks()|length > 0 %} active{% endif %} mini inline loader" style="margin-right: 1em;"></div>
+	{{ eos.core.tasks.TaskScheduler.active_tasks()|length }} active tasks
+	{% if eos.core.tasks.TaskScheduler.pending_tasks()|length > 0 %}
+		({{ eos.core.tasks.TaskScheduler.pending_tasks()|length }} pending)
+	{% endif %}
+	<i class="dropdown icon"></i>
+	<div class="menu">
+		<div class="header">Active tasks</div>
+		{% for task in eos.core.tasks.TaskScheduler.active_tasks() %}
+			<div class="item">{{ task.label }}</div>
+		{% endfor %}
+		<div class="divider"></div>
+		<div class="header">Pending tasks</div>
+		{% for task in eos.core.tasks.TaskScheduler.pending_tasks() %}
+			<div class="item">{{ task.label }}</div>
+		{% endfor %}
+		<div class="divider"></div>
+		<div class="header">Recently completed tasks</div>
+		{% for task in eos.core.tasks.TaskScheduler.completed_tasks(3) %}
+			<div class="item">{% if task.status < 0 %}<i class="warning sign icon"></i> {% endif %}{{ task.label }}</div>
+		{% endfor %}
+	</div>
+</div>

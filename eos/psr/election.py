@@ -225,8 +225,6 @@ class InternalMixingTrustee(MixingTrustee):
 		return True
 
 class PSRElection(Election):
-	_db_name = Election._name
-	
 	sk = EmbeddedObjectField(SEGPrivateKey, is_protected=True) # TODO: Threshold
 	
 	public_key = EmbeddedObjectField(SEGPublicKey)
