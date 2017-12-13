@@ -16,6 +16,8 @@ ADMINS = [
 
 TASK_RUN_STRATEGY = 'eos.core.tasks.direct.DirectRunStrategy'
 
+TIMEZONE = 'Australia/Canberra'
+
 # MongoDB
 
 DB_TYPE = 'mongodb'

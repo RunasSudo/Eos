@@ -36,6 +36,7 @@ import functools
 import importlib
 import json
 import os
+import pytz
 import subprocess
 
 app = flask.Flask(__name__, static_folder=None)
@@ -157,7 +158,8 @@ def inject_globals():
 
 @app.template_filter('pretty_date')
 def pretty_date(dt):
-	return flask.Markup('<time datetime="{}" title="{}">{}</time>'.format(dt.strftime('%Y-%m-%dT%H:%M:%SZ'), dt.strftime('%Y-%m-%d %H:%M:%S UTC'), timeago.format(dt, datetime.now())))
+	dt_local = dt.astimezone(pytz.timezone(app.config['TIMEZONE']))
+	return flask.Markup('<time datetime="{}" title="{}">{}</time>'.format(dt_local.strftime('%Y-%m-%dT%H:%M:%S%z'), dt_local.strftime('%Y-%m-%d %H:%M:%S %Z'), timeago.format(dt, DateTimeField.now())))
 
 # Tickle the plumbus every request
 @app.before_request

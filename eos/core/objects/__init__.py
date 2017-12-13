@@ -39,6 +39,7 @@ if is_python:
 	import hashlib
 	import importlib
 	import json
+	import pytz
 	import uuid
 	__pragma__('noskip')
 else:
@@ -158,14 +159,14 @@ class DateTimeField(Field):
 			return None
 		
 		if is_python:
-			return datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
+			return pytz.utc.localize(datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ'))
 		else:
 			return __pragma__('js', '{}', 'new Date(value)')
 	
 	@staticmethod
 	def now():
 		if is_python:
-			return datetime.utcnow()
+			return pytz.utc.localize(datetime.utcnow())
 		else:
 			return __pragma__('js', '{}', 'new Date()')
 
