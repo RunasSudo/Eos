@@ -214,7 +214,8 @@ def election_admin(func):
 @app.route('/election/<election_id>/')
 @using_election
 def election_api_json(election):
-	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, should_protect=True, for_hash=('full' not in flask.request.args))), mimetype='application/json')
+	is_full = 'full' in flask.request.args
+	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, None, SerialiseOptions(should_protect=True, for_hash=(not is_full), combine_related=True))), mimetype='application/json')
 
 @app.route('/election/<election_id>/view')
 @using_election
@@ -326,8 +327,8 @@ def election_api_cast_vote(election):
 	election.save()
 	
 	return flask.Response(json.dumps({
-		'voter': EosObject.serialise_and_wrap(voter, should_protect=True),
-		'vote': EosObject.serialise_and_wrap(vote, should_protect=True)
+		'voter': EosObject.serialise_and_wrap(voter, None, SerialiseOptions(should_protect=True)),
+		'vote': EosObject.serialise_and_wrap(vote, None, SerialiseOptions(should_protect=True))
 	}), mimetype='application/json')
 
 @app.route('/election/<election_id>/export/question/<int:q_num>/<format>')

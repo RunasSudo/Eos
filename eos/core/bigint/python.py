@@ -14,7 +14,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from eos.core.objects import EosObject
+from eos.core.objects import *
 
 import math
 
@@ -46,7 +46,7 @@ class BigInt(EosObject):
 	def nbits(self):
 		return math.ceil(math.log2(self.impl)) if self.impl > 0 else 0
 	
-	def serialise(self, for_hash=False, should_protect=False):
+	def serialise(self, options=SerialiseOptions.DEFAULT):
 		return str(self)
 	
 	@classmethod

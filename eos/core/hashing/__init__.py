@@ -71,12 +71,12 @@ class SHA256:
 	
 	def update_obj(self, *values):
 		for value in values:
-			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value, None, True)))
+			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value, None, SerialiseOptions(for_hash=True))))
 		return self
 	
 	def update_obj_raw(self, *values):
 		for value in values:
-			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value, None, False)))
+			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value, None, SerialiseOptions(for_hash=False))))
 		return self
 	
 	def hash_as_b64(self):

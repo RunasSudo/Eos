@@ -34,6 +34,20 @@ class PostgreSQLDBProvider(eos.core.db.DBProvider):
 		self.cur.execute(SQL('SELECT data FROM {}').format(Identifier(table)))
 		return [x[0] for x in self.cur.fetchall()]
 	
+	def get_all_by_fields(self, table, fields):
+		# TODO: Make this much better
+		result = []
+		for val in self.get_all(table):
+			if '_id' in fields and val['_id'] != fields.pop('_id'):
+				continue
+			if 'type' in fields and val['type'] != fields.pop('type'):
+				continue
+			for field in fields:
+				if val['value'][field] != fields[field]:
+					continue
+			result.append(val)
+		return result
+	
 	def get_by_id(self, table, _id):
 		self.create_table(table)
 		self.cur.execute(SQL('SELECT data FROM {} WHERE _id = %s').format(Identifier(table)), (_id,))

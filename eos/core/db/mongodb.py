@@ -26,6 +26,16 @@ class MongoDBProvider(eos.core.db.DBProvider):
 	def get_all(self, collection):
 		return self.db[collection].find()
 	
+	def get_all_by_fields(self, collection, fields):
+		query = {}
+		if '_id' in fields:
+			query['_id'] = fields.pop('_id')
+		if 'type' in fields:
+			query['type'] = fields.pop('type')
+		for field in fields:
+			query['value.' + field] = fields.pop(field)
+		return self.db[collection].find(query)
+	
 	def get_by_id(self, collection, _id):
 		return self.db[collection].find_one(_id)
 	

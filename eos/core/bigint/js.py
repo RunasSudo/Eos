@@ -14,7 +14,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from eos.core.objects import EosObject
+from eos.core.objects import *
 
 import random
 
@@ -125,7 +125,7 @@ class BigInt(EosObject):
 	def nbits(self):
 		return self.impl.bitLength()
 	
-	def serialise(self, for_hash=False, should_protect=False):
+	def serialise(self, options=SerialiseOptions.DEFAULT):
 		return str(self)
 	
 	@classmethod
