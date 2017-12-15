@@ -278,10 +278,10 @@ class ElectionTestCase(EosTestCase):
 				answer = ApprovalAnswer(choices=VOTES[i][j])
 				encrypted_answer = BlockEncryptedAnswer.encrypt(election.sk.public_key, answer)
 				ballot.encrypted_answers.append(encrypted_answer)
-			vote = Vote(ballot=ballot, cast_at=DateTimeField.now())
-			election.voters[i].votes.append(vote)
+			vote = Vote(voter_id=election.voters[i]._id, ballot=ballot, cast_at=DateTimeField.now())
+			vote.save()
 		
-		election.save()
+		#election.save()
 		
 		# Close voting
 		self.do_task_assert(election, 'eos.base.workflow.TaskCloseVoting', 'eos.psr.workflow.TaskMixVotes')

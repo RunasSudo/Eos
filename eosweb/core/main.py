@@ -311,7 +311,7 @@ def election_api_cast_vote(election):
 	
 	# Cast the vote
 	ballot = EosObject.deserialise_and_unwrap(data['ballot'])
-	vote = Vote(ballot=ballot, cast_at=DateTimeField.now())
+	vote = Vote(voter_id=voter._id, ballot=ballot, cast_at=DateTimeField.now())
 	
 	# Store data
 	if app.config['CAST_FINGERPRINT']:
@@ -322,9 +322,7 @@ def election_api_cast_vote(election):
 		else:
 			vote.cast_ip = flask.request.remote_addr
 	
-	voter.votes.append(vote)
-	
-	election.save()
+	vote.save()
 	
 	return flask.Response(json.dumps({
 		'voter': EosObject.serialise_and_wrap(voter, None, SerialiseOptions(should_protect=True)),

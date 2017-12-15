@@ -167,8 +167,8 @@ class TaskDecryptVotes(WorkflowTask):
 			election.results.append(EosObject.lookup('eos.base.election.RawResult')())
 		
 		for voter in election.voters:
-			if len(voter.votes) > 0:
-				vote = voter.votes[-1]
+			if len(voter.votes.get_all()) > 0:
+				vote = voter.votes.get_all()[-1]
 				ballot = vote.ballot
 				for q_num in range(len(ballot.encrypted_answers)):
 					plaintexts, answer = ballot.encrypted_answers[q_num].decrypt()

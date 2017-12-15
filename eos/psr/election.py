@@ -96,8 +96,8 @@ class MixingTrustee(Trustee):
 			# Use the raw ballots from voters
 			orig_answers = []
 			for voter in self.recurse_parents(Election).voters:
-				if len(voter.votes) > 0:
-					vote = voter.votes[-1]
+				if len(voter.votes.get_all()) > 0:
+					vote = voter.votes.get_all()[-1]
 					ballot = vote.ballot
 					orig_answers.append(ballot.encrypted_answers[question_num])
 			return orig_answers
@@ -195,8 +195,8 @@ class InternalMixingTrustee(MixingTrustee):
 		else:
 			orig_answers = []
 			for voter in election.voters:
-				if len(voter.votes) > 0:
-					ballot = voter.votes[-1].ballot
+				if len(voter.votes.get_all()) > 0:
+					ballot = voter.votes.get_all()[-1].ballot
 					orig_answers.append(ballot.encrypted_answers[question])
 		shuffled_answers, commitments = self.mixnets[question].shuffle(orig_answers)
 		self.mixed_questions.append(EosList(shuffled_answers))

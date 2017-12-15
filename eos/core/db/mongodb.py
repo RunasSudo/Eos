@@ -33,7 +33,7 @@ class MongoDBProvider(eos.core.db.DBProvider):
 		if 'type' in fields:
 			query['type'] = fields.pop('type')
 		for field in fields:
-			query['value.' + field] = fields.pop(field)
+			query['value.' + field] = fields[field]
 		return self.db[collection].find(query)
 	
 	def get_by_id(self, collection, _id):

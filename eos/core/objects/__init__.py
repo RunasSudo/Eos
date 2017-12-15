@@ -85,6 +85,9 @@ class Field:
 			value._instance = (obj, self.real_name)
 			if not value._inited:
 				value.post_init()
+	
+	def object_init(self, obj, value):
+		self.object_set(obj, value)
 
 class SerialiseOptions:
 	def __init__(self, for_hash=False, should_protect=False, combine_related=False):
@@ -152,20 +155,24 @@ class RelatedObjectListManager:
 	
 	def get_all(self):
 		query = {self.field.related_field: getattr(self.obj, self.field.this_field)}
-		return self.field.object_type.get_all_by_fields(**query)
+		return self.field.related_type.get_all_by_fields(**query)
 
 class RelatedObjectListField(Field):
 	def __init__(self, object_type=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.object_type = object_type
-		self.this_field = args['this_field'] if 'this_field' in args else '_id'
-		self.related_field = args['related_field'] if 'related_field' in args else 'related_id'
+		self.related_type = kwargs['related_type']
+		self.object_type = kwargs['object_type'] if 'object_type' in kwargs else None
+		self.this_field = kwargs['this_field'] if 'this_field' in kwargs else '_id'
+		self.related_field = kwargs['related_field']
 	
 	def object_get(self, obj):
 		return RelatedObjectListManager(self, obj)
 	
 	def object_set(self, obj, value):
 		raise Exception('Cannot directly set related field')
+	
+	def object_init(self, obj, value):
+		pass
 	
 	def serialise(self, value, options=SerialiseOptions.DEFAULT):
 		if not options.combine_related:
@@ -174,7 +181,7 @@ class RelatedObjectListField(Field):
 	
 	def deserialise(self, value):
 		if value is None:
-			return self.get_manager()
+			return None
 		return EosList([EosObject.deserialise_and_unwrap(x, self.object_type) for x in value])
 
 if is_python:
@@ -270,8 +277,9 @@ class EosObject(metaclass=EosObjectType):
 		if object_type:
 			if value:
 				return value.serialise(options)
-			return None
-		return {'type': value._name, 'value': (value.serialise(options) if value else None)}
+		if value:
+			return {'type': value._name, 'value': (value.serialise(options) if value else None)}
+		return None
 	
 	@staticmethod
 	def deserialise_and_unwrap(value, object_type=None):
@@ -428,12 +436,12 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 					})
 			
 			if val.internal_name in kwargs:
-				setattr(self, val.real_name, kwargs[val.internal_name])
+				val.object_init(self, kwargs[val.internal_name])
 			else:
 				default = val.default
 				if default is not None and callable(default):
 					default = default()
-				setattr(self, val.real_name, default)
+				val.object_init(self, default)
 	
 	def serialise(self, options=SerialiseOptions.DEFAULT):
 		return {val.real_name: val.serialise(getattr(self, val.real_name), options) for attr, val in self._fields.items() if ((val.is_hashed or not options.for_hash) and (not options.should_protect or not val.is_protected))}
@@ -479,6 +487,9 @@ class TopLevelObject(DocumentObject, metaclass=TopLevelObjectType):
 	
 	@classmethod
 	def get_all_by_fields(cls, **fields):
+		for field in fields:
+			if not isinstance(fields[field], str):
+				fields[field] = str(fields[field])
 		return [EosObject.deserialise_and_unwrap(x) for x in dbinfo.provider.get_all_by_fields(cls._db_name, fields)]
 	
 	@classmethod

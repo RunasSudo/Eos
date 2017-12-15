@@ -46,8 +46,11 @@ class Ballot(EmbeddedObject):
 		
 		return Ballot(encrypted_answers=encrypted_answers_deaudit, election_id=self.election_id, election_hash=self.election_hash)
 
-class Vote(EmbeddedObject):
-	_ver = StringField(default='0.5')
+class Vote(TopLevelObject):
+	_ver = StringField(default='0.6')
+	
+	_id = UUIDField()
+	voter_id = UUIDField()
 	
 	ballot = EmbeddedObjectField()
 	cast_at = DateTimeField()
@@ -57,8 +60,10 @@ class Vote(EmbeddedObject):
 	cast_fingerprint = BlobField(is_protected=True)
 
 class Voter(EmbeddedObject):
+	_ver = StringField(default='0.6')
+	
 	_id = UUIDField()
-	votes = EmbeddedObjectListField()
+	votes = RelatedObjectListField(related_type=Vote, object_type=None, this_field='_id', related_field='voter_id')
 
 class User(EmbeddedObject):
 	admins = []
@@ -229,7 +234,7 @@ class Election(TopLevelObject):
 		election_hash = SHA256().update_obj(self).hash_as_b64()
 		
 		for voter in self.voters:
-			for vote in voter.votes:
+			for vote in voter.votes.get_all():
 				if vote.ballot.election_id != self._id:
 					raise Exception('Invalid election ID on ballot')
 				if vote.ballot.election_hash != election_hash:
