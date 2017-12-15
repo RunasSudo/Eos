@@ -34,6 +34,7 @@ from datetime import datetime
 
 import functools
 import importlib
+import io
 import json
 import os
 import pytz
@@ -307,6 +308,15 @@ def election_api_cast_vote(election):
 		'voter': EosObject.serialise_and_wrap(voter, should_protect=True),
 		'vote': EosObject.serialise_and_wrap(vote, should_protect=True)
 	}), mimetype='application/json')
+
+@app.route('/election/<election_id>/export/question/<int:q_num>/<format>')
+@using_election
+def election_api_export_question(election, q_num, format):
+	import eos.base.util.blt
+	#return flask.Response(''.join(eos.base.util.blt.writeBLT(election, q_num, 2)), mimetype='text/plain')
+	resp = flask.send_file(io.BytesIO(''.join(eos.base.util.blt.writeBLT(election, q_num, 2)).encode('utf-8')), mimetype='text/plain; charset=utf-8', attachment_filename='{}.blt'.format(q_num), as_attachment=True)
+	resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+	return resp
 
 @app.route('/auditor')
 def auditor():

@@ -81,6 +81,8 @@
 	{% if (session.user and session.user.is_admin() and election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.READY) or election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
 		<h2>Results</h2>
 		
+		<p><a href="{{ url_for('election_api_json', election_id=election._id) }}?full" class="mini ui labeled icon button"><i class="download icon"></i> Export as Eos JSON</a></p>
+		
 		{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
 			<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at|pretty_date }}.</p>
 		{% else %}
