@@ -21,6 +21,7 @@ import timeago
 from eos.core.objects import *
 from eos.core.tasks import *
 from eos.base.election import *
+from eos.base.tasks import *
 from eos.base.workflow import *
 from eos.psr.crypto import *
 from eos.psr.election import *
@@ -152,6 +153,26 @@ def verify_election(electionid):
 	
 	election.verify()
 	print('The election has passed validation')
+
+@app.cli.command('tally_stv')
+@click.option('--electionid', default=None)
+@click.option('--qnum', default=0)
+@click.option('--randfile', default=None)
+def tally_stv_election(electionid, qnum, randfile):
+	election = Election.get_by_id(electionid)
+	
+	with open(randfile, 'r') as f:
+		dat = json.load(f)
+	task = TaskTallySTV(
+		election_id=election._id,
+		q_num=qnum,
+		random=dat,
+		num_seats=7,
+		status=Task.Status.READY,
+		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
+	)
+	task.save()
+	task.run()
 
 @app.context_processor
 def inject_globals():
@@ -313,8 +334,7 @@ def election_api_cast_vote(election):
 @using_election
 def election_api_export_question(election, q_num, format):
 	import eos.base.util.blt
-	#return flask.Response(''.join(eos.base.util.blt.writeBLT(election, q_num, 2)), mimetype='text/plain')
-	resp = flask.send_file(io.BytesIO(''.join(eos.base.util.blt.writeBLT(election, q_num, 2)).encode('utf-8')), mimetype='text/plain; charset=utf-8', attachment_filename='{}.blt'.format(q_num), as_attachment=True)
+	resp = flask.send_file(io.BytesIO('\n'.join(eos.base.util.blt.writeBLT(election, q_num, 2)).encode('utf-8')), mimetype='text/plain; charset=utf-8', attachment_filename='{}.blt'.format(q_num), as_attachment=True)
 	resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
 	return resp
 

@@ -205,6 +205,14 @@ class RawResult(Result):
 		combined.sort(key=lambda x: x[1], reverse=True)
 		return combined
 
+class MultipleResult(Result):
+	results = EmbeddedObjectListField()
+
+class STVResult(Result):
+	elected = ListField(IntField())
+	log = StringField()
+	random = BlobField()
+
 class Election(TopLevelObject):
 	_id = UUIDField()
 	workflow = EmbeddedObjectField(Workflow) # Once saved, we don't care what kind of workflow it is

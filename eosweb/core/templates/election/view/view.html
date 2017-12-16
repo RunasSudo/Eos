@@ -92,8 +92,24 @@
 		{% endif %}
 		
 		{% for question in election.questions %}
-			<h3>{{ loop.index }}. {{ question.prompt }}</h2>
-			{% include eosweb.core.main.model_view_map[question.__class__]['result_raw'] %}
+			<h3>{{ loop.index }}. {{ question.prompt }}</h3>
+			{% set q_num = loop.index0 %}
+			{% set result = election.results[q_num] %}
+			{% if result._name == 'eos.base.election.MultipleResult' %}
+				{% set result1 = result %}
+				<div class="ui top attached tabular menu">
+					{% for result in result1.results %}
+						<div class="{% if loop.index0 == 0 %}active {% endif %}item" data-tab="result-{{ q_num }}-{{ loop.index0 }}">{{ result.__class__.__name__.replace('Result', '') }}</div>
+					{% endfor %}
+				</div>
+				{% for result in result1.results %}
+					<div class="ui bottom attached{% if loop.index0 == 0 %} active{% endif %} tab segment" data-tab="result-{{ q_num }}-{{ loop.index0 }}">
+						{% include eosweb.core.main.model_view_map[question.__class__]['result_' + result._name] %}
+					</div>
+				{% endfor %}
+			{% else %}
+				{% include eosweb.core.main.model_view_map[question.__class__]['result_' + result._name] %}
+			{% endif %}
 		{% endfor %}
 	{% endif %}
 	

@@ -21,27 +21,27 @@ def writeBLT(election, q_num, seats, withdrawn=[]):
 	
 	electionLines = []
 	
-	electionLines.append('{} {}\n'.format(len(flat_choices), seats))
+	electionLines.append('{} {}'.format(len(flat_choices), seats))
 	
 	if len(withdrawn) > 0:
-		electionLines.append(' '.join(['-{}'.format(flat_choices.index(candidate) + 1) for candidate in withdrawn]) + '\n')
+		electionLines.append(' '.join(['-{}'.format(flat_choices.index(candidate) + 1) for candidate in withdrawn]))
 	
 	result = election.results[q_num].count()
 	
 	for answer, count in result:
 		if answer.choices:
-			electionLines.append('{} {} 0\n'.format(count, ' '.join(str(x + 1) for x in answer.choices)))
+			electionLines.append('{} {} 0'.format(count, ' '.join(str(x + 1) for x in answer.choices)))
 		else:
-			electionLines.append('{} 0\n'.format(count))
+			electionLines.append('{} 0'.format(count))
 	
-	electionLines.append('0\n')
+	electionLines.append('0')
 	
 	for candidate in flat_choices:
 		if candidate.party:
-			electionLines.append("'{} – {}'\n".format(candidate.name, candidate.party))
+			electionLines.append("'{} – {}'".format(candidate.name, candidate.party))
 		else:
-			electionLines.append("'{}'\n".format(candidate.name))
+			electionLines.append("'{}'".format(candidate.name))
 	
-	electionLines.append("'{} – {}'\n".format(election.name, question.prompt))
+	electionLines.append("'{} – {}'".format(election.name, question.prompt))
 	
 	return electionLines
