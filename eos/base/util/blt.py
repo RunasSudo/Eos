@@ -26,7 +26,10 @@ def writeBLT(election, q_num, seats, withdrawn=[]):
 	if len(withdrawn) > 0:
 		electionLines.append(' '.join(['-{}'.format(flat_choices.index(candidate) + 1) for candidate in withdrawn]))
 	
-	result = election.results[q_num].count()
+	result_obj = election.results[q_num]
+	if result_obj._name == 'eos.base.election.MultipleResult':
+		result_obj = next(x for x in result_obj.results if x._name == 'eos.base.election.RawResult')
+	result = result_obj.count()
 	
 	for answer, count in result:
 		if answer.choices:
