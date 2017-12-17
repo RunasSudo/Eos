@@ -84,7 +84,7 @@
 		<p><a href="{{ url_for('election_api_json', election_id=election._id) }}?full" class="mini ui labeled icon button"><i class="download icon"></i> Export as Eos JSON</a></p>
 		
 		{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
-			<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at|pretty_date }}.</p>
+			<p>Results were released {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at|pretty_date }}.</p>
 		{% else %}
 			<div class="ui warning message">
 				This is a preview of the election results, shown only to you, the election administrator. To publicly release the results, you must do so from the <a href="{{ url_for('election_admin_summary', election_id=election._id) }}">‘Administrate this election’</a> tab.
