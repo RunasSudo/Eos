@@ -16,8 +16,10 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
+<p><a href="{{ url_for('election_api_export_question', election_id=election._id, q_num=q_num, format='blt') }}" class="mini ui labeled icon button"><i class="download icon"></i> Export as OpenSTV BLT</a></p>
+
 <table class="ui celled table">
-	{% for answer, num in election.results[loop.index0].count() %}
+	{% for answer, num in result.count() %}
 		<tr>
 			<td class="fourteen wide">{{ question.pretty_answer(answer) }}</td>
 			<td class="two wide">{{ num }}</td>

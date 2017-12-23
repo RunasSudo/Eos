@@ -31,7 +31,7 @@
 	{% endfor %}
 	
 	<p>If you are happy with your selections, then make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
-	<p>Click ‘Continue’, and you will be able to log into cast your vote.</p>
+	<p>Click ‘Continue’, and you will be able to copy your pre-poll ballot to provide to the election administrator.</p>
 {% endblock %}
 
 {% block buttons %}

@@ -17,6 +17,9 @@
 import eos.core.objects
 import eos.core.bigint
 import eos.core.hashing
+import eos.core.tests
+import eos.core.tasks
+import eos.core.tasks.direct
 
 import eos.base.election
 import eos.base.workflow

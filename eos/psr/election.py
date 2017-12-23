@@ -225,8 +225,6 @@ class InternalMixingTrustee(MixingTrustee):
 		return True
 
 class PSRElection(Election):
-	_db_name = Election._name
-	
 	sk = EmbeddedObjectField(SEGPrivateKey, is_protected=True) # TODO: Threshold
 	
 	public_key = EmbeddedObjectField(SEGPublicKey)
@@ -244,6 +242,9 @@ class PSRElection(Election):
 		# Verify decryption proofs
 		for q_num in range(len(self.questions)):
 			raw_result = self.results[q_num]
+			if isinstance(raw_result, MultipleResult):
+				raw_result = next(result for result in raw_result.results if isinstance(result, RawResult))
+			
 			for answer_num in range(len(raw_result.plaintexts)):
 				# Input and output blocks:
 				plaintexts = raw_result.plaintexts[answer_num]

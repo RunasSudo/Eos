@@ -15,6 +15,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from eos.core.objects import *
+from eos.core.bigint import *
 from eos.base.workflow import *
 
 class Answer(EmbeddedObject):
@@ -46,8 +47,14 @@ class Ballot(EmbeddedObject):
 		return Ballot(encrypted_answers=encrypted_answers_deaudit, election_id=self.election_id, election_hash=self.election_hash)
 
 class Vote(EmbeddedObject):
+	_ver = StringField(default='0.5')
+	
 	ballot = EmbeddedObjectField()
 	cast_at = DateTimeField()
+	comment = StringField()
+	
+	cast_ip = StringField(is_protected=True)
+	cast_fingerprint = BlobField(is_protected=True)
 
 class Voter(EmbeddedObject):
 	_id = UUIDField()
@@ -110,18 +117,48 @@ class Result(EmbeddedObject):
 	pass
 
 class ListChoiceQuestion(Question):
-	choices = ListField(StringField())
+	_ver = StringField(default='0.5')
+	
+	choices = EmbeddedObjectListField()
 	min_choices = IntField()
 	max_choices = IntField()
+	randomise_choices = BooleanField(default=False)
 	
 	def pretty_answer(self, answer):
 		if len(answer.choices) == 0:
 			return '(blank votes)'
-		return ', '.join([self.choices[choice] for choice in answer.choices])
+		flat_choices = self.flatten_choices()
+		return ', '.join([flat_choices[choice].name for choice in answer.choices])
 	
 	def max_bits(self):
-		answer = self.answer_type(choices=list(range(len(self.choices))))
+		answer = self.answer_type(choices=list(range(self.max_choices)))
 		return len(EosObject.to_json(EosObject.serialise_and_wrap(answer))) * 8
+	
+	def flatten_choices(self):
+		# Return a flat list of Choices, without Tickets
+		flat_choices = []
+		for choice in self.choices:
+			if isinstance(choice, Ticket):
+				for choice2 in choice.choices:
+					flat_choices.append(choice2)
+			else:
+				flat_choices.append(choice)
+		return flat_choices
+	
+	def randomised_choices(self):
+		if not self.randomise_choices:
+			return self.choices
+		else:
+			# Clone list
+			output = EosList([x for x in self.choices])
+			# Fisher-Yates shuffle
+			i = len(output)
+			while i != 0:
+				rnd = BigInt.noncrypto_random(0, i - 1)
+				rnd = rnd.__int__()
+				i -= 1
+				output[rnd], output[i] = output[i], output[rnd]
+			return output
 
 class ApprovalAnswer(Answer):
 	choices = ListField(IntField())
@@ -134,6 +171,24 @@ class PreferentialAnswer(Answer):
 
 class PreferentialQuestion(ListChoiceQuestion):
 	answer_type = PreferentialAnswer
+
+class Choice(EmbeddedObject):
+	name = StringField()
+	party = StringField(default=None)
+	
+	@property
+	def party_or_ticket(self):
+		if self.party is not None:
+			return self.party
+		else:
+			ticket = self.recurse_parents(Ticket)
+			if ticket:
+				return ticket.name
+		return None
+
+class Ticket(EmbeddedObject):
+	name = StringField()
+	choices = EmbeddedObjectListField()
 
 class RawResult(Result):
 	plaintexts = ListField(EmbeddedObjectListField())
@@ -149,6 +204,14 @@ class RawResult(Result):
 				combined[index][1] += 1
 		combined.sort(key=lambda x: x[1], reverse=True)
 		return combined
+
+class MultipleResult(Result):
+	results = EmbeddedObjectListField()
+
+class STVResult(Result):
+	elected = ListField(IntField())
+	log = StringField()
+	random = BlobField()
 
 class Election(TopLevelObject):
 	_id = UUIDField()

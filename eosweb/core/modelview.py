@@ -20,7 +20,7 @@ from eos.psr.election import *
 model_view_map = {
 	ApprovalQuestion: {
 		'view': 'question/approval/view.html',
-		'result_raw': 'question/approval/result_raw.html',
+		'result_eos.base.election.RawResult': 'question/approval/result_raw.html',
 		'selections_make': 'question/approval/selections_make.html',
 		'selections_review': 'question/approval/selections_review.html'
 	},
@@ -29,7 +29,8 @@ model_view_map = {
 	},
 	PreferentialQuestion: {
 		'view': 'question/preferential/view.html',
-		'result_raw': 'question/preferential/result_raw.html',
+		'result_eos.base.election.RawResult': 'question/preferential/result_raw.html',
+		'result_eos.base.election.STVResult': 'question/preferential/result_stv.html',
 		'selections_make': 'question/preferential/selections_make.html',
 		'selections_review': 'question/preferential/selections_review.html'
 	},

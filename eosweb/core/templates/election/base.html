@@ -45,6 +45,11 @@
 	{{ super() }}
 	
 	<script>
+		function initTab() {
+			$('.tabular.menu .item').tab();
+			$('.ui.accordion').accordion();
+		}
+		
 		$(".election-tab-ajax").click(function() {
 			var linkEl = $(this);
 			history.pushState({}, "", linkEl.attr("href"));
@@ -56,8 +61,12 @@
 			
 			$("#election-tab-content").load(linkEl.attr("href") + " #election-tab-content", function() {
 				linkEl.find(".loader").removeClass("active");
+				
+				initTab();
 			});
 			return false;
 		});
+		
+		initTab();
 	</script>
 {% endblock %}

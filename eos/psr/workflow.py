@@ -66,7 +66,7 @@ class TaskDecryptVotes(eos.base.workflow.TaskDecryptVotes):
 		election = self.recurse_parents('eos.base.election.Election')
 		
 		for _ in range(len(election.questions)):
-			election.results.append(EosObject.objects['eos.base.election.RawResult']())
+			election.results.append(EosObject.lookup('eos.base.election.RawResult')())
 		
 		for i in range(len(election.mixing_trustees[-1].mixed_questions)):
 			for encrypted_answer in election.mixing_trustees[-1].mixed_questions[i]:

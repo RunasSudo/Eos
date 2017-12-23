@@ -18,6 +18,7 @@ from eos.core.bigint import *
 from eos.core.objects import *
 from eos.core.hashing import *
 from eos.core.tasks import *
+from eos.core.tasks.direct import *
 
 # Common library things
 # ===================

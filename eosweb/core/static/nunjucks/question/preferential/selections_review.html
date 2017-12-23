@@ -16,11 +16,13 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
+{% set flat_choices = question.flatten_choices() %}
+
 {% if booth.answers[loop.index0].value.choices.length > 0 %}
 	<div class="ui ordered list">
 		{% for choice in booth.answers[loop.index0].value.choices %}
 			<div class="item">
-				<div class="content">{{ question.choices.__getitem__(choice) }}</div>
+				<div class="content">{{ flat_choices[choice].name }}{% if flat_choices[choice].party_or_ticket %} – {{ flat_choices[choice].party_or_ticket }}{% endif %}</div>
 			</div>
 		{% endfor %}
 	</div>

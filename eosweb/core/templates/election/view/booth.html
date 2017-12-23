@@ -38,6 +38,9 @@
 	<script src="{{ url_for('static', filename='js/eosjs.js') }}"></script>
 	
 	<script src="{{ url_for('static', filename='bower_components/dragula.js/dist/dragula.min.js') }}"></script>
+	{% if eosweb.app.config['CAST_FINGERPRINT'] %}
+		<script src="{{ url_for('static', filename='bower_components/fingerprintjs2/dist/fingerprint2.min.js') }}"></script>
+	{% endif %}
 	
 	<script>
 		var templates = {};
@@ -50,11 +53,14 @@
 		
 		var username = {% if session.user %}"{{ session.user.name }}"{% else %}null{% endif %};
 		var auth_methods = {{ auth_methods|safe }};
+		var should_do_fingerprint = {{ 'true' if eosweb.app.config['CAST_FINGERPRINT'] else 'false' }};
 		
 		function resetBooth() {
 			booth = {
 				"questionNum": 0,
 				"answers": [],
+				"q_state": [],
+				"fingerprint": []
 			};
 		}
 		resetBooth();
@@ -136,6 +142,7 @@
 				techDetails = '<p>Technical details: ' + err + '</p>';
 			}
 			$("#booth-content").html('<div class="ui error message"><p>We were unable to display the next page of the voting booth. For your security, your ballot selections have been cleared. Please try again. If this problem persists, contact the {{ election.kind }} administrator.</p>' + techDetails + '</div>');
+			console.error(err);
 		}
 		
 		function showTemplate(template, opts, destination) {
@@ -207,30 +214,54 @@
 			}
 		});
 		templates['booth/encrypt.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/review.html', {ballot: booth.ballot});
-			}
-		});
-		templates['booth/review.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/audit.html', {ballot: booth.ballot});
-			}
-		});
-		templates['booth/audit.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/cast.html', {ballot: booth.ballot});
-			}
-		});
-		templates['booth/cast.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/complete.html', {voter: booth.voter, vote: booth.vote});
-			}
-		});
-		templates['booth/complete.html'] = null;
+		
+		if (location.search.indexOf('?prepoll') >= 0) {
+			// Pre-poll
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/review_prepoll.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/review_prepoll.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/audit.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/audit.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/cast_prepoll.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/cast_prepoll.html'] = null;
+		} else {
+			// Real voting booth
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/review.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/review.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/audit.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/audit.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/cast.html', {ballot: booth.ballot});
+				}
+			});
+			templates['booth/cast.html'] = null;
+			boothTasks.append({
+				activate: function(fromLeft) {
+					showTemplate('booth/complete.html', {voter: booth.voter, vote: booth.vote});
+				}
+			});
+			templates['booth/complete.html'] = null;
+		}
 		
 		// === END BOOTH TASKS ===
 		

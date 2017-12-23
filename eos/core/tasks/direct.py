@@ -15,5 +15,27 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from eos.core.tasks import *
+from eos.core.objects import *
 
-
+class DirectRunStrategy(RunStrategy):
+	def run(self, task):
+		task.status = Task.Status.PROCESSING
+		task.started_at = DateTimeField.now()
+		task.save()
+		
+		try:
+			task._run()
+			task.status = Task.Status.COMPLETE
+			task.completed_at = DateTimeField.now()
+			task.save()
+		except Exception as e:
+			task.status = Task.Status.FAILED
+			task.completed_at = DateTimeField.now()
+			if is_python:
+				#__pragma__('skip')
+				import traceback
+				#__pragma__('noskip')
+				task.messages.append(traceback.format_exc())
+			else:
+				task.messages.append(repr(e))
+			task.save()

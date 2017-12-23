@@ -17,10 +17,31 @@
 #}
 
 <table class="ui celled table">
-	{% for answer, num in result.count() %}
+	<thead>
 		<tr>
-			<td class="fourteen wide">{{ question.pretty_answer(answer) }}</td>
-			<td class="two wide">{{ num }}</td>
+			<th class="fourteen wide">Candidate</th>
+			<th class="two wide">Elected</th>
 		</tr>
-	{% endfor %}
+	</thead>
+	<tbody>
+		{% set flat_choices = question.flatten_choices() %}
+		{% for elected in result.elected %}
+			<tr>
+				<td class="fourteen wide">{{ flat_choices[elected].name }}{% if flat_choices[elected].party %} – {{ flat_choices[elected].party }}{% endif %}</td>
+				<td class="two wide">{{ loop.index }}</td>
+			</tr>
+		{% endfor %}
+	</tbody>
 </table>
+
+<div class="ui accordion">
+	<div class="title">
+		<i class="dropdown icon"></i>
+		Count log
+	</div>
+	<div class="content">
+		<div class="ui form">
+			<textarea style="font-family: monospace;" rows="20">{{ result.log }}</textarea>
+		</div>
+	</div>
+</div>

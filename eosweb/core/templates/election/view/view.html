@@ -33,33 +33,58 @@
 		{% else %}
 			<p><button class="ui huge button">Voting in this {{ election.kind }} has not yet opened</button></p>
 		{% endif %}
-		
-		<p>
-			Voting in this {{ election.kind }}
-			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
-				opened at {{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
-			{% else %}
-				is scheduled to open
-			{% endif %}
-			at the administrators' discretion, and
-			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
-				closed at {{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
-			{% else %}
-				is scheduled to close
-			{% endif %}
-			at the administrators' discretion.
-		</p>
 	{% else %}
 		<p><button class="ui huge button">This {{ election.kind }} is not yet ready for voting</button></p>
 		
 		<p>The administrator of this {{ election.kind }} has not yet finished setting the election parameters. The details of the {{ election.kind }} may change at any time.</p>
 	{% endif %}
 	
+	<p>
+		Voting in this {{ election.kind }}
+		{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status == Status.EXITED %}
+			opened
+			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at|pretty_date }}
+				according to schedule,
+			{% else %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').exited_at|pretty_date }}
+				at the administrator's discretion,
+			{% endif %}
+		{% else %}
+			is scheduled to open
+			{% if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at|pretty_date }},
+			{% else %}
+				the administrator's discretion,
+			{% endif %}
+		{% endif %}
+		and
+		{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
+			closed
+			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at|pretty_date }}
+				according to schedule.
+			{% else %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').exited_at|pretty_date }}
+				at the administrator's discretion.
+			{% endif %}
+		{% else %}
+			is scheduled to close
+			{% if election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at %}
+				{{ election.workflow.get_task('eos.base.workflow.TaskCloseVoting').get_entry_task().run_at|pretty_date }}.
+			{% else %}
+				the administrator's discretion.
+			{% endif %}
+		{% endif %}
+	</p>
+	
 	{% if (session.user and session.user.is_admin() and election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.READY) or election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
 		<h2>Results</h2>
 		
+		<p><a href="{{ url_for('election_api_json', election_id=election._id) }}?full" class="mini ui labeled icon button"><i class="download icon"></i> Export as Eos JSON</a></p>
+		
 		{% if election.workflow.get_task('eos.base.workflow.TaskReleaseResults').status == Status.EXITED %}
-			<p>Results were released at {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC.</p>
+			<p>Results were released {{ election.workflow.get_task('eos.base.workflow.TaskReleaseResults').exited_at|pretty_date }}.</p>
 		{% else %}
 			<div class="ui warning message">
 				This is a preview of the election results, shown only to you, the election administrator. To publicly release the results, you must do so from the <a href="{{ url_for('election_admin_summary', election_id=election._id) }}">‘Administrate this election’</a> tab.
@@ -67,8 +92,24 @@
 		{% endif %}
 		
 		{% for question in election.questions %}
-			<h3>{{ loop.index }}. {{ question.prompt }}</h2>
-			{% include eosweb.core.main.model_view_map[question.__class__]['result_raw'] %}
+			<h3>{{ loop.index }}. {{ question.prompt }}</h3>
+			{% set q_num = loop.index0 %}
+			{% set result = election.results[q_num] %}
+			{% if result._name == 'eos.base.election.MultipleResult' %}
+				{% set result1 = result %}
+				<div class="ui top attached tabular menu">
+					{% for result in result1.results %}
+						<div class="{% if loop.index0 == 0 %}active {% endif %}item" data-tab="result-{{ q_num }}-{{ loop.index0 }}">{{ result.__class__.__name__.replace('Result', '') }}</div>
+					{% endfor %}
+				</div>
+				{% for result in result1.results %}
+					<div class="ui bottom attached{% if loop.index0 == 0 %} active{% endif %} tab segment" data-tab="result-{{ q_num }}-{{ loop.index0 }}">
+						{% include eosweb.core.main.model_view_map[question.__class__]['result_' + result._name] %}
+					</div>
+				{% endfor %}
+			{% else %}
+				{% include eosweb.core.main.model_view_map[question.__class__]['result_' + result._name] %}
+			{% endif %}
 		{% endfor %}
 	{% endif %}
 	
@@ -76,6 +117,8 @@
 		<h2>Voting booth</h2>
 		
 		<p>Voting in this {{ election.kind }} has not yet begun. If you would like to preview the voting booth, <a href="{{ url_for('election_booth', election_id=election._id) }}">click here</a>. Note that you will not be able to cast any ballots until voting opens.</p>
+		
+		<p><small>If you are a registered pre-poll voter, you may access the pre-poll voting booth <a href="{{ url_for('election_booth', election_id=election._id) }}?prepoll">here</a>.</small></p>
 	{% elif election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == Status.EXITED %}
 		<h2>Voting booth</h2>
 		

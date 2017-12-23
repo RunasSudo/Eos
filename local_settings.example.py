@@ -14,6 +14,10 @@ ADMINS = [
 	#eos.redditauth.election.RedditUser(username='xxxxxxxx')
 ]
 
+TASK_RUN_STRATEGY = 'eos.core.tasks.direct.DirectRunStrategy'
+
+TIMEZONE = 'Australia/Canberra'
+
 # MongoDB
 
 DB_TYPE = 'mongodb'
@@ -37,3 +41,8 @@ SMTP_FROM = 'eos@localhost'
 REDDIT_OAUTH_CLIENT_ID = 'xxxxxxxxxxxxxx'
 REDDIT_OAUTH_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxx'
 REDDIT_USER_AGENT = 'Application Title by /u/Your_Username'
+
+# Security
+
+CAST_IP = True
+CAST_FINGERPRINT = False

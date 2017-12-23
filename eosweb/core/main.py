@@ -16,9 +16,13 @@
 
 import click
 import flask
+import timeago
 
 from eos.core.objects import *
+from eos.core.tasks import *
 from eos.base.election import *
+from eos.base.tasks import *
+from eos.base.workflow import *
 from eos.psr.crypto import *
 from eos.psr.election import *
 from eos.psr.mixnet import *
@@ -31,8 +35,10 @@ from datetime import datetime
 
 import functools
 import importlib
+import io
 import json
 import os
+import pytz
 import subprocess
 
 app = flask.Flask(__name__, static_folder=None)
@@ -123,10 +129,16 @@ def setup_test_election():
 	election.sk = EGPrivateKey.generate()
 	election.public_key = election.sk.public_key
 	
-	question = PreferentialQuestion(prompt='President', choices=['John Smith', 'Joe Bloggs', 'John Q. Public'], min_choices=0, max_choices=3)
+	question = PreferentialQuestion(prompt='President', choices=[
+		Ticket(name='ACME Party', choices=[
+			Choice(name='John Smith'),
+			Choice(name='Joe Bloggs', party='Independent ACME')
+		]),
+		Choice(name='John Q. Public')
+	], min_choices=0, max_choices=3, randomise_choices=True)
 	election.questions.append(question)
 	
-	question = ApprovalQuestion(prompt='Chairman', choices=['John Doe', 'Andrew Citizen'], min_choices=0, max_choices=1)
+	question = ApprovalQuestion(prompt='Chairman', choices=[Choice(name='John Doe'), Choice(name='Andrew Citizen')], min_choices=0, max_choices=1)
 	election.questions.append(question)
 	
 	election.save()
@@ -142,9 +154,40 @@ def verify_election(electionid):
 	election.verify()
 	print('The election has passed validation')
 
+@app.cli.command('tally_stv')
+@click.option('--electionid', default=None)
+@click.option('--qnum', default=0)
+@click.option('--randfile', default=None)
+def tally_stv_election(electionid, qnum, randfile):
+	election = Election.get_by_id(electionid)
+	
+	with open(randfile, 'r') as f:
+		dat = json.load(f)
+	task = TaskTallySTV(
+		election_id=election._id,
+		q_num=qnum,
+		random=dat,
+		num_seats=7,
+		status=Task.Status.READY,
+		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
+	)
+	task.save()
+	task.run()
+
 @app.context_processor
 def inject_globals():
 	return {'eos': eos, 'eosweb': eosweb, 'SHA256': eos.core.hashing.SHA256}
+
+@app.template_filter('pretty_date')
+def pretty_date(dt):
+	dt_local = dt.astimezone(pytz.timezone(app.config['TIMEZONE']))
+	return flask.Markup('<time datetime="{}" title="{}">{}</time>'.format(dt_local.strftime('%Y-%m-%dT%H:%M:%S%z'), dt_local.strftime('%Y-%m-%d %H:%M:%S %Z'), timeago.format(dt, DateTimeField.now())))
+
+# Tickle the plumbus every request
+@app.before_request
+def tick_scheduler():
+	# Process pending tasks
+	TaskScheduler.tick()
 
 # === Views ===
 
@@ -211,12 +254,34 @@ def election_admin_summary(election):
 @using_election
 @election_admin
 def election_admin_enter_task(election):
-	task = election.workflow.get_task(flask.request.args['task_name'])
-	if task.status != WorkflowTask.Status.READY:
+	workflow_task = election.workflow.get_task(flask.request.args['task_name'])
+	if workflow_task.status != WorkflowTask.Status.READY:
 		return flask.Response('Task is not yet ready or has already exited', 409)
 	
-	task.enter()
-	election.save()
+	task = WorkflowTaskEntryTask(
+		election_id=election._id,
+		workflow_task=workflow_task._name,
+		status=Task.Status.READY,
+		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
+	)
+	task.run()
+	
+	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
+
+@app.route('/election/<election_id>/admin/schedule_task', methods=['POST'])
+@using_election
+@election_admin
+def election_admin_schedule_task(election):
+	workflow_task = election.workflow.get_task(flask.request.form['task_name'])
+	
+	task = WorkflowTaskEntryTask(
+		election_id=election._id,
+		workflow_task=workflow_task._name,
+		run_at=DateTimeField().deserialise(flask.request.form['datetime']),
+		status=Task.Status.READY,
+		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
+	)
+	task.save()
 	
 	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
 
@@ -246,6 +311,16 @@ def election_api_cast_vote(election):
 	# Cast the vote
 	ballot = EosObject.deserialise_and_unwrap(data['ballot'])
 	vote = Vote(ballot=ballot, cast_at=DateTimeField.now())
+	
+	# Store data
+	if app.config['CAST_FINGERPRINT']:
+		vote.cast_fingerprint = data['fingerprint']
+	if app.config['CAST_IP']:
+		if os.path.exists('/app/.heroku'):
+			vote.cast_ip = flask.request.headers['X-Forwarded-For'].split(',')[-1]
+		else:
+			vote.cast_ip = flask.request.remote_addr
+	
 	voter.votes.append(vote)
 	
 	election.save()
@@ -254,6 +329,14 @@ def election_api_cast_vote(election):
 		'voter': EosObject.serialise_and_wrap(voter, should_protect=True),
 		'vote': EosObject.serialise_and_wrap(vote, should_protect=True)
 	}), mimetype='application/json')
+
+@app.route('/election/<election_id>/export/question/<int:q_num>/<format>')
+@using_election
+def election_api_export_question(election, q_num, format):
+	import eos.base.util.blt
+	resp = flask.send_file(io.BytesIO('\n'.join(eos.base.util.blt.writeBLT(election, q_num, 2)).encode('utf-8')), mimetype='text/plain; charset=utf-8', attachment_filename='{}.blt'.format(q_num), as_attachment=True)
+	resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+	return resp
 
 @app.route('/auditor')
 def auditor():

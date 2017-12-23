@@ -19,31 +19,40 @@
 window = self; // Workaround for libraries
 isLibrariesLoaded = false;
 
-function generateEncryptedVote(election, answers) {
+function generateEncryptedVote(election, answers, should_do_fingerprint) {
 	encrypted_answers = [];
 	for (var q_num = 0; q_num < answers.length; q_num++) {
 		answer_json = answers[q_num];
 		answer = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(answer_json, null);
-		encrypted_answer = eosjs.eos.psr.election.__all__.BlockEncryptedAnswer.encrypt(election.public_key, answer, election.questions.__getitem__(q_num).max_bits());
+		encrypted_answer = eosjs.eos.psr.election.__all__.BlockEncryptedAnswer.encrypt(election.public_key, answer, election.questions.__getitem__(q_num).max_bits() + 32); // +32 bits for the length
 		encrypted_answers.push(eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(encrypted_answer, null));
 	}
 	
-	postMessage(encrypted_answers);
+	postMessage({
+		encrypted_answers: encrypted_answers
+	});
 }
 
 onmessage = function(msg) {
-	if (!isLibrariesLoaded) {
-		importScripts(
-			msg.data.static_base_url + "js/eosjs.js"
-		);
-		isLibrariesLoaded = true;
-	}
-	
-	if (msg.data.action === "generateEncryptedVote") {
-		msg.data.election = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(msg.data.election, null);
+	try {
+		if (!isLibrariesLoaded) {
+			importScripts(
+				msg.data.static_base_url + "js/eosjs.js"
+			);
+			isLibrariesLoaded = true;
+		}
 		
-		generateEncryptedVote(msg.data.election, msg.data.answers);
-	} else {
-		throw "Unknown action: " + msg.data.action;
+		if (msg.data.action === "generateEncryptedVote") {
+			msg.data.election = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(msg.data.election, null);
+			
+			generateEncryptedVote(msg.data.election, msg.data.answers);
+		} else {
+			throw "Unknown action: " + msg.data.action;
+		}
+	} catch (ex) {
+		if (ex.__repr__) {
+			throw ex.__repr__();
+		}
+		throw ex;
 	}
 }

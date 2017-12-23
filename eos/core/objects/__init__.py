@@ -37,7 +37,9 @@ if is_python:
 	import base64
 	from datetime import datetime
 	import hashlib
+	import importlib
 	import json
+	import pytz
 	import uuid
 	__pragma__('noskip')
 else:
@@ -83,6 +85,8 @@ class PrimitiveField(Field):
 DictField = PrimitiveField
 IntField = PrimitiveField
 StringField = PrimitiveField
+BooleanField = PrimitiveField
+BlobField = PrimitiveField
 
 class EmbeddedObjectField(Field):
 	def __init__(self, object_type=None, *args, **kwargs):
@@ -155,14 +159,14 @@ class DateTimeField(Field):
 			return None
 		
 		if is_python:
-			return datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ')
+			return pytz.utc.localize(datetime.strptime(value, '%Y-%m-%dT%H:%M:%SZ'))
 		else:
 			return __pragma__('js', '{}', 'new Date(value)')
 	
 	@staticmethod
 	def now():
 		if is_python:
-			return datetime.utcnow()
+			return pytz.utc.localize(datetime.utcnow())
 		else:
 			return __pragma__('js', '{}', 'new Date()')
 
@@ -175,9 +179,6 @@ class EosObjectType(type):
 		cls._name = (cls.__module__ + '.' + cls.__name__).replace('.js.', '.').replace('.python.', '.') #TNYI: qualname
 		if name != 'EosObject':
 			EosObject.objects[cls._name] = cls
-		if '_db_name' not in attrs:
-			# Don't inherit _db_name, use only if explicitly given
-			cls._db_name = cls._name
 		return cls
 
 class EosObject(metaclass=EosObjectType):
@@ -193,7 +194,7 @@ class EosObject(metaclass=EosObjectType):
 	def recurse_parents(self, cls):
 		#if not isinstance(cls, type):
 		if isinstance(cls, str):
-			cls = EosObject.objects[cls]
+			cls = EosObject.lookup(cls)
 		
 		if isinstance(self, cls):
 			return self
@@ -207,6 +208,13 @@ class EosObject(metaclass=EosObjectType):
 		return EosObject.serialise_and_wrap(self) == EosObject.serialise_and_wrap(other)
 	
 	@staticmethod
+	def lookup(name):
+		if name in EosObject.objects:
+			return EosObject.objects[name]
+		importlib.import_module(name[:name.rindex('.')])
+		return EosObject.objects[name]
+	
+	@staticmethod
 	def serialise_and_wrap(value, object_type=None, for_hash=False, should_protect=False):
 		if object_type:
 			if value:
@@ -218,7 +226,9 @@ class EosObject(metaclass=EosObjectType):
 	def deserialise_and_unwrap(value, object_type=None):
 		if object_type:
 			return object_type.deserialise(value)
-		return EosObject.objects[value['type']].deserialise(value['value'])
+		if value:
+			return EosObject.lookup(value['type']).deserialise(value['value'])
+		return None
 	
 	@staticmethod
 	def to_json(value):
@@ -397,7 +407,25 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 				attrs[val.internal_name] = val.deserialise(value[val.real_name])
 		return cls(**attrs)
 
-class TopLevelObject(DocumentObject):
+class TopLevelObjectType(DocumentObjectType):
+	def __new__(meta, name, bases, attrs):
+		cls = DocumentObjectType.__new__(meta, name, bases, attrs)
+		
+		# TopLevelObject obviously has no _db_name
+		if cls._name == 'eos.core.objects.TopLevelObject':
+			pass
+		else:
+			if '_db_name' not in attrs:
+				cls._db_name = cls._name
+				# If _db_name is False, then explicitly use the _name. Otherwise, inherit.
+				if cls._db_name is not False:
+					for base in bases:
+						if hasattr(base, '_db_name'):
+							cls._db_name = base._db_name
+							break
+		return cls
+
+class TopLevelObject(DocumentObject, metaclass=TopLevelObjectType):
 	def save(self):
 		#res = db[self._name].replace_one({'_id': self.serialise()['_id']}, self.serialise(), upsert=True)
 		#res = dbinfo.db[self._db_name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
@@ -409,6 +437,8 @@ class TopLevelObject(DocumentObject):
 	
 	@classmethod
 	def get_by_id(cls, _id):
+		if not isinstance(_id, str):
+			_id = str(_id)
 		return EosObject.deserialise_and_unwrap(dbinfo.provider.get_by_id(cls._db_name, _id))
 
 class EmbeddedObject(DocumentObject):
