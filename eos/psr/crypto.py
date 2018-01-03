@@ -144,7 +144,7 @@ class EGPrivateKey(EmbeddedObject):
 		result.commitmentA = pow(self.public_key.group.g, w, self.public_key.group.p)
 		result.commitmentB = pow(ciphertext.gamma, w, self.public_key.group.p)
 		
-		result.challenge = SHA256().update_obj(ciphertext).update_obj(result.commitmentA).update_obj(result.commitmentB).hash_as_bigint()
+		result.challenge = SHA256().update_obj(ciphertext).update_obj(result.commitmentA).update_obj(result.commitmentB).update_obj(result.message).hash_as_bigint()
 		
 		result.response = w + self.x * result.challenge
 		
@@ -175,6 +175,8 @@ class EGCiphertext(EmbeddedObject):
 		return ct.gamma == self.gamma and ct.delta == self.delta
 
 class EGProvedPlaintext(EmbeddedObject):
+	_ver = StringField(default='0.6')
+	
 	message = EmbeddedObjectField(BigInt)
 	
 	ciphertext = EmbeddedObjectField()
