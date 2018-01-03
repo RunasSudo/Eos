@@ -2,6 +2,7 @@ coverage==4.4.1
 Flask==0.12.2
 Flask-OAuthlib==0.9.4
 gunicorn==19.7.1
+libsass==0.13.4
 psycopg2==2.7.3.2
 PyExecJS==1.4.1
 pymongo==3.5.1

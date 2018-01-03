@@ -387,6 +387,12 @@ def email_authenticate():
 	
 	return flask.redirect(flask.url_for('login_complete'))
 
+@app.route('/email')
+def tmp():
+	import sass
+	css = sass.compile(string=flask.render_template('email/base.scss'))
+	return flask.render_template('email/base.html', title='Hello World', text='<p>Dear voter,</p><p>You are registered to vote in the election Election Name.</p>', css=css)
+
 # === Apps ===
 
 for app_name in app.config['APPS']:
