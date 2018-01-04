@@ -69,6 +69,9 @@ class TaskScheduler:
 			if task.status == Task.Status.READY:
 				pending_tasks.append(task)
 		
+		# Sort them to ensure we iterate over them in the correct order
+		pending_tasks.sort(key=lambda task: task.run_at.timestamp() if task.run_at else 0)
+		
 		return pending_tasks
 	
 	@staticmethod
