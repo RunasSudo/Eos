@@ -42,6 +42,9 @@ class MongoDBProvider(eos.core.db.DBProvider):
 	def update_by_id(self, collection, _id, value):
 		self.db[collection].replace_one({'_id': _id}, value, upsert=True)
 	
+	def delete_by_id(self, collection, _id):
+		self.db[collection].delete_one({'_id': _id})
+	
 	def reset_db(self):
 		self.client.drop_database(self.db_name)
 

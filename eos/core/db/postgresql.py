@@ -58,6 +58,11 @@ class PostgreSQLDBProvider(eos.core.db.DBProvider):
 		self.cur.execute(SQL('INSERT INTO {} (_id, data) VALUES (%s, %s) ON CONFLICT (_id) DO UPDATE SET data = excluded.data').format(Identifier(table)), (_id, psycopg2.extras.Json(value)))
 		self.conn.commit()
 	
+	def delete_by_id(self, table, _id):
+		self.create_table(table)
+		self.cur.execute(SQL('DELETE FROM {} WHERE _id = %s').format(Identifier(table)), (_id))
+		self.conn.commit()
+	
 	def reset_db(self):
 		self.cur.execute('DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public')
 		self.conn.commit()

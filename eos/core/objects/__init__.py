@@ -481,6 +481,9 @@ class TopLevelObject(DocumentObject, metaclass=TopLevelObjectType):
 		#res = dbinfo.db[self._db_name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
 		dbinfo.provider.update_by_id(self._db_name, self._fields['_id'].serialise(self._id), EosObject.serialise_and_wrap(self))
 	
+	def delete(self):
+		dbinfo.provider.delete_by_id(self._db_name, self._fields['_id'].serialise(self._id))
+	
 	@classmethod
 	def get_all(cls):
 		return [EosObject.deserialise_and_unwrap(x) for x in dbinfo.provider.get_all(cls._db_name)]

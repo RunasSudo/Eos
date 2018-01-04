@@ -36,6 +36,9 @@ class DBProvider:
 	def update_by_id(self, collection, _id, value):
 		raise Exception('Not implemented')
 	
+	def delete_by_id(self, collection, _id):
+		raise Exception('Not implemented')
+	
 	def reset_db(self):
 		raise Exception('Not implemented')
 
@@ -53,6 +56,9 @@ class DummyProvider(DBProvider):
 		pass
 	
 	def update_by_id(self, collection, _id, value):
+		pass
+	
+	def delete_by_id(self, collection, _id):
 		pass
 	
 	def reset_db(self):
