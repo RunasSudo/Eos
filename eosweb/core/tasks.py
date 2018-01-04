@@ -38,7 +38,7 @@ class WebTask(Task):
 			css=css,
 			text='<p>The task <i>{}</i> failed execution. The output was:</p><pre>{}</pre>'.format(self.label, '\n'.join(self.messages))
 		)
-		html = premailer.Premailer(html).transform()
+		html = premailer.Premailer(html, strip_important=False).transform()
 		
 		body = flask.render_template(
 			'email/base.txt',
