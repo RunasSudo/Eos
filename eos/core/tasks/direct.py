@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -28,6 +28,8 @@ class DirectRunStrategy(RunStrategy):
 			task.status = Task.Status.COMPLETE
 			task.completed_at = DateTimeField.now()
 			task.save()
+			
+			task.complete()
 		except Exception as e:
 			task.status = Task.Status.FAILED
 			task.completed_at = DateTimeField.now()
@@ -39,3 +41,5 @@ class DirectRunStrategy(RunStrategy):
 			else:
 				task.messages.append(repr(e))
 			task.save()
+			
+			task.error()

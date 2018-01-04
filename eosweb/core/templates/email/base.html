@@ -1,6 +1,6 @@
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This file adapted from https://github.com/leemunroe/responsive-html-email-template, licensed under the MIT licence.
 	
@@ -25,7 +25,7 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 		<title>{{ title }}</title>
 		<style>
-			{{ css }}
+			{{ css|safe }}
 		</style>
 	</head>
 	<body class="">

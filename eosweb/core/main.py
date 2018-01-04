@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -27,6 +27,8 @@ from eos.psr.crypto import *
 from eos.psr.election import *
 from eos.psr.mixnet import *
 from eos.psr.workflow import *
+
+from eosweb.core.tasks import *
 
 import eos.core.hashing
 import eosweb
@@ -259,7 +261,7 @@ def election_admin_enter_task(election):
 	if workflow_task.status != WorkflowTask.Status.READY:
 		return flask.Response('Task is not yet ready or has already exited', 409)
 	
-	task = WorkflowTaskEntryTask(
+	task = WorkflowTaskEntryWebTask(
 		election_id=election._id,
 		workflow_task=workflow_task._name,
 		status=Task.Status.READY,
@@ -275,7 +277,7 @@ def election_admin_enter_task(election):
 def election_admin_schedule_task(election):
 	workflow_task = election.workflow.get_task(flask.request.form['task_name'])
 	
-	task = WorkflowTaskEntryTask(
+	task = WorkflowTaskEntryWebTask(
 		election_id=election._id,
 		workflow_task=workflow_task._name,
 		run_at=DateTimeField().deserialise(flask.request.form['datetime']),
@@ -386,12 +388,6 @@ def email_authenticate():
 	flask.session['user'] = user
 	
 	return flask.redirect(flask.url_for('login_complete'))
-
-@app.route('/email')
-def tmp():
-	import sass
-	css = sass.compile(string=flask.render_template('email/base.scss'))
-	return flask.render_template('email/base.html', title='Hello World', text='<p>Dear voter,</p><p>You are registered to vote in the election Election Name.</p>', css=css)
 
 # === Apps ===
 

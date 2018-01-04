@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -27,6 +27,8 @@ class Task(TopLevelObject):
 		FAILED = -10
 		TIMEOUT = -20
 	
+	label = 'Unknown task'
+	
 	_id = UUIDField()
 	run_strategy = EmbeddedObjectField()
 	
@@ -42,6 +44,12 @@ class Task(TopLevelObject):
 		self.run_strategy.run(self)
 	
 	def _run(self):
+		pass
+	
+	def complete(self):
+		pass
+	
+	def error(self):
 		pass
 
 class DummyTask(Task):
