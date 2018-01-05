@@ -46,7 +46,9 @@
 		}
 		
 		function nextQuestion() {
-			saveSelections();
+			if (!saveSelections()) {
+				return;
+			}
 			if (booth.questionNum == election.questions.__len__() - 1) {
 				nextTemplate();
 			} else {

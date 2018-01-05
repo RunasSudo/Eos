@@ -18,7 +18,15 @@
 
 <h2>{{ questionNum + 1 }}. {{ election.questions.__getitem__(questionNum).prompt }}</h2>
 
-<p><small>Vote for between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }} choices. Click the check-boxes to the left of the choices to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.</small></p>
+<p><small>
+	Vote for
+	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}
+		exactly {{ election.questions.__getitem__(questionNum).min_choices }}
+	{% else %}
+		between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% endif %}
+	choices. Click the check-boxes to the left of the choices to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.
+</small></p>
 
 <div id="question-choices" class="ui form" style="margin-bottom: 1em;">
 	<div class="grouped fields">
@@ -63,7 +71,16 @@
 		$("#question-choices input:checked").each(function(i, el) {
 			selections.push(parseInt(el.id.substring("question-choice-".length)));
 		});
+		
+		if (selections.length < election.questions.__getitem__(booth.questionNum).min_choices) {
+			if (!window.confirm('You have selected fewer than the minimum required number of choices. If you proceed to cast this ballot, it will **NOT** be counted. If this was not your intention, please click the "Cancel" button below now, and correct your selections.')) {
+				return false;
+			}
+		}
+		
 		answer = eosjs.eos.base.election.__all__.ApprovalAnswer(eosjs.__kwargtrans__({choices: selections}));
 		booth.answers[booth.questionNum] = eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(answer);
+		
+		return true;
 	}
 </script>

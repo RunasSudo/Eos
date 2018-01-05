@@ -18,7 +18,15 @@
 
 <h2>{{ questionNum + 1 }}. {{ election.questions.__getitem__(questionNum).prompt }}</h2>
 
-<p><small>Vote for between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }} choices. Click and drag the choices from the grey box to the blue box in order from most-preferred to least-preferred. It is in your best interests to vote for as many choices as you can.</small></p>
+<p><small>
+	Vote for
+	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}
+		exactly {{ election.questions.__getitem__(questionNum).min_choices }}
+	{% else %}
+		between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% endif %}
+	choices. Click and drag the choices from the grey box to the blue box in order from most-preferred to least-preferred. It is in your best interests to vote for as many choices as you can.
+</small></p>
 
 <div id="question-choices-selected" class="preferential-choices">
 	<div style="color: #3465a4;">Options voted for:</div>
@@ -160,9 +168,18 @@
 		$("#question-choices-selected .preferential-choice:not(.ticket)").each(function(i, el) {
 			selections.push(parseInt(el.dataset.choiceno));
 		});
+		
+		if (selections.length < election.questions.__getitem__(booth.questionNum).min_choices) {
+			if (!window.confirm('You have selected fewer than the minimum required number of choices. If you proceed to cast this ballot, it will **NOT** be counted. If this was not your intention, please click the "Cancel" button below now, and correct your selections.')) {
+				return false;
+			}
+		}
+		
 		answer = eosjs.eos.base.election.__all__.PreferentialAnswer(eosjs.__kwargtrans__({choices: selections}));
 		booth.answers[booth.questionNum] = eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(answer);
 		
 		booth.q_state[booth.questionNum] = [$("#question-choices-selected .dragarea").html(), $("#question-choices-remaining .dragarea").html()]; // wew lad
+		
+		return true;
 	}
 </script>
