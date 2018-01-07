@@ -23,7 +23,7 @@
 	
 	<div class="ui success message">
 		<div class="header">Smart ballot tracker</div>
-		<p>This smart ballot tracker confirms that {{ voter.name }} cast a vote in the election {{ election.py_name }} at {{ vote.cast_at }}.</p>
+		<p>This smart ballot tracker confirms that {{ voter.py_name }} cast a vote in the election {{ election.py_name }} at {{ vote.cast_at }}.</p>
 		<p>Ballot fingerprint: <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span></p>
 	</div>
 	
