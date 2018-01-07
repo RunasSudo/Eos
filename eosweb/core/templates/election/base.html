@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -57,7 +57,7 @@
 			$("#election-tab-menu .item").removeClass("active");
 			linkEl.addClass("active");
 			
-			$("#election-tab-content").html('<div class="ui active text loader">Loading. Please wait.</div>');
+			$("#election-tab-content").html('<div class="ui basic segment" style="min-height: 8em;"><div class="ui active text loader">Loading. Please wait.</div></div>');
 			
 			$("#election-tab-content").load(linkEl.attr("href") + " #election-tab-content", function() {
 				linkEl.find(".loader").removeClass("active");
