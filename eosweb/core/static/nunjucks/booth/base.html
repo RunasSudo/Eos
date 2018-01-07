@@ -23,8 +23,10 @@
 {# Convert the template name to a numerical index for comparison #}
 {% if template == 'booth/welcome.html' %}
 	{% set menuindex = 1 %}
-{% elif template == 'booth/selections.html' or template == 'booth/encrypt.html' %}
+{% elif template == 'booth/selections.html' %}
 	{% set menuindex = 2 %}
+{% elif template == 'booth/encrypt.html' %}
+	{% set menuindex = 2.5 %}
 {% elif template == 'booth/review.html' %}
 	{% set menuindex = 3 %}
 {% elif template == 'booth/audit.html' %}
