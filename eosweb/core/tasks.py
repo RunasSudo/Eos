@@ -14,47 +14,14 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-import premailer
-import sass
-
-import flask
-import flask_mail
+from . import emails
 
 from eos.core.tasks import *
 from eos.base.election import *
 
 class WebTask(Task):
 	def error(self):
-		import eosweb
-		
-		# Prepare email
-		title = 'Task failed: {}'.format(self.label)
-		
-		css = sass.compile(string=flask.render_template('email/base.scss'))
-		html = flask.render_template(
-			'email/base.html',
-			title=title,
-			css=css,
-			text='<p>The task <i>{}</i> failed execution. The output was:</p><pre>{}</pre>'.format(self.label, '\n'.join(self.messages))
-		)
-		html = premailer.Premailer(html, strip_important=False).transform()
-		
-		body = flask.render_template(
-			'email/base.txt',
-			title=title,
-			text='The task "{}" failed execution. The output was:\n\n{}'.format(self.label, '\n'.join(self.messages))
-		)
-		
-		# Send email
-		mail = flask_mail.Mail(eosweb.app)
-		msg = flask_mail.Message(
-			title,
-			recipients=[admin.email for admin in eosweb.app.config['ADMINS'] if isinstance(admin, EmailUser)],
-			body=body,
-			html=html
-		)
-		mail.send(msg)
+		emails.task_email_failure(self)
 
 class WorkflowTaskEntryWebTask(WorkflowTaskEntryTask, WebTask):
 	pass

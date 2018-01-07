@@ -30,6 +30,8 @@ from eos.psr.workflow import *
 
 from eosweb.core.tasks import *
 
+from . import emails
+
 import eos.core.hashing
 import eosweb
 
@@ -123,7 +125,7 @@ def setup_test_election():
 	for voter in election.voters:
 		if isinstance(voter, UserVoter):
 			if isinstance(voter.user, EmailUser):
-				voter.user.email_password(app.config['SMTP_HOST'], app.config['SMTP_PORT'], app.config['SMTP_USER'], app.config['SMTP_PASS'], app.config['SMTP_FROM'])
+				emails.voter_email_password(election, voter)
 	
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
