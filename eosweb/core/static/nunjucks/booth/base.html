@@ -56,12 +56,29 @@
 </ul>
 
 <div class="ui container">
+	{% block helpbtn %}
+		{# <button class="tiny ui right floated labeled icon teal button" onclick="$('#modal-help').modal('show');"><i class="help circle icon"></i> Help</button> #}
+	{% endblock %}
 	{% block content %}{% endblock %}
 </div>
 
 <div class="ui container" style="margin-top: 1em;">
+	<div style="clear: both;"></div>
 	{% block buttons %}{% endblock %}
 	<div style="clear: both;"></div>
+</div>
+
+<div class="ui modal" id="modal-help">
+	<i class="close icon"></i>
+	<div class="header">
+		Help
+	</div>
+	<div class="content">
+		{% block help %}{% endblock %}
+	</div>
+	<div class="actions">
+		<button class="ui approve button">OK</button>
+	</div>
 </div>
 
 {% block after %}{% endblock %}

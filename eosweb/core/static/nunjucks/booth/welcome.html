@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -18,12 +18,25 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
+{% block helpbtn %}
+	{# Don't float – we want it to overlap with the image #}
+	<div style="position: relative;">
+		<button class="tiny ui labeled icon teal button" style="position: absolute; right: 0; z-index: 1; margin: 0;" onclick="$('#modal-help').modal('show');"><i class="help circle icon"></i> Help</button>
+	</div>
+{% endblock %}
+
 {% block content %}
+	<img src="/static/img/logo.png" style="width: 100%; max-width: 500px; display: block; margin: 0 auto;">
+	
+	<img src="/static/img/guide.png" style="width: 100%; max-width: 500px; display: block; margin: 0 auto; margin-top: 1em;">
+{% endblock %}
+
+{% block help %}
 	<p>Welcome to the {{ election.name }} voting booth.</p>
-	<p>Follow the on-screen directions to prepare and cast your ballot in this {{ election.kind }}. The bar above will show your progress. Please note that your ballot will <b>not be cast until</b> you complete the final ‘Cast ballot’ stage and receive a <b>‘smart ballot tracker’</b>.</p>
-	<p>If at any point you wish to return to a previous screen, click the ‘Back’ button below.</p>
-	<p>If you wish, you may disconnect your internet connection now while preparing your ballot, however you must re-connect your internet connection before logging in to cast your ballot.</p>
-	<p>Please click the blue ‘Continue’ button below to continue.</p>
+	<p>Follow the on-screen directions to prepare and cast your ballot in this {{ election.kind }}. The bar at the top of the page will show your progress. Please note that your ballot will <b>not be cast until</b> you complete the final ‘Cast ballot’ stage and receive a <b>‘smart ballot tracker’</b>.</p>
+	<p>If at any point you wish to return to a previous screen, click the ‘Back’ button.</p>
+	{# <p>If you wish, you may disconnect your internet connection now while preparing your ballot, however you must re-connect your internet connection before logging in to cast your ballot.</p> #}
+	<p>Click the ‘OK’ button below, then click the blue ‘Continue’ button to continue.</p>
 {% endblock %}
 
 {% block buttons %}
