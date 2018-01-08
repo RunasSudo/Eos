@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -31,7 +31,7 @@
 	{% endfor %}
 	
 	<p>If you are happy with your selections, then make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
-	<p>Click ‘Continue’, and you will be able to log into cast your vote.</p>
+	<p>Click ‘Continue’, and you will be able to log in to cast your vote.</p>
 {% endblock %}
 
 {% block buttons %}
