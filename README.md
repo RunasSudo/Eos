@@ -1,6 +1,6 @@
 # Eos: Modular verifiable elections
 
-Work in progress – An API for elections and cryptography is more or less complete, focus is now on building a functional user interface
+Work in progress – Both API and GUI are sufficiently complete to have seen experimental use
 
 ## Comparison with competitors
 
