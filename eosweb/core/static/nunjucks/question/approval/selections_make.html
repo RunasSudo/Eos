@@ -1,6 +1,6 @@
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -28,16 +28,34 @@
 	choices. Click the check-boxes to the left of the choices to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.
 </small></p>
 
+{% set is_radio = election.questions.__getitem__(questionNum).max_choices == 1 %}
+
 <div id="question-choices" class="ui form" style="margin-bottom: 1em;">
 	<div class="grouped fields">
 		{% for choice in election.questions.__getitem__(questionNum).randomised_choices().impl %}
 			<div class="field">
-				<div class="ui checkbox">
-					<input type="checkbox" id="question-choice-{{ election.questions.__getitem__(questionNum).choices.impl.indexOf(choice) }}" onchange="choicesChanged();">
+				<div class="ui{% if is_radio %} radio{% endif %} checkbox">
+					<input
+					{% if is_radio %}
+						name="question-choices"
+						type="radio"
+					{% else %}
+						type="checkbox"
+					{% endif %}
+					id="question-choice-{{ election.questions.__getitem__(questionNum).choices.impl.indexOf(choice) }}" onchange="choicesChanged();">
+					
 					<label for="question-choice-{{ election.questions.__getitem__(questionNum).choices.impl.indexOf(choice) }}">{{ choice.name }}{% if choice.party %} – {{ choice.party }}{% endif %}</label>
 				</div>
 			</div>
 		{% endfor %}
+		{% if is_radio and election.questions.__getitem__(questionNum).min_choices == 0 %}
+			<div class="field">
+				<div class="ui{% if is_radio %} radio{% endif %} checkbox">
+					<input name="question-choices" type="radio" id="question-choice-none" onchange="choicesChanged();" checked>
+					<label for="question-choice-none"><i>None of the above</i></label>
+				</div>
+			</div>
+		{% endif %}
 	</div>
 </div>
 
@@ -47,15 +65,17 @@
 
 <script>
 	function choicesChanged() {
-		var numChoices = $("#question-choices input:checked").length;
-		if (numChoices >= election.questions.__getitem__(booth.questionNum).max_choices) {
-			// Prevent making any more selections
-			$("#question-choices input:not(:checked)").prop("disabled", true);
-			$("#message-max-choices").removeClass("hidden");
-		} else {
-			$("#question-choices input").prop("disabled", false);
-			$("#message-max-choices").addClass("hidden");
-		}
+		{% if not is_radio %}
+			var numChoices = $("#question-choices input:checked").length;
+			if (numChoices >= election.questions.__getitem__(booth.questionNum).max_choices) {
+				// Prevent making any more selections
+				$("#question-choices input:not(:checked)").prop("disabled", true);
+				$("#message-max-choices").removeClass("hidden");
+			} else {
+				$("#question-choices input").prop("disabled", false);
+				$("#message-max-choices").addClass("hidden");
+			}
+		{% endif %}
 	}
 	
 	// Fill in ballot with previous selections
@@ -69,7 +89,9 @@
 	function saveSelections() {
 		selections = [];
 		$("#question-choices input:checked").each(function(i, el) {
-			selections.push(parseInt(el.id.substring("question-choice-".length)));
+			if (el.id !== "question-choice-none") {
+				selections.push(parseInt(el.id.substring("question-choice-".length)));
+			}
 		});
 		
 		if (selections.length < election.questions.__getitem__(booth.questionNum).min_choices) {
