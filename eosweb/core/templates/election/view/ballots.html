@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -32,7 +32,7 @@
 					<td>{{ voter.name }}</td>
 					{% set votes = voter.votes.get_all() %}
 					{% if votes|length > 0 %}
-						<td class="hash">{{ SHA256().update_obj(votes[-1].ballot).hash_as_b64() }}</td>
+						<td class="hash">{{ SHA256().update_obj(votes[-1].ballot).hash_as_b64(True) }}</td>
 					{% else %}
 						<td class="hash"></td>
 					{% endif %}

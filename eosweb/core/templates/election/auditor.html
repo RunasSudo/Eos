@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -195,7 +195,7 @@
 				auditContentsInner.innerHTML += '<p><i class="icon"></i> Question ' + (questionNum + 1) + ': ' + election.questions.__getitem__(questionNum).pretty_answer(auditBallot.answers.__getitem__(questionNum)) + '</p>';
 			}
 			
-			auditContentsInner.innerHTML += '<p><i class="info circle icon"></i> <b>Please check that the ballot fingerprint you recorded matches the following computed ballot fingerprint: <span class="hash">' + eosjs.eos.core.hashing.__all__.SHA256().update_obj(auditBallot).hash_as_b64() + '</span>.</b></p>';
+			auditContentsInner.innerHTML += '<p><i class="info circle icon"></i> <b>Please check that the ballot fingerprint you recorded matches the following computed ballot fingerprint: <span class="hash">' + eosjs.eos.core.hashing.__all__.SHA256().update_obj(auditBallot).hash_as_b64(true) + '</span>.</b></p>';
 			auditContentsInner.innerHTML += '<p><i class="checkmark icon"></i> If the selections are correct, and the ballot fingerprint matches, then the ballot has been prepared correctly.</p>';
 			
 			return true;

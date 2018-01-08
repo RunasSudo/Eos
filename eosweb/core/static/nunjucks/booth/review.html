@@ -30,7 +30,7 @@
 		{% include templates[selection_model_view_map[election.questions.__getitem__(loop.index0)._name]["selections_review"]] %}
 	{% endfor %}
 	
-	<p>If you are happy with your selections, then make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
+	<p>If you are happy with your selections, then make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64(true) }}</span>.</p>
 	<p>Click ‘Continue’, and you will be able to log in to cast your vote.</p>
 {% endblock %}
 
