@@ -1,6 +1,6 @@
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -46,7 +46,14 @@
 
 {% macro printchoice(choice, ticket=None) %}
 	<div class="preferential-choice" data-choiceno="{{ flat_choices.indexOf(choice) }}">
-		<div class="number"></div>
+		<div class="number">
+			<select>
+				<option selected></option>
+				{% for i in range(flat_choices|length) %}
+					<option>{{ i + 1 }}</option>
+				{% endfor %}
+			</select>
+		</div>
 		<div class="content">
 			<div class="candidate-name">{{ choice.name }}</div>
 			{% if choice.party %}
@@ -70,7 +77,14 @@
 			{% if choice.choices %}
 				{# Ticket #}
 				<div class="preferential-choice ticket">
-					<div class="number"></div>
+					<div class="number">
+						<select>
+							<option selected></option>
+							{% for i in range(flat_choices|length) %}
+								<option>{{ i + 1 }}</option>
+							{% endfor %}
+						</select>
+					</div>
 					<div class="content">
 						<div class="party-name">{{ choice.name }}</div>
 						<div class="ticket-choices">
@@ -93,17 +107,19 @@
 	
 	function choicesChanged() {
 		// Recalculate numbers
-		$(".preferential-choices .preferential-choice .number").each(function(i, el) {
-			$(el).text("");
+		$(".preferential-choices .preferential-choice .number select").each(function(i, el) {
+			$(el).val("");
 		});
-		var selectedChoices = $("#question-choices-selected .dragarea > .preferential-choice > .number");
+		var selectedChoices = $("#question-choices-selected .dragarea > .preferential-choice > .number select");
 		selectedChoices.each(function(i, el) {
-			$(el).text(i + 1);
+			$(el).val(i + 1);
 		});
-		var selectedCandidates = $("#question-choices-selected .preferential-choice:not(.ticket) .number");
+		var selectedCandidates = $("#question-choices-selected .preferential-choice:not(.ticket) .number select");
 		if (selectedCandidates.length >= election.questions.__getitem__(booth.questionNum).max_choices) {
 			// Prevent making any more selections
 			allowAdding = false;
+			
+			$("#question-choices-remaining .preferential-choice .number select").prop("disabled", true);
 			
 			if (selectedCandidates.length > election.questions.__getitem__(booth.questionNum).max_choices) {
 				// Prevent progression
@@ -115,9 +131,12 @@
 			}
 		} else {
 			allowAdding = true;
+			
+			$("#question-choices-remaining .preferential-choice .number select").prop("disabled", false);
+			
+			$(".primary.button").removeClass("disabled");
 			$("#message-max-choices").addClass("hidden");
 			$("#message-too-many-choices").addClass("hidden");
-			$(".primary.button").removeClass("disabled");
 		}
 	}
 	
