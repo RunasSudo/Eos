@@ -107,9 +107,7 @@
 	
 	function choicesChanged() {
 		// Recalculate numbers
-		$(".preferential-choices .preferential-choice .number select").each(function(i, el) {
-			$(el).val("");
-		});
+		$(".preferential-choices .preferential-choice .number select").val("");
 		var selectedChoices = $("#question-choices-selected .dragarea > .preferential-choice > .number select");
 		selectedChoices.each(function(i, el) {
 			$(el).val(i + 1);
@@ -147,6 +145,10 @@
 		choicesChanged();
 	}
 	
+	// =============
+	// DRAG AND DROP
+	// =============
+	
 	var dragulaChoices = dragula(
 		[document.querySelector("#question-choices-selected .dragarea"), document.querySelector("#question-choices-remaining .dragarea")].concat([].slice.apply(document.querySelectorAll(".ticket-choices"))),
 		{
@@ -164,9 +166,10 @@
 	);
 	
 	function breakTicket(ticket) {
-		ticket.find(".ticket-choices .preferential-choice").each(function(i, el) {
-			$(el).detach().insertAfter(ticket);
-		});
+		//ticket.find(".ticket-choices .preferential-choice").each(function(i, el) {
+		//	$(el).detach().insertAfter(ticket);
+		//});
+		ticket.find(".ticket-choices .preferential-choice").detach().insertAfter(ticket);
 		ticket.remove();
 	}
 	
@@ -181,6 +184,47 @@
 		
 		choicesChanged();
 	});
+	
+	// ===============
+	// DROP DOWN BOXES
+	// ===============
+	
+	$(".preferential-choices .preferential-choice .number select").change(function(evt) {
+		var index = parseInt($(this).val());
+		
+		var choiceEl = $(this).parents(".preferential-choice").first();
+		var ticket = null;
+		
+		// If the source is within a ticket, break the ticket afterwards
+		// (It is impossible for the target to be within a ticket)
+		if (choiceEl.parents(".ticket").length > 0) {
+			ticket = choiceEl.parents(".ticket").first();
+		}
+		
+		// Simulate drag-and-drop
+		var selectedChoices = $("#question-choices-selected .dragarea > .preferential-choice");
+		if ($(this).val() === "") {
+			// Deselect
+			choiceEl.detach().appendTo($("#question-choices-remaining .dragarea"));
+		} else if (index > selectedChoices.length) {
+			// Append to end
+			choiceEl.detach().appendTo($("#question-choices-selected .dragarea"));
+		} else {
+			// Insert in the middle
+			choiceEl.detach().insertBefore(selectedChoices[index - 1]);
+		}
+		
+		// Now break the ticket
+		if (ticket !== null) {
+			breakTicket(ticket);
+		}
+		
+		choicesChanged();
+	});
+	
+	// =======
+	// GENERAL
+	// =======
 	
 	function saveSelections() {
 		selections = [];
