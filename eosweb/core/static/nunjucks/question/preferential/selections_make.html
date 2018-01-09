@@ -47,7 +47,7 @@
 {% macro printchoice(choice, ticket=None) %}
 	<div class="preferential-choice" data-choiceno="{{ flat_choices.indexOf(choice) }}">
 		<div class="number">
-			<select>
+			<select class="ui dropdown">
 				<option selected></option>
 				{% for i in range(flat_choices|length) %}
 					<option>{{ i + 1 }}</option>
@@ -78,7 +78,7 @@
 				{# Ticket #}
 				<div class="preferential-choice ticket">
 					<div class="number">
-						<select>
+						<select class="ui dropdown">
 							<option selected></option>
 							{% for i in range(flat_choices|length) %}
 								<option>{{ i + 1 }}</option>
