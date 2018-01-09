@@ -130,6 +130,17 @@ time[title] {
 	text-align: center;
 }
 
+.preferential-choice .number select {
+	background-color: white;
+}
+
+.preferential-choice .content {
+	/* Vertically center */
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
 .preferential-choice .party-name, .preferential-choice .ticket-party-name {
 	font-style: italic;
 	font-size: small;
