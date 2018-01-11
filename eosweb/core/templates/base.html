@@ -42,7 +42,7 @@
 			{% endif %}
 		</div>
 	</div>
-	<div class="ui main text container" id="main_container">
+	<div class="ui main text container" id="main_container" {% block mainContainerOpts %}{% endblock %}>
 		{% block content %}
 		{% endblock content %}
 	</div>

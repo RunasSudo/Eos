@@ -44,6 +44,7 @@ import json
 import os
 import pytz
 import subprocess
+import uuid
 
 app = flask.Flask(__name__, static_folder=None)
 
@@ -243,6 +244,13 @@ def election_view_questions(election):
 @using_election
 def election_view_ballots(election):
 	return flask.render_template('election/view/ballots.html', election=election)
+
+@app.route('/election/<election_id>/voter/<voter_id>')
+@using_election
+def election_voter_view(election, voter_id):
+	voter_id = uuid.UUID(voter_id)
+	voter = next(voter for voter in election.voters if voter._id == voter_id)
+	return flask.render_template('election/voter/view.html', election=election, voter=voter)
 
 @app.route('/election/<election_id>/view/trustees')
 @using_election

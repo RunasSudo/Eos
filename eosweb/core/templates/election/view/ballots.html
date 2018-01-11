@@ -19,7 +19,7 @@
 #}
 
 {% block electioncontent %}
-	<table class="ui celled table">
+	<table class="ui selectable celled table">
 		<thead>
 			<tr>
 				<th>Voter</th>
@@ -29,13 +29,15 @@
 		<tbody>
 			{% for voter in election.voters %}
 				<tr>
-					<td>{{ voter.name }}</td>
+					<td class="selectable"><a href="{{ url_for('election_voter_view', election_id=election._id, voter_id=voter._id) }}">{{ voter.name }}</a></td>
 					{% set votes = voter.votes.get_all() %}
-					{% if votes|length > 0 %}
-						<td class="hash">{{ SHA256().update_obj(votes[-1].ballot).hash_as_b64(True) }}</td>
-					{% else %}
-						<td class="hash"></td>
-					{% endif %}
+					<td class="selectable"><a href="{{ url_for('election_voter_view', election_id=election._id, voter_id=voter._id) }}">
+						{% if votes|length > 0 %}
+							<span class="hash">{{ SHA256().update_obj(votes[-1].ballot).hash_as_b64(True) }}</span>
+						{% else %}
+							&nbsp;
+						{% endif %}
+					</a></td>
 				</tr>
 			{% endfor %}
 		</tbody>
