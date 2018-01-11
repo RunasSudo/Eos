@@ -26,6 +26,17 @@
 	word-break: break-all;
 }
 
+.monoout {
+	font-family: monospace;
+	white-space: pre-wrap;
+	overflow-y: scroll;
+	
+	padding: .78571429em 1em;
+	border: 1px solid rgba(34,36,38,.15);
+	color: rgba(0,0,0,.87);
+	border-radius: .28571429rem;
+}
+
 .superem {
 	font-weight: bold;
 	font-style: italic;

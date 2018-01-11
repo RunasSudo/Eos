@@ -208,9 +208,9 @@ def using_election(func):
 
 def election_admin(func):
 	@functools.wraps(func)
-	def wrapped(election, **kwargs):
+	def wrapped(*args, **kwargs):
 		if 'user' in flask.session and flask.session['user'].is_admin():
-			return func(election, **kwargs)
+			return func(*args, **kwargs)
 		else:
 			return flask.Response('Administrator credentials required', 403)
 	return wrapped
@@ -340,6 +340,12 @@ def election_api_export_question(election, q_num, format):
 	resp = flask.send_file(io.BytesIO('\n'.join(eos.base.util.blt.writeBLT(election, q_num, 2)).encode('utf-8')), mimetype='text/plain; charset=utf-8', attachment_filename='{}.blt'.format(q_num), as_attachment=True)
 	resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
 	return resp
+
+@app.route('/task/<task_id>')
+@election_admin
+def task_view(task_id):
+	task = Task.get_by_id(task_id)
+	return flask.render_template('task/view.html', task=task)
 
 @app.route('/auditor')
 def auditor():

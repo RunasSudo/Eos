@@ -26,26 +26,26 @@
 	<div class="menu">
 		<div class="header">Active tasks</div>
 		{% for task in eos.core.tasks.TaskScheduler.active_tasks() %}
-			<div class="item">
+			<a class="item" href="{{ url_for('task_view', task_id=task._id) }}">
 				{{ task.label }}
 				<br><small><i class="wait icon"></i> started {{ task.started_at|pretty_date }}</small>
-			</div>
+			</a>
 		{% endfor %}
 		<div class="divider"></div>
 		<div class="header">Pending tasks</div>
 		{% for task in eos.core.tasks.TaskScheduler.pending_tasks() %}
-			<div class="item">
+			<a class="item" href="{{ url_for('task_view', task_id=task._id) }}">
 				{{ task.label }}
 				<br><small><i class="wait icon"></i> due {{ task.run_at|pretty_date }}</small>
-			</div>
+			</a>
 		{% endfor %}
 		<div class="divider"></div>
 		<div class="header">Recently completed tasks</div>
 		{% for task in eos.core.tasks.TaskScheduler.completed_tasks(3) %}
-			<div class="item">
+			<a class="item" href="{{ url_for('task_view', task_id=task._id) }}">
 				{% if task.status.is_error() %}<i class="warning sign icon"></i> {% endif %}{{ task.label }}
 				<br><small><i class="wait icon"></i> completed {{ task.completed_at|pretty_date }}</small>
-			</div>
+			</a>
 		{% endfor %}
 	</div>
 </div>
