@@ -1,6 +1,6 @@
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -43,7 +43,7 @@
 		<div class="header">Recently completed tasks</div>
 		{% for task in eos.core.tasks.TaskScheduler.completed_tasks(3) %}
 			<div class="item">
-				{% if task.status < 0 %}<i class="warning sign icon"></i> {% endif %}{{ task.label }}
+				{% if task.status.is_error() %}<i class="warning sign icon"></i> {% endif %}{{ task.label }}
 				<br><small><i class="wait icon"></i> completed {{ task.completed_at|pretty_date }}</small>
 			</div>
 		{% endfor %}

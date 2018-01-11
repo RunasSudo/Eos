@@ -503,3 +503,61 @@ class TopLevelObject(DocumentObject, metaclass=TopLevelObjectType):
 
 class EmbeddedObject(DocumentObject):
 	pass
+
+# Enums
+# =====
+
+class EosEnumType(EosObjectType):
+	def __new__(meta, name, bases, attrs):
+		cls = EosObjectType.__new__(meta, name, bases, attrs)
+		
+		cls._values = {}
+		
+		for attr in list(dir(cls)):
+			val = getattr(cls, attr);
+			if isinstance(val, int):
+				instance = cls(attr, val)
+				setattr(cls, attr, instance)
+				cls._values[val] = instance
+		
+		return cls
+
+class EosEnum(EosObject, metaclass=EosEnumType):
+	def __init__(self, name, value):
+		super().__init__()
+		self.name = name
+		self.value = value
+	
+	def __eq__(self, other):
+		if not isinstance(other, self.__class__):
+			return False
+		return self.value == other.value
+	def __ne__(self, other):
+		if not isinstance(other, self.__class__):
+			return True
+		return self.value != other.value
+	def __gt__(self, other):
+		if not isinstance(other, self.__class__):
+			raise TypeError
+		return self.value > other.value
+	def __lt__(self, other):
+		if not isinstance(other, self.__class__):
+			raise TypeError
+		return self.value < other.value
+	def __ge__(self, other):
+		if not isinstance(other, self.__class__):
+			raise TypeError
+		return self.value >= other.value
+	def __le__(self, other):
+		if not isinstance(other, self.__class__):
+			raise TypeError
+		return self.value <= other.value
+	
+	def serialise(self, options=SerialiseOptions.DEFAULT):
+		return self.value
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls._values[value]
+
+EnumField = EmbeddedObjectField

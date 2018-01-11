@@ -19,19 +19,19 @@ from eos.core.objects import *
 
 class DirectRunStrategy(RunStrategy):
 	def run(self, task):
-		task.status = Task.Status.PROCESSING
+		task.status = TaskStatus.PROCESSING
 		task.started_at = DateTimeField.now()
 		task.save()
 		
 		try:
 			task._run()
-			task.status = Task.Status.COMPLETE
+			task.status = TaskStatus.COMPLETE
 			task.completed_at = DateTimeField.now()
 			task.save()
 			
 			task.complete()
 		except Exception as e:
-			task.status = Task.Status.FAILED
+			task.status = TaskStatus.FAILED
 			task.completed_at = DateTimeField.now()
 			if is_python:
 				#__pragma__('skip')

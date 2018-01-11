@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -23,7 +23,7 @@
 	
 	<ul>
 		{% for task in election.workflow.tasks %}
-			{% if task.status == eos.base.workflow.WorkflowTask.Status.READY %}
+			{% if task.status == eos.base.workflow.WorkflowTaskStatus.READY %}
 				<li><a href="{{ url_for('election_admin_enter_task', election_id=election._id, task_name=task._name) }}" onclick="return window.confirm('Are you sure you want to execute the task \'{{ task.label }}\'? This action is irreversible.');">{{ task.label }}</a></li>
 			{% endif %}
 		{% endfor %}

@@ -172,7 +172,7 @@ def tally_stv_election(electionid, qnum, randfile):
 		q_num=qnum,
 		random=dat,
 		num_seats=7,
-		status=Task.Status.READY,
+		status=TaskStatus.READY,
 		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
 	)
 	task.save()
@@ -260,13 +260,13 @@ def election_admin_summary(election):
 @election_admin
 def election_admin_enter_task(election):
 	workflow_task = election.workflow.get_task(flask.request.args['task_name'])
-	if workflow_task.status != WorkflowTask.Status.READY:
+	if workflow_task.status != WorkflowTaskStatus.READY:
 		return flask.Response('Task is not yet ready or has already exited', 409)
 	
 	task = WorkflowTaskEntryWebTask(
 		election_id=election._id,
 		workflow_task=workflow_task._name,
-		status=Task.Status.READY,
+		status=TaskStatus.READY,
 		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
 	)
 	task.run()
@@ -283,7 +283,7 @@ def election_admin_schedule_task(election):
 		election_id=election._id,
 		workflow_task=workflow_task._name,
 		run_at=DateTimeField().deserialise(flask.request.form['datetime']),
-		status=Task.Status.READY,
+		status=TaskStatus.READY,
 		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
 	)
 	task.save()
@@ -293,7 +293,7 @@ def election_admin_schedule_task(election):
 @app.route('/election/<election_id>/cast_ballot', methods=['POST'])
 @using_election
 def election_api_cast_vote(election):
-	if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status < WorkflowTask.Status.EXITED or election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status > WorkflowTask.Status.READY:
+	if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status < WorkflowTaskStatus.EXITED or election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status > WorkflowTaskStatus.READY:
 		# Voting is not yet open or has closed
 		return flask.Response('Voting is not yet open or has closed', 409)
 	

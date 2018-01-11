@@ -16,17 +16,20 @@
 
 from eos.core.objects import *
 
-class Task(TopLevelObject):
-	class Status:
-		UNKNOWN = 0
-		
-		READY = 20
-		PROCESSING = 30
-		COMPLETE = 50
-		
-		FAILED = -10
-		TIMEOUT = -20
+class TaskStatus(EosEnum):
+	UNKNOWN = 0
 	
+	READY = 20
+	PROCESSING = 30
+	COMPLETE = 50
+	
+	FAILED = -10
+	TIMEOUT = -20
+	
+	def is_error(self):
+		return self.value < 0
+
+class Task(TopLevelObject):
 	label = 'Unknown task'
 	
 	_id = UUIDField()
@@ -37,7 +40,7 @@ class Task(TopLevelObject):
 	started_at = DateTimeField()
 	completed_at = DateTimeField()
 	
-	status = IntField(default=0)
+	status = EnumField(TaskStatus)
 	messages = ListField(StringField())
 	
 	def run(self):
@@ -74,7 +77,7 @@ class TaskScheduler:
 		tasks = Task.get_all()
 		
 		for task in tasks:
-			if task.status == Task.Status.READY:
+			if task.status == TaskStatus.READY:
 				pending_tasks.append(task)
 		
 		# Sort them to ensure we iterate over them in the correct order
@@ -88,7 +91,7 @@ class TaskScheduler:
 		tasks = Task.get_all()
 		
 		for task in tasks:
-			if task.status == Task.Status.PROCESSING:
+			if task.status == TaskStatus.PROCESSING:
 				active_tasks.append(task)
 		
 		return active_tasks
@@ -99,7 +102,7 @@ class TaskScheduler:
 		tasks = Task.get_all()
 		
 		for task in tasks:
-			if task.status == Task.Status.COMPLETE or task.status < 0:
+			if task.status == TaskStatus.COMPLETE or task.status.is_error():
 				completed_tasks.append(task)
 		
 		if limit:

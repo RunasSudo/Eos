@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -26,13 +26,13 @@ class ElectionTestCase(EosTestCase):
 		cls.db_connect_and_reset()
 	
 	def do_task_assert(self, election, task, next_task):
-		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.READY)
+		self.assertEqual(election.workflow.get_task(task).status, WorkflowTaskStatus.READY)
 		if next_task is not None:
-			self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.NOT_READY)
+			self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTaskStatus.NOT_READY)
 		election.workflow.get_task(task).enter()
-		self.assertEqual(election.workflow.get_task(task).status, WorkflowTask.Status.EXITED)
+		self.assertEqual(election.workflow.get_task(task).status, WorkflowTaskStatus.EXITED)
 		if next_task is not None:
-			self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTask.Status.READY)
+			self.assertEqual(election.workflow.get_task(next_task).status, WorkflowTaskStatus.READY)
 	
 	@py_only
 	def test_run_election(self):
@@ -44,7 +44,7 @@ class ElectionTestCase(EosTestCase):
 		self.assertEqual(election.workflow._instance, (election, 'workflow'))
 		
 		# Check workflow behaviour
-		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status, WorkflowTask.Status.READY)
+		self.assertEqual(election.workflow.get_task('eos.base.workflow.TaskConfigureElection').status, WorkflowTaskStatus.READY)
 		self.assertEqual(election.workflow.get_task('does.not.exist'), None)
 		
 		# Set election details
