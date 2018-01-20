@@ -60,7 +60,7 @@
 						<div class="ui accordion">
 							<div class="title">
 								<i class="dropdown icon"></i>
-								<span class="hash">{{ eos.core.hashing.SHA256().update_obj(vote).hash_as_b64(True) }}</span>
+								<span class="hash">{{ eos.core.hashing.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span>
 							</div>
 							<div class="content">
 								<div class="monoout" style="max-height: 10em;">{% if session.user and session.user.is_admin() %}{{ eos.core.objects.EosObject.to_json(eos.core.objects.EosObject.serialise_and_wrap(vote)) }}{% else %}{{ eos.core.objects.EosObject.to_json(eos.core.objects.EosObject.serialise_and_wrap(vote, options=eos.core.objects.SerialiseOptions(should_protect=True))) }}{% endif %}</div>
