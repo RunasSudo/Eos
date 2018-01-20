@@ -40,7 +40,7 @@ class Task(TopLevelObject):
 	started_at = DateTimeField()
 	completed_at = DateTimeField()
 	
-	status = EnumField(TaskStatus)
+	status = EnumField(TaskStatus, default=TaskStatus.UNKNOWN)
 	messages = ListField(StringField())
 	
 	def run(self):

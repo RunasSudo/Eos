@@ -29,7 +29,7 @@ class WorkflowTask(EmbeddedObject):
 	depends_on = []
 	provides = []
 	
-	status = EnumField(WorkflowTaskStatus, is_hashed=False)
+	status = EnumField(WorkflowTaskStatus, is_hashed=False, default=WorkflowTaskStatus.UNKNOWN)
 	exited_at = DateTimeField(is_hashed=False)
 	
 	def __init__(self, *args, **kwargs):
