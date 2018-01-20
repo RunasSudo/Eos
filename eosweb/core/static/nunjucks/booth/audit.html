@@ -25,7 +25,7 @@
 		<p>Your vote has <span class="superem">not</span> yet been cast. Please follow the instructions to continue.</p>
 	</div>
 	
-	<p>The following is your ballot with fingerprint <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64(true) }}</span>, decrypted and ready for auditing.</p>
+	<p>The following is your ballot with fingerprint <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>, decrypted and ready for auditing.</p>
 	
 	<div class="ui form">
 		{# For some reason nunjucks doesn't like calling this the normal way #}
@@ -40,4 +40,12 @@
 {% block buttons %}
 	{# Dirty trick to go back to the encryption step #}
 	<button class="ui right floated primary button" onclick="nextTemplate(-2);">Continue</button>
+{% endblock %}
+
+{% block help %}
+	<p>Eos is now ready to audit your ballot. This is an optional step that you can take to ensure that your ballot was prepared correctly by the voting booth.</p>
+	<p>To complete the audit, provide the data shown to a trusted third-party, or <a href="/auditor?electionUrl={{ election_base_url }}" target="_blank">click here to open the Eos auditor</a> and copy-paste in the data shown.</p>
+	<p>If you are satisfied with the result of the audit, click the blue ‘Continue’ button to proceed to cast your ballot.</p>
+	<p>Click the ‘OK’ button below to close this help screen.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
 {% endblock %}

@@ -22,6 +22,8 @@
 	Vote for
 	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}
 		exactly {{ election.questions.__getitem__(questionNum).min_choices }}
+	{% elif election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices - 1 %}
+		either {{ election.questions.__getitem__(questionNum).min_choices }} or {{ election.questions.__getitem__(questionNum).max_choices }}
 	{% else %}
 		between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }}
 	{% endif %}
@@ -246,3 +248,22 @@
 		return true;
 	}
 </script>
+
+<div id="selections-make-help">
+	<p>This is a preferential voting question. You are required to vote for
+	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}
+		exactly {{ election.questions.__getitem__(questionNum).min_choices }}
+	{% elif election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices - 1 %}
+		either {{ election.questions.__getitem__(questionNum).min_choices }} or {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% else %}
+		between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% endif %}
+	choices.</p>
+	<p>If using a desktop computer or a laptop, use your mouse to click and drag the choices from the grey box to the blue box.</p>
+	<p>If using a smartphone or tablet, use your finger to drag the choices from the grey box to the blue box.</p>
+	<p>You should order your choices inside the blue box in order from most-preferred (at the top) to least-preferred (at the bottom).</p>
+	<p>It is in your best interests to vote for as many choices as you can.</p>
+	<p>Once you are satisfied with your selections, click the ‘Continue’ button.</p>
+	<p>Click the ‘OK’ button below to close this help screen.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
+</div>

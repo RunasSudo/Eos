@@ -38,3 +38,18 @@
 {% block buttons %}
 	<a href="{{ election_base_url }}view/ballots" class="ui right floated primary button">Finish</a>
 {% endblock %}
+
+{% block after %}
+	<div class="ui tiny message" style="margin-top: 3em;">
+		<div class="header">Information for advanced users</div>
+		<p>Your full ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span>.</p>
+	</div>
+{% endblock %}
+
+{% block help %}
+	<p>You have now successfully cast your ballot in this election!</p>
+	<p>The green ‘smart ballot tracker’ shows the details of your vote. Please retain a copy of your smart ballot tracker, as it can be used as proof that you voted in this election, and can be used to verify that your vote is counted corectly.</p>
+	<p>You may now close this window and exit the voting booth.</p>
+	<p>Click the ‘OK’ button below to close this help screen.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
+{% endblock %}

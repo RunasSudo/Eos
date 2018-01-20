@@ -33,7 +33,12 @@
 			boothError("Question template unable to save selections");
 		}
 		
+		function loadHelp() {
+			$("#modal-help .content").html($("#selections-make-help").html());
+		}
+		
 		showTemplate(selection_model_view_map[election.questions.__getitem__(booth.questionNum)._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+		loadHelp();
 		
 		function previousQuestion() {
 			saveSelections();
@@ -42,6 +47,7 @@
 			} else {
 				booth.questionNum--;
 				showTemplate(selection_model_view_map[election.questions.__getitem__(booth.questionNum)._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+				loadHelp();
 			}
 		}
 		
@@ -54,6 +60,7 @@
 			} else {
 				booth.questionNum++;
 				showTemplate(selection_model_view_map[election.questions.__getitem__(booth.questionNum)._name]["selections_make"], { "questionNum": booth.questionNum }, "#question-box");
+				loadHelp();
 			}
 		}
 	</script>

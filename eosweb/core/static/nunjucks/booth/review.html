@@ -30,7 +30,7 @@
 		{% include templates[selection_model_view_map[election.questions.__getitem__(loop.index0)._name]["selections_review"]] %}
 	{% endfor %}
 	
-	<p>If you are happy with your selections, then make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64(true) }}</span>.</p>
+	<p>If you are happy with your selections, then make a note of </p>
 	<p>Click ‘Continue’, and you will be able to log in to cast your vote.</p>
 {% endblock %}
 
@@ -40,6 +40,16 @@
 {% endblock %}
 
 {% block after %}
-	<div style="clear: both; margin-bottom: 1em;"></div>
-	<p><small>If you would like to audit your ballot, <a href="#" onclick="nextTemplate(1);">click here</a>. Auditing your ballot is an <b>optional</b> step you can take to check that your vote has been prepared correctly. You do not need to audit your ballot in order to cast a vote.</small></p>
+	<div class="ui tiny message" style="margin-top: 3em;">
+		<div class="header">Information for advanced users</div>
+		<p>Your ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
+		<p>If you would like to audit your ballot, <a href="#" onclick="nextTemplate(1);">click here</a></p>
+	</div>
+{% endblock %}
+
+{% block help %}
+	<p>This screen shows your selections for each of the questions in this election. Please carefully check your selections and ensure they are as you intended.</p>
+	<p>If there are any problems with your selections, they will be shown in red or orange.</p>
+	<p>Click the ‘OK’ button below to close this help screen, then click the blue ‘Continue’ button if you are satisfied with your selections, otherwise, click the ‘Back’ button.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
 {% endblock %}

@@ -170,3 +170,7 @@ time[title] {
 .ticket > .content > .party-name {
 	font-size: inherit;
 }
+
+#selections-make-help {
+	display: none;
+}

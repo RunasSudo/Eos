@@ -19,13 +19,11 @@
 #}
 
 {% block content %}
-	<p>Your vote has <span class="superem">not</span> yet been cast.</p>
-	
-	<div class="ui negative message">
+	<div class="ui negative message" style="clear: both;">
 		<p>Your vote has <span class="superem">not</span> yet been cast. Please follow the instructions to continue.</p>
 	</div>
 	
-	<p>If you have not already done so, please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64(true) }}</span>. Please retain a copy of your ballot fingerprint – you can use it to verify that your vote has been counted correctly. You may <a href="#" onclick="window.print();return false;">print this page</a> as a receipt if you wish.</p>
+	<p>Please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64(true) }}</span>. Please retain a copy of your ballot fingerprint – you can use it to verify that your vote has been counted correctly. You may <a href="#" onclick="window.print();return false;">print this page</a> as a receipt if you wish.</p>
 	
 	<p>To continue, copy and paste the ballot below and provide it to the election administrator.</p>
 	
@@ -38,4 +36,18 @@
 
 {% block buttons %}
 	<button class="ui left floated button" onclick="prevTemplate();">Back</a>
+{% endblock %}
+
+{% block after %}
+	<div class="ui tiny message" style="margin-top: 3em;">
+		<div class="header">Information for advanced users</div>
+		<p>Your full ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
+	</div>
+{% endblock %}
+
+{% block help %}
+	<p>You are now ready to cast your ballot. As this is a pre-poll voting booth, you must manually provide your ballot to the election administrator.</p>
+	<p>Copy and paste the entire text of the ballot shown in the textbox into a message to the election administrator.</p>
+	<p>Click the ‘OK’ button below to close this help screen.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
 {% endblock %}

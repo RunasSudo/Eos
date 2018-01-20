@@ -22,10 +22,17 @@
 	Vote for
 	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}
 		exactly {{ election.questions.__getitem__(questionNum).min_choices }}
+	{% elif election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices - 1 %}
+		either {{ election.questions.__getitem__(questionNum).min_choices }} or {{ election.questions.__getitem__(questionNum).max_choices }}
 	{% else %}
 		between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }}
 	{% endif %}
-	choices. Click the check-boxes to the left of the choices to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.
+	choices.
+	{% if is_radio %}
+		Click the radio buttons to the left of the choices to make your selection, then click the ‘Continue button’. If you make a mistake, click another radio button to change your selection.
+	{% else %}
+		Click the check-boxes to the left of the choices to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.
+	{% endif %}
 </small></p>
 
 {% set is_radio = election.questions.__getitem__(questionNum).max_choices == 1 %}
@@ -106,3 +113,23 @@
 		return true;
 	}
 </script>
+
+<div id="selections-make-help">
+	<p>{% if is_radio %}This is a vote-for-one question.{% else %}This is an approval voting question.{% endif %} You are required to vote for
+	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}
+		exactly {{ election.questions.__getitem__(questionNum).min_choices }}
+	{% elif election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices - 1 %}
+		either {{ election.questions.__getitem__(questionNum).min_choices }} or {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% else %}
+		between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% endif %}
+	choices.</p>
+	{% if is_radio %}
+		<p>Click or tap the radio buttons to the left of the choices to make your selection. If you make a mistake, click or tap another radio button to change your selection.</p>
+	{% else %}
+		<p>Click or tap the check-boxes to the left of the choices to make your selection. If you make a mistake, click or tap the check-boxes again to clear your selection.</p>
+	{% endif %}
+	<p>Once you are satisfied with your selections, click the ‘Continue’ button.</p>
+	<p>Click the ‘OK’ button below to close this help screen.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
+</div>
