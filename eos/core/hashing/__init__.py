@@ -85,7 +85,7 @@ class SHA256:
 		else:
 			b64 = self.impl.getHash('B64')
 		if short:
-			return b64[:8]
+			return b64[:10]
 		return b64
 	
 	def hash_as_hex(self):
