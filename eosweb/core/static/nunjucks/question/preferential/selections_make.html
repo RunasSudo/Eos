@@ -168,20 +168,29 @@
 	);
 	
 	function breakTicket(ticket) {
-		//ticket.find(".ticket-choices .preferential-choice").each(function(i, el) {
-		//	$(el).detach().insertAfter(ticket);
-		//});
-		ticket.find(".ticket-choices .preferential-choice").detach().insertAfter(ticket);
+		ticket.find(".ticket-choices").first().children(".preferential-choice").detach().insertAfter(ticket);
 		ticket.remove();
 	}
 	
 	dragulaChoices.on("drop", function(el, target, source, sibling) {
-		// If the source or target is a ticket, break the ticket
+		// If the source or target is a ticket, break the ticket if necessary
 		if ($(source).parents(".ticket").length > 0) {
-			breakTicket($(source).parents(".ticket").first())
+			// This is a candidate dragged out of a ticket – break the ticket
+			breakTicket($(source).parents(".ticket").first());
 		}
 		if ($(target).parents(".ticket").length > 0) {
-			breakTicket($(target).parents(".ticket").first())
+			// This is a candidate/ticket dragged into a .ticket-choices
+			// Was it dragged to the first or last position?
+			if (sibling == null) {
+				// Dragged to the end – just move it away
+				$(el).detach().insertAfter($(target).parents(".ticket").first());
+			} else if(sibling == $(target).children(".preferential-choice:not(.ticket)").first().get(0)) {
+				// Dragged to the beginning – just move it away
+				$(el).detach().insertBefore($(target).parents(".ticket").first());
+			} else {
+				// Dragged into the middle – break the ticket
+				breakTicket($(target).parents(".ticket").first());
+			}
 		}
 		
 		choicesChanged();
