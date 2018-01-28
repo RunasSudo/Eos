@@ -16,6 +16,7 @@
 
 import click
 import flask
+import flask_session
 import timeago
 
 from eos.core.objects import *
@@ -61,6 +62,16 @@ if 'EOSWEB_SETTINGS' in os.environ:
 
 # Connect to database
 db_connect(app.config['DB_NAME'], app.config['DB_URI'], app.config['DB_TYPE'])
+
+# Configure sessions
+if app.config['DB_TYPE'] == 'mongodb':
+	app.config['SESSION_TYPE'] = 'mongodb'
+	app.config['SESSION_MONGODB'] = dbinfo.provider.client
+	app.config['SESSION_MONGODB_DB'] = dbinfo.provider.db_name
+elif app.config['DB_TYPE'] == 'postgresql':
+	app.config['SESSION_TYPE'] = 'sqlalchemy'
+	app.config['SQLALCHEMY_DATABASE_URI'] = dbinfo.provider.conn.dsn
+flask_session.Session(app)
 
 # Set configs
 User.admins = app.config['ADMINS']
@@ -298,6 +309,12 @@ def election_admin_schedule_task(election):
 	
 	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
 
+@app.route('/election/<election_id>/stage_ballot', methods=['POST'])
+@using_election
+def election_api_stage_ballot(election):
+	flask.session['staged_ballot'] = json.loads(flask.request.data)
+	return 'OK'
+
 @app.route('/election/<election_id>/cast_ballot', methods=['POST'])
 @using_election
 def election_api_cast_vote(election):
@@ -305,7 +322,7 @@ def election_api_cast_vote(election):
 		# Voting is not yet open or has closed
 		return flask.Response('Voting is not yet open or has closed', 409)
 	
-	data = json.loads(flask.request.data)
+	data = flask.session['staged_ballot']
 	
 	if 'user' not in flask.session:
 		# User is not authenticated
@@ -336,6 +353,8 @@ def election_api_cast_vote(election):
 	
 	vote.save()
 	
+	del flask.session['staged_ballot']
+	
 	return flask.Response(json.dumps({
 		'voter': EosObject.serialise_and_wrap(voter, None, SerialiseOptions(should_protect=True)),
 		'vote': EosObject.serialise_and_wrap(vote, None, SerialiseOptions(should_protect=True))
@@ -365,14 +384,29 @@ def debug():
 
 @app.route('/auth/login')
 def login():
+	flask.session['login_next'] = flask.request.referrer
 	return flask.render_template('auth/login.html')
+
+@app.route('/auth/stage_next', methods=['POST'])
+def auth_stage_next():
+	flask.session['login_next'] = flask.request.data
+	return 'OK'
 
 @app.route('/auth/logout')
 def logout():
 	flask.session['user'] = None
-	#return flask.redirect(flask.request.args['next'] if 'next' in flask.request.args else '/')
-	# I feel like there's some kind of exploit here, so we'll leave this for now
-	return flask.redirect('/')
+	if flask.request.referrer:
+		return flask.redirect(flask.request.referrer)
+	else:
+		return flask.redirect('/')
+
+@app.route('/auth/login_callback')
+def login_callback():
+	print(flask.session)
+	if 'login_next' in flask.session and flask.session['login_next']:
+		return flask.redirect(flask.session['login_next'])
+	else:
+		return flask.redirect('/')
 
 @app.route('/auth/login_complete')
 def login_complete():

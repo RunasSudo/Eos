@@ -59,8 +59,13 @@
 {% endblock %}
 
 {% block buttons %}
-	<button class="ui left floated button" onclick="prevTemplate(2);">Back</button>
-	<button class="ui right floated primary button" id="cast_button" onclick="castBallot();"{% if not username %} style="display: none;"{% endif %}>Cast ballot</button>
+	{% if is_cast %}
+		<a class="ui left floated button" href="{{ election_base_url }}booth">Reset</a>
+		<button class="ui right floated primary button" id="cast_button" onclick="castBallot();"{% if not username %} style="display: none;"{% endif %}>Cast ballot</button>
+	{% else %}
+		<button class="ui left floated button" onclick="prevTemplate(2);">Back</button>
+		<button class="ui right floated primary button" id="cast_button" onclick="stageBallot(castBallot);"{% if not username %} style="display: none;"{% endif %}>Cast ballot</button>
+	{% endif %}
 {% endblock %}
 
 {% block after %}
@@ -75,30 +80,90 @@
 		});
 		
 		function login(el) {
-			window.open(el.getAttribute("href"), "eos_login_window", "width=400,height=600");
+			// Stage the vote for casting in case we change page
+			stageBallot(function(data) {
+				// Stage the next page in case we change page
+				stageNext("{{ election_base_url }}booth?cast", function(data) {
+					window.open(el.getAttribute("href"), "eos_login_window", "width=400,height=600");
+				});
+			});
 		}
+		
 		function callback_complete(username) {
 			$("#cast_button").show();
 			$("#booth_logged_in_as").text("You are currently logged in as " + username + ".");
+			// Ballot was staged when we clicked the login button
 			castBallot();
 			return true;
+		}
+		
+		function stageBallot(callback) {
+			// Prepare ballot
+			var deauditedBallot = booth.ballot.deaudit();
+			
+			$.ajax({
+				url: "{{ election_base_url }}stage_ballot",
+				type: "POST",
+				data: eosjs.eos.core.objects.__all__.EosObject.to_json({
+					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(deauditedBallot, null),
+					"fingerprint": booth.fingerprint || null
+				}),
+				contentType: "application/json",
+				dataType: "text",
+				async: false // so window.open happens in main thread
+			})
+				.done(function(data) {
+					callback(data);
+				})
+				.fail(function(xhr, status, err) {
+					if (xhr.responseText && xhr.responseText.length < 100) {
+						$("#error_unknown_tech").text("Technical details: " + err + " – " + xhr.responseText);
+					} else {
+						$("#error_unknown_tech").text("Technical details: " + err);
+					}
+					$("#error_unknown").removeClass("hidden");
+					
+					$("#error_invalid_id").addClass("hidden");
+					
+					console.error(xhr);
+					throw err;
+				});
+		}
+		
+		function stageNext(url, callback) {
+			$.ajax({
+				url: "/auth/stage_next",
+				type: "POST",
+				data: url,
+				contentType: "text/plain",
+				dataType: "text",
+				async: false // so window.open happens in main thread
+			})
+				.done(function(data) {
+					callback(data);
+				})
+				.fail(function(xhr, status, err) {
+					if (xhr.responseText && xhr.responseText.length < 100) {
+						$("#error_unknown_tech").text("Technical details: " + err + " – " + xhr.responseText);
+					} else {
+						$("#error_unknown_tech").text("Technical details: " + err);
+					}
+					$("#error_unknown").removeClass("hidden");
+					
+					$("#error_invalid_id").addClass("hidden");
+					
+					console.error(xhr);
+					throw err;
+				});
 		}
 		
 		function castBallot() {
 			$("#cast_prompt").hide();
 			$("#casting").show();
 			
-			// Prepare ballot
-			booth.ballot = booth.ballot.deaudit();
-			
 			$.ajax({
 				url: "{{ election_base_url }}cast_ballot",
 				type: "POST",
-				data: eosjs.eos.core.objects.__all__.EosObject.to_json({
-					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(booth.ballot, null),
-					"fingerprint": booth.fingerprint || null
-				}),
-				contentType: "application/json",
 				dataType: "text"
 			})
 				.done(function(data) {
@@ -134,6 +199,10 @@
 					throw err;
 				});
 		}
+		
+		{% if is_cast %}
+			castBallot();
+		{% endif %}
 	</script>
 {% endblock %}
 
