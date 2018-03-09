@@ -402,7 +402,6 @@ def logout():
 
 @app.route('/auth/login_callback')
 def login_callback():
-	print(flask.session)
 	if 'login_next' in flask.session and flask.session['login_next']:
 		return flask.redirect(flask.session['login_next'])
 	else:
@@ -443,7 +442,7 @@ def email_authenticate():
 
 for app_name in app.config['APPS']:
 	app_main = importlib.import_module(app_name + '.main')
-	app_main.main(app)
+	app.register_blueprint(app_main.blueprint)
 
 # === Model-Views ===
 
