@@ -67,6 +67,14 @@
 		resetBooth();
 		
 		function loadElection() {
+			// Verify booth
+			if (should_do_fingerprint) {
+				if (typeof Fingerprint2 === 'undefined') {
+					boothError('Your browser did not load fingerprintj2 correctly. Please try again after disabling your ad blockers and similar software. If the issue persists, try using a different browser.');
+					return;
+				}
+			}
+			
 			$.ajax({ url: "{{ url_for('election_api_json', election_id=election._id) }}", dataType: "text" })
 				.done(function(data) {
 					try {
