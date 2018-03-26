@@ -70,7 +70,7 @@ if app.config['DB_TYPE'] == 'mongodb':
 	app.config['SESSION_MONGODB_DB'] = dbinfo.provider.db_name
 elif app.config['DB_TYPE'] == 'postgresql':
 	app.config['SESSION_TYPE'] = 'sqlalchemy'
-	app.config['SQLALCHEMY_DATABASE_URI'] = dbinfo.provider.conn.dsn
+	app.config['SQLALCHEMY_DATABASE_URI'] = app.config['DB_URI'] + app.config['DB_NAME']
 flask_session.Session(app)
 
 # Set configs
@@ -114,6 +114,11 @@ def static(filename):
 def run_tests(prefix, lang):
 	import eos.tests
 	eos.tests.run_tests(prefix, lang)
+
+# Create the session databases (SQL only)
+@app.cli.command('sessdb')
+def sessdb():
+	app.session_interface.db.create_all()
 
 # TODO: Will remove this once we have a web UI
 @app.cli.command('drop_db_and_setup')
