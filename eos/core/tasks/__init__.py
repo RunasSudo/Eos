@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -16,16 +16,21 @@
 
 from eos.core.objects import *
 
+class TaskStatus(EosEnum):
+	UNKNOWN = 0
+	
+	READY = 20
+	PROCESSING = 30
+	COMPLETE = 50
+	
+	FAILED = -10
+	TIMEOUT = -20
+	
+	def is_error(self):
+		return self.value < 0
+
 class Task(TopLevelObject):
-	class Status:
-		UNKNOWN = 0
-		
-		READY = 20
-		PROCESSING = 30
-		COMPLETE = 50
-		
-		FAILED = -10
-		TIMEOUT = -20
+	label = 'Unknown task'
 	
 	_id = UUIDField()
 	run_strategy = EmbeddedObjectField()
@@ -35,13 +40,19 @@ class Task(TopLevelObject):
 	started_at = DateTimeField()
 	completed_at = DateTimeField()
 	
-	status = IntField(default=0)
+	status = EnumField(TaskStatus, default=TaskStatus.UNKNOWN)
 	messages = ListField(StringField())
 	
 	def run(self):
 		self.run_strategy.run(self)
 	
 	def _run(self):
+		pass
+	
+	def complete(self):
+		pass
+	
+	def error(self):
 		pass
 
 class DummyTask(Task):
@@ -66,8 +77,11 @@ class TaskScheduler:
 		tasks = Task.get_all()
 		
 		for task in tasks:
-			if task.status == Task.Status.READY:
+			if task.status == TaskStatus.READY:
 				pending_tasks.append(task)
+		
+		# Sort them to ensure we iterate over them in the correct order
+		pending_tasks.sort(key=lambda task: task.run_at.timestamp() if task.run_at else 0)
 		
 		return pending_tasks
 	
@@ -77,7 +91,7 @@ class TaskScheduler:
 		tasks = Task.get_all()
 		
 		for task in tasks:
-			if task.status == Task.Status.PROCESSING:
+			if task.status == TaskStatus.PROCESSING:
 				active_tasks.append(task)
 		
 		return active_tasks
@@ -88,7 +102,7 @@ class TaskScheduler:
 		tasks = Task.get_all()
 		
 		for task in tasks:
-			if task.status == Task.Status.COMPLETE or task.status < 0:
+			if task.status == TaskStatus.COMPLETE or task.status.is_error():
 				completed_tasks.append(task)
 		
 		if limit:

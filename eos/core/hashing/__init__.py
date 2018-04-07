@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -71,19 +71,22 @@ class SHA256:
 	
 	def update_obj(self, *values):
 		for value in values:
-			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value, None, True)))
+			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value, None, SerialiseOptions(for_hash=True))))
 		return self
 	
 	def update_obj_raw(self, *values):
 		for value in values:
-			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value, None, False)))
+			self.update_text(EosObject.to_json(EosObject.serialise_and_wrap(value, None, SerialiseOptions(for_hash=False))))
 		return self
 	
-	def hash_as_b64(self):
+	def hash_as_b64(self, short=False):
 		if is_python:
-			return base64.b64encode(self.impl.digest()).decode('utf-8')
+			b64 = base64.b64encode(self.impl.digest()).decode('utf-8')
 		else:
-			return self.impl.getHash('B64')
+			b64 = self.impl.getHash('B64')
+		if short:
+			return b64[:10]
+		return b64
 	
 	def hash_as_hex(self):
 		if is_python:

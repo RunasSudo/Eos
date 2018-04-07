@@ -14,32 +14,14 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from eos.core.tasks import *
-from eos.core.objects import *
+from . import emails
 
-class DirectRunStrategy(RunStrategy):
-	def run(self, task):
-		task.status = TaskStatus.PROCESSING
-		task.started_at = DateTimeField.now()
-		task.save()
-		
-		try:
-			task._run()
-			task.status = TaskStatus.COMPLETE
-			task.completed_at = DateTimeField.now()
-			task.save()
-			
-			task.complete()
-		except Exception as e:
-			task.status = TaskStatus.FAILED
-			task.completed_at = DateTimeField.now()
-			if is_python:
-				#__pragma__('skip')
-				import traceback
-				#__pragma__('noskip')
-				task.messages.append(traceback.format_exc())
-			else:
-				task.messages.append(repr(e))
-			task.save()
-			
-			task.error()
+from eos.core.tasks import *
+from eos.base.election import *
+
+class WebTask(Task):
+	def error(self):
+		emails.task_email_failure(self)
+
+class WorkflowTaskEntryWebTask(WorkflowTaskEntryTask, WebTask):
+	pass

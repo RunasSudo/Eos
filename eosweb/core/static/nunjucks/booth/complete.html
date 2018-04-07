@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -21,10 +21,13 @@
 {% block content %}
 	<p>Your vote has been successfully cast. The following is your ‘smart ballot tracker’. Please retain a copy of your smart ballot tracker – you can use it to verify that your vote has been counted correctly. You may <a href="#" onclick="window.print();return false;">print this page</a> as a receipt if you wish.</p>
 	
-	<div class="ui success message">
-		<div class="header">Smart ballot tracker</div>
-		<p>This smart ballot tracker confirms that {{ voter.name }} cast a vote in the election {{ election.py_name }} at {{ vote.cast_at }}.</p>
-		<p>Ballot fingerprint: <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span></p>
+	<div class="ui success icon message">
+		<i class="check circle outline icon"></i>
+		<div class="content">
+			<div class="header">Smart ballot tracker</div>
+			<p>This smart ballot tracker confirms that {{ voter.py_name }} cast a vote in the election {{ election.py_name }} at {{ vote.cast_at }}.</p>
+			<p>Ballot fingerprint: <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(vote.ballot).hash_as_b64(true) }}</span></p>
+		</div>
 	</div>
 	
 	<p>Please check that the ballot fingerprint above matches the ballot fingerprint you recorded earlier.</p>
@@ -34,4 +37,19 @@
 
 {% block buttons %}
 	<a href="{{ election_base_url }}view/ballots" class="ui right floated primary button">Finish</a>
+{% endblock %}
+
+{% block after %}
+	<div class="ui tiny message" style="margin-top: 3em;">
+		<div class="header">Information for advanced users</div>
+		<p>Your full ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span>.</p>
+	</div>
+{% endblock %}
+
+{% block help %}
+	<p>You have now successfully cast your ballot in this election!</p>
+	<p>The green ‘smart ballot tracker’ shows the details of your vote. Please retain a copy of your smart ballot tracker, as it can be used as proof that you voted in this election, and can be used to verify that your vote is counted corectly.</p>
+	<p>You may now close this window and exit the voting booth.</p>
+	<p>Click the ‘OK’ button below to close this help screen.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
 {% endblock %}

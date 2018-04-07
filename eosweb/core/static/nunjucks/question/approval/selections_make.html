@@ -1,6 +1,6 @@
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -18,18 +18,51 @@
 
 <h2>{{ questionNum + 1 }}. {{ election.questions.__getitem__(questionNum).prompt }}</h2>
 
-<p><small>Vote for between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }} choices. Click the check-boxes to the left of the choices to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.</small></p>
+<p><small>
+	Vote for
+	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}
+		exactly {{ election.questions.__getitem__(questionNum).min_choices }}
+	{% elif election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices - 1 %}
+		either {{ election.questions.__getitem__(questionNum).min_choices }} or {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% else %}
+		between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% endif %}
+	choices.
+	{% if is_radio %}
+		Click the radio buttons to the left of the choices to make your selection, then click the ‘Continue button’. If you make a mistake, click another radio button to change your selection.
+	{% else %}
+		Click the check-boxes to the left of the choices to make your selection, then click the ‘Continue’ button. If you make a mistake, click the check-boxes again to clear your selection.
+	{% endif %}
+</small></p>
+
+{% set is_radio = election.questions.__getitem__(questionNum).max_choices == 1 %}
 
 <div id="question-choices" class="ui form" style="margin-bottom: 1em;">
 	<div class="grouped fields">
 		{% for choice in election.questions.__getitem__(questionNum).randomised_choices().impl %}
 			<div class="field">
-				<div class="ui checkbox">
-					<input type="checkbox" id="question-choice-{{ election.questions.__getitem__(questionNum).choices.impl.indexOf(choice) }}" onchange="choicesChanged();">
+				<div class="ui{% if is_radio %} radio{% endif %} checkbox">
+					<input
+					{% if is_radio %}
+						name="question-choices"
+						type="radio"
+					{% else %}
+						type="checkbox"
+					{% endif %}
+					id="question-choice-{{ election.questions.__getitem__(questionNum).choices.impl.indexOf(choice) }}" onchange="choicesChanged();">
+					
 					<label for="question-choice-{{ election.questions.__getitem__(questionNum).choices.impl.indexOf(choice) }}">{{ choice.name }}{% if choice.party %} – {{ choice.party }}{% endif %}</label>
 				</div>
 			</div>
 		{% endfor %}
+		{% if is_radio and election.questions.__getitem__(questionNum).min_choices == 0 %}
+			<div class="field">
+				<div class="ui{% if is_radio %} radio{% endif %} checkbox">
+					<input name="question-choices" type="radio" id="question-choice-none" onchange="choicesChanged();" checked>
+					<label for="question-choice-none"><i>None of the above</i></label>
+				</div>
+			</div>
+		{% endif %}
 	</div>
 </div>
 
@@ -39,15 +72,17 @@
 
 <script>
 	function choicesChanged() {
-		var numChoices = $("#question-choices input:checked").length;
-		if (numChoices >= election.questions.__getitem__(booth.questionNum).max_choices) {
-			// Prevent making any more selections
-			$("#question-choices input:not(:checked)").prop("disabled", true);
-			$("#message-max-choices").removeClass("hidden");
-		} else {
-			$("#question-choices input").prop("disabled", false);
-			$("#message-max-choices").addClass("hidden");
-		}
+		{% if not is_radio %}
+			var numChoices = $("#question-choices input:checked").length;
+			if (numChoices >= election.questions.__getitem__(booth.questionNum).max_choices) {
+				// Prevent making any more selections
+				$("#question-choices input:not(:checked)").prop("disabled", true);
+				$("#message-max-choices").removeClass("hidden");
+			} else {
+				$("#question-choices input").prop("disabled", false);
+				$("#message-max-choices").addClass("hidden");
+			}
+		{% endif %}
 	}
 	
 	// Fill in ballot with previous selections
@@ -61,9 +96,40 @@
 	function saveSelections() {
 		selections = [];
 		$("#question-choices input:checked").each(function(i, el) {
-			selections.push(parseInt(el.id.substring("question-choice-".length)));
+			if (el.id !== "question-choice-none") {
+				selections.push(parseInt(el.id.substring("question-choice-".length)));
+			}
 		});
+		
+		if (selections.length < election.questions.__getitem__(booth.questionNum).min_choices) {
+			if (!window.confirm('You have selected fewer than the minimum required number of choices. If you proceed to cast this ballot, it will **NOT** be counted. If this was not your intention, please click the "Cancel" button below now, and correct your selections.')) {
+				return false;
+			}
+		}
+		
 		answer = eosjs.eos.base.election.__all__.ApprovalAnswer(eosjs.__kwargtrans__({choices: selections}));
 		booth.answers[booth.questionNum] = eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(answer);
+		
+		return true;
 	}
 </script>
+
+<div id="selections-make-help">
+	<p>{% if is_radio %}This is a vote-for-one question.{% else %}This is an approval voting question.{% endif %} You are required to vote for
+	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}
+		exactly {{ election.questions.__getitem__(questionNum).min_choices }}
+	{% elif election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices - 1 %}
+		either {{ election.questions.__getitem__(questionNum).min_choices }} or {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% else %}
+		between {{ election.questions.__getitem__(questionNum).min_choices }} and {{ election.questions.__getitem__(questionNum).max_choices }}
+	{% endif %}
+	choices.</p>
+	{% if is_radio %}
+		<p>Click or tap the radio buttons to the left of the choices to make your selection. If you make a mistake, click or tap another radio button to change your selection.</p>
+	{% else %}
+		<p>Click or tap the check-boxes to the left of the choices to make your selection. If you make a mistake, click or tap the check-boxes again to clear your selection.</p>
+	{% endif %}
+	<p>Once you are satisfied with your selections, click the ‘Continue’ button.</p>
+	<p>Click the ‘OK’ button below to close this help screen.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
+</div>

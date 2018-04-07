@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -144,7 +144,7 @@ class TaskTestCase(EosTestCase):
 		task.save()
 		task.run()
 		
-		self.assertEqual(task.status, Task.Status.COMPLETE)
+		self.assertEqual(task.status, TaskStatus.COMPLETE)
 		self.assertEqual(len(task.messages), 1)
 		self.assertEqual(task.messages[0], 'Hello World')
 		self.assertEqual(task.result, 'Success')
@@ -158,6 +158,6 @@ class TaskTestCase(EosTestCase):
 		task.save()
 		task.run()
 		
-		self.assertEqual(task.status, Task.Status.FAILED)
+		self.assertEqual(task.status, TaskStatus.FAILED)
 		self.assertEqual(len(task.messages), 1)
 		self.assertTrue('Test exception' in task.messages[0])

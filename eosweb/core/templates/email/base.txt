@@ -2,6 +2,8 @@
 	Eos - Verifiable elections
 	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
+	This file adapted from https://github.com/leemunroe/responsive-html-email-template, licensed under the MIT licence.
+	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
 	the Free Software Foundation, either version 3 of the License, or
@@ -16,30 +18,9 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
-<table class="ui celled table">
-	<thead>
-		<tr>
-			<th class="fourteen wide">Candidate</th>
-			<th class="two wide">Elected</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% set flat_choices = question.flatten_choices() %}
-		{% for elected in result.elected %}
-			<tr>
-				<td class="fourteen wide">{{ flat_choices[elected].name }}{% if flat_choices[elected].party %} – {{ flat_choices[elected].party }}{% endif %}</td>
-				<td class="two wide">{{ loop.index }}</td>
-			</tr>
-		{% endfor %}
-	</tbody>
-</table>
+{{ text|safe }}
 
-<div class="ui accordion">
-	<div class="title">
-		<i class="dropdown icon"></i>
-		Count log
-	</div>
-	<div class="content">
-		<div class="monoout" style="max-height: 20em;">{{ result.log }}</div>
-	</div>
-</div>
+---
+
+Eos Voting for {{ eosweb.app.config['ORG_NAME'] }}
+{{ eosweb.app.config['BASE_URI'] }}

@@ -1,6 +1,6 @@
 /*
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -26,6 +26,18 @@
 	word-break: break-all;
 }
 
+.monoout {
+	font-family: monospace;
+	white-space: pre-wrap;
+	word-break: break-all;
+	overflow-y: scroll;
+	
+	padding: .78571429em 1em;
+	border: 1px solid rgba(34,36,38,.15);
+	color: rgba(0,0,0,.87);
+	border-radius: .28571429rem;
+}
+
 .superem {
 	font-weight: bold;
 	font-style: italic;
@@ -47,6 +59,11 @@ time[title] {
 /* Fix display of multiple right-aligned menu items */
 .ui.menu:not(.vertical) .right.item ~ .right.item {
 	margin-left: 0 !important;
+}
+
+/* Fix nested selectable tables */
+.ui.table.selectable tr > td.selectable:hover {
+	background: initial !important;
 }
 
 @media print {
@@ -118,13 +135,27 @@ time[title] {
 	padding: 0.5em 0 0.5em 0.5em;
 }
 
-.ticket-choices .number, .ticket-choices .content {
+.ticket-choices .number {
+	padding: 0;
+}
+
+.ticket-choices .content {
 	padding: 0 0 0 0.5em;
 }
 
 .preferential-choice .number {
-	width: 2em;
 	text-align: center;
+}
+
+.preferential-choice .number select {
+	background-color: white;
+}
+
+.preferential-choice .content {
+	/* Vertically center */
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 }
 
 .preferential-choice .party-name, .preferential-choice .ticket-party-name {
@@ -138,4 +169,8 @@ time[title] {
 
 .ticket > .content > .party-name {
 	font-size: inherit;
+}
+
+#selections-make-help {
+	display: none;
 }

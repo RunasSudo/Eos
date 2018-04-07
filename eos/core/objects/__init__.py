@@ -74,9 +74,31 @@ class Field:
 		self.default = kwargs['default'] if 'default' in kwargs else kwargs['py_default'] if 'py_default' in kwargs else None
 		self.is_protected = kwargs['is_protected'] if 'is_protected' in kwargs else False
 		self.is_hashed = kwargs['is_hashed'] if 'is_hashed' in kwargs else not self.is_protected
+	
+	def object_get(self, obj):
+		return obj._field_values[self.real_name]
+	
+	def object_set(self, obj, value):
+		obj._field_values[self.real_name] = value
+		
+		if isinstance(value, EosObject):
+			value._instance = (obj, self.real_name)
+			if not value._inited:
+				value.post_init()
+	
+	def object_init(self, obj, value):
+		self.object_set(obj, value)
+
+class SerialiseOptions:
+	def __init__(self, for_hash=False, should_protect=False, combine_related=False):
+		self.for_hash = for_hash
+		self.should_protect = should_protect
+		self.combine_related = combine_related
+
+SerialiseOptions.DEFAULT = SerialiseOptions()
 
 class PrimitiveField(Field):
-	def serialise(self, value, for_hash=False, should_protect=False):
+	def serialise(self, value, options=SerialiseOptions.DEFAULT):
 		return value
 	
 	def deserialise(self, value):
@@ -93,8 +115,8 @@ class EmbeddedObjectField(Field):
 		super().__init__(*args, **kwargs)
 		self.object_type = object_type
 	
-	def serialise(self, value, for_hash=False, should_protect=False):
-		return EosObject.serialise_and_wrap(value, self.object_type, for_hash, should_protect)
+	def serialise(self, value, options=SerialiseOptions.DEFAULT):
+		return EosObject.serialise_and_wrap(value, self.object_type, options)
 	
 	def deserialise(self, value):
 		return EosObject.deserialise_and_unwrap(value, self.object_type)
@@ -104,8 +126,8 @@ class ListField(Field):
 		super().__init__(default=EosList, *args, **kwargs)
 		self.element_field = element_field
 	
-	def serialise(self, value, for_hash=False, should_protect=False):
-		return [self.element_field.serialise(x, for_hash, should_protect) for x in (value.impl if isinstance(value, EosList) else value)]
+	def serialise(self, value, options=SerialiseOptions.DEFAULT):
+		return [self.element_field.serialise(x, options) for x in (value.impl if isinstance(value, EosList) else value)]
 	
 	def deserialise(self, value):
 		return EosList([self.element_field.deserialise(x) for x in value])
@@ -115,11 +137,47 @@ class EmbeddedObjectListField(Field):
 		super().__init__(default=EosList, *args, **kwargs)
 		self.object_type = object_type
 	
-	def serialise(self, value, for_hash=False, should_protect=False):
+	def serialise(self, value, options=SerialiseOptions.DEFAULT):
 		# TNYI: Doesn't know how to deal with iterators like EosList
 		if value is None:
 			return None
-		return [EosObject.serialise_and_wrap(x, self.object_type, for_hash, should_protect) for x in (value.impl if isinstance(value, EosList) else value)]
+		return [EosObject.serialise_and_wrap(x, self.object_type, options) for x in (value.impl if isinstance(value, EosList) else value)]
+	
+	def deserialise(self, value):
+		if value is None:
+			return None
+		return EosList([EosObject.deserialise_and_unwrap(x, self.object_type) for x in value])
+
+class RelatedObjectListManager:
+	def __init__(self, field, obj):
+		self.field = field
+		self.obj = obj
+	
+	def get_all(self):
+		query = {self.field.related_field: getattr(self.obj, self.field.this_field)}
+		return self.field.related_type.get_all_by_fields(**query)
+
+class RelatedObjectListField(Field):
+	def __init__(self, object_type=None, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.related_type = kwargs['related_type']
+		self.object_type = kwargs['object_type'] if 'object_type' in kwargs else None
+		self.this_field = kwargs['this_field'] if 'this_field' in kwargs else '_id'
+		self.related_field = kwargs['related_field']
+	
+	def object_get(self, obj):
+		return RelatedObjectListManager(self, obj)
+	
+	def object_set(self, obj, value):
+		raise Exception('Cannot directly set related field')
+	
+	def object_init(self, obj, value):
+		pass
+	
+	def serialise(self, value, options=SerialiseOptions.DEFAULT):
+		if not options.combine_related:
+			return None
+		return EmbeddedObjectListField(object_type=self.object_type).serialise(value.get_all(), options)
 	
 	def deserialise(self, value):
 		if value is None:
@@ -131,7 +189,7 @@ if is_python:
 		def __init__(self, *args, **kwargs):
 			super().__init__(default=uuid.uuid4, *args, **kwargs)
 		
-		def serialise(self, value, for_hash=False, should_protect=False):
+		def serialise(self, value, options=SerialiseOptions.DEFAULT):
 			return str(value)
 		
 		def deserialise(self, value):
@@ -145,7 +203,7 @@ class DateTimeField(Field):
 			return '0' + str(number)
 		return str(number)
 	
-	def serialise(self, value, for_hash=False, should_protect=False):
+	def serialise(self, value, options=SerialiseOptions.DEFAULT):
 		if value is None:
 			return None
 		
@@ -215,12 +273,13 @@ class EosObject(metaclass=EosObjectType):
 		return EosObject.objects[name]
 	
 	@staticmethod
-	def serialise_and_wrap(value, object_type=None, for_hash=False, should_protect=False):
+	def serialise_and_wrap(value, object_type=None, options=SerialiseOptions.DEFAULT):
 		if object_type:
 			if value:
-				return value.serialise(for_hash, should_protect)
-			return None
-		return {'type': value._name, 'value': (value.serialise(for_hash, should_protect) if value else None)}
+				return value.serialise(options)
+		if value:
+			return {'type': value._name, 'value': (value.serialise(options) if value else None)}
+		return None
 	
 	@staticmethod
 	def deserialise_and_unwrap(value, object_type=None):
@@ -327,14 +386,9 @@ class DocumentObjectType(EosObjectType):
 		if is_python:
 			def make_property(name, field):
 				def field_getter(self):
-					return self._field_values[name]
+					return field.object_get(self)
 				def field_setter(self, value):
-					self._field_values[name] = value
-					
-					if isinstance(value, EosObject):
-						value._instance = (self, name)
-						if not value._inited:
-							value.post_init()
+					field.object_set(self, value)
 				return property(field_getter, field_setter)
 			
 			for attr, val in fields.items():
@@ -362,15 +416,11 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 				pass
 			else:
 				def make_property(name, field):
+					# TNYI: Transcrypt doesn't pass self
 					def field_getter():
-						return self._field_values[name]
+						return field.object_get(self)
 					def field_setter(value):
-						self._field_values[name] = value
-						
-						if isinstance(value, EosObject):
-							value._instance = (self, name)
-							if not value._inited:
-								value.post_init()
+						field.object_set(self, value)
 					return (field_getter, field_setter)
 				prop = make_property(val.real_name, val)
 				# TNYI: No support for property()
@@ -386,15 +436,15 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 					})
 			
 			if val.internal_name in kwargs:
-				setattr(self, val.real_name, kwargs[val.internal_name])
+				val.object_init(self, kwargs[val.internal_name])
 			else:
 				default = val.default
 				if default is not None and callable(default):
 					default = default()
-				setattr(self, val.real_name, default)
+				val.object_init(self, default)
 	
-	def serialise(self, for_hash=False, should_protect=False):
-		return {val.real_name: val.serialise(getattr(self, val.real_name), for_hash, should_protect) for attr, val in self._fields.items() if ((val.is_hashed or not for_hash) and (not should_protect or not val.is_protected))}
+	def serialise(self, options=SerialiseOptions.DEFAULT):
+		return {val.real_name: val.serialise(getattr(self, val.real_name), options) for attr, val in self._fields.items() if ((val.is_hashed or not options.for_hash) and (not options.should_protect or not val.is_protected))}
 	
 	@classmethod
 	def deserialise(cls, value):
@@ -431,9 +481,19 @@ class TopLevelObject(DocumentObject, metaclass=TopLevelObjectType):
 		#res = dbinfo.db[self._db_name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
 		dbinfo.provider.update_by_id(self._db_name, self._fields['_id'].serialise(self._id), EosObject.serialise_and_wrap(self))
 	
+	def delete(self):
+		dbinfo.provider.delete_by_id(self._db_name, self._fields['_id'].serialise(self._id))
+	
 	@classmethod
 	def get_all(cls):
 		return [EosObject.deserialise_and_unwrap(x) for x in dbinfo.provider.get_all(cls._db_name)]
+	
+	@classmethod
+	def get_all_by_fields(cls, **fields):
+		for field in fields:
+			if not isinstance(fields[field], str):
+				fields[field] = str(fields[field])
+		return [EosObject.deserialise_and_unwrap(x) for x in dbinfo.provider.get_all_by_fields(cls._db_name, fields)]
 	
 	@classmethod
 	def get_by_id(cls, _id):
@@ -443,3 +503,61 @@ class TopLevelObject(DocumentObject, metaclass=TopLevelObjectType):
 
 class EmbeddedObject(DocumentObject):
 	pass
+
+# Enums
+# =====
+
+class EosEnumType(EosObjectType):
+	def __new__(meta, name, bases, attrs):
+		cls = EosObjectType.__new__(meta, name, bases, attrs)
+		
+		cls._values = {}
+		
+		for attr in list(dir(cls)):
+			val = getattr(cls, attr);
+			if isinstance(val, int):
+				instance = cls(attr, val)
+				setattr(cls, attr, instance)
+				cls._values[val] = instance
+		
+		return cls
+
+class EosEnum(EosObject, metaclass=EosEnumType):
+	def __init__(self, name, value):
+		super().__init__()
+		self.name = name
+		self.value = value
+	
+	def __eq__(self, other):
+		if not isinstance(other, self.__class__):
+			return False
+		return self.value == other.value
+	def __ne__(self, other):
+		if not isinstance(other, self.__class__):
+			return True
+		return self.value != other.value
+	def __gt__(self, other):
+		if not isinstance(other, self.__class__):
+			raise TypeError
+		return self.value > other.value
+	def __lt__(self, other):
+		if not isinstance(other, self.__class__):
+			raise TypeError
+		return self.value < other.value
+	def __ge__(self, other):
+		if not isinstance(other, self.__class__):
+			raise TypeError
+		return self.value >= other.value
+	def __le__(self, other):
+		if not isinstance(other, self.__class__):
+			raise TypeError
+		return self.value <= other.value
+	
+	def serialise(self, options=SerialiseOptions.DEFAULT):
+		return self.value
+	
+	@classmethod
+	def deserialise(cls, value):
+		return cls._values[value]
+
+EnumField = EmbeddedObjectField

@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -17,19 +17,19 @@
 from eos.core.objects import *
 from eos.core.tasks import *
 
+class WorkflowTaskStatus(EosEnum):
+	UNKNOWN = 0
+	NOT_READY = 10
+	READY = 20
+	ENTERED = 30
+	#COMPLETE = 40
+	EXITED = 50
+
 class WorkflowTask(EmbeddedObject):
-	class Status:
-		UNKNOWN = 0
-		NOT_READY = 10
-		READY = 20
-		ENTERED = 30
-		#COMPLETE = 40
-		EXITED = 50
-	
 	depends_on = []
 	provides = []
 	
-	status = IntField(default=0, is_hashed=False)
+	status = EnumField(WorkflowTaskStatus, is_hashed=False, default=WorkflowTaskStatus.UNKNOWN)
 	exited_at = DateTimeField(is_hashed=False)
 	
 	def __init__(self, *args, **kwargs):
@@ -40,8 +40,8 @@ class WorkflowTask(EmbeddedObject):
 		
 		self.workflow = self.recurse_parents(Workflow)
 		
-		if self.status == WorkflowTask.Status.UNKNOWN:
-			self.status = WorkflowTask.Status.READY if self.are_dependencies_met() else WorkflowTask.Status.NOT_READY
+		if self.status == WorkflowTaskStatus.UNKNOWN:
+			self.status = WorkflowTaskStatus.READY if self.are_dependencies_met() else WorkflowTaskStatus.NOT_READY
 		
 		self.listeners = {
 			'enter': [],
@@ -51,7 +51,7 @@ class WorkflowTask(EmbeddedObject):
 		# Helpers
 		
 		def on_dependency_exit():
-			self.status = WorkflowTask.Status.READY if self.are_dependencies_met() else WorkflowTask.Status.NOT_READY
+			self.status = WorkflowTaskStatus.READY if self.are_dependencies_met() else WorkflowTaskStatus.NOT_READY
 		for depends_on_desc in self.depends_on:
 			for depends_on_task in self.workflow.get_tasks(depends_on_desc):
 				depends_on_task.listeners['exit'].append(on_dependency_exit)
@@ -59,7 +59,7 @@ class WorkflowTask(EmbeddedObject):
 	def are_dependencies_met(self):
 		for depends_on_desc in self.depends_on:
 			for depends_on_task in self.workflow.get_tasks(depends_on_desc):
-				if depends_on_task.status is not WorkflowTask.Status.EXITED:
+				if depends_on_task.status is not WorkflowTaskStatus.EXITED:
 					return False
 		return True
 	
@@ -71,10 +71,10 @@ class WorkflowTask(EmbeddedObject):
 		self.exit()
 	
 	def enter(self):
-		if self.status is not WorkflowTask.Status.READY:
+		if self.status is not WorkflowTaskStatus.READY:
 			raise Exception('Attempted to enter a task when not ready')
 		
-		self.status = WorkflowTask.Status.ENTERED
+		self.status = WorkflowTaskStatus.ENTERED
 		self.fire_event('enter')
 		self.on_enter()
 	
@@ -86,10 +86,10 @@ class WorkflowTask(EmbeddedObject):
 		self.exited_at = DateTimeField.now()
 	
 	def exit(self):
-		if self.status is not WorkflowTask.Status.ENTERED:
+		if self.status is not WorkflowTaskStatus.ENTERED:
 			raise Exception('Attempted to exit a task when not entered')
 		
-		self.status = WorkflowTask.Status.EXITED
+		self.status = WorkflowTaskStatus.EXITED
 		self.fire_event('exit')
 		self.on_exit()
 	
@@ -146,7 +146,7 @@ class TaskConfigureElection(WorkflowTask):
 	label = 'Freeze the election'
 	
 	#def on_enter(self):
-	#	self.status = WorkflowTask.Status.COMPLETE
+	#	self.status = WorkflowTaskStatus.COMPLETE
 
 class TaskOpenVoting(WorkflowTask):
 	label = 'Open voting'
@@ -167,8 +167,8 @@ class TaskDecryptVotes(WorkflowTask):
 			election.results.append(EosObject.lookup('eos.base.election.RawResult')())
 		
 		for voter in election.voters:
-			if len(voter.votes) > 0:
-				vote = voter.votes[-1]
+			if len(voter.votes.get_all()) > 0:
+				vote = voter.votes.get_all()[-1]
 				ballot = vote.ballot
 				for q_num in range(len(ballot.encrypted_answers)):
 					plaintexts, answer = ballot.encrypted_answers[q_num].decrypt()

@@ -35,7 +35,11 @@
 	</div>
 {% endif %}
 
-{% if booth.answers[loop.index0].value.choices.length < question.max_choices %}
+{% if booth.answers[loop.index0].value.choices.length < question.min_choices %}
+	<div class="ui error message">
+		<p>You have selected fewer than the minimum required number of choices. If you proceed to cast this ballot, it will <span class="superem">not</span> be counted. If this was not your intention, please click the ‘Back’ button below now, and correct your selections.</p>
+	</div>
+{% elif booth.answers[loop.index0].value.choices.length < question.max_choices %}
 	<div class="ui warning message">
 		<p>You have selected fewer than the maximum allowed number of choices. If this was not your intention, please click the ‘Back’ button below now, and correct your selections.</p>
 	</div>

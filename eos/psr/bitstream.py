@@ -153,7 +153,7 @@ class BitStream(EosObject):
 		bs.seek(0)
 		return bs
 	
-	def serialise(self):
+	def serialise(self, options=SerialiseOptions.DEFAULT):
 		return self.impl
 	
 	@classmethod
@@ -173,7 +173,7 @@ class InfiniteHashBitStream(BitStream):
 		# 11000110110
 		#    ^----
 		if nbits is None:
-			nbits = self.remaining
+			raise Exception('Cannot read indefinite amount from InfiniteHashBitStream')
 		while nbits > self.remaining:
 			self.ctr += 1
 			self.sha.update_text(str(self.ctr))

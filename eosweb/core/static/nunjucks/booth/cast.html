@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -20,7 +20,7 @@
 
 {% block content %}
 	<div id="cast_prompt">
-		<p>Your vote has <span class="superem">not</span> yet been cast. If you have not already done so, please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
+		<p>Your vote has <span class="superem">not</span> yet been cast. Please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64(true) }}</span>.</p>
 		
 		<div class="ui negative message">
 			<p>Your vote has <span class="superem">not</span> yet been cast. Please follow the instructions to continue.</p>
@@ -53,47 +53,117 @@
 			<p id="error_unknown_tech"></p>
 		</div>
 	</div>
-	<div id="casting" style="display: none;">
+	<div class="ui basic segment" id="casting" style="display: none; min-height: 4em;">
 		<div class="ui active text loader">Casting your ballot. Please wait.</div>
 	</div>
 {% endblock %}
 
 {% block buttons %}
-	<button class="ui left floated button" onclick="prevTemplate(2);">Back</button>
-	<button class="ui right floated primary button" id="cast_button" onclick="castBallot();"{% if not username %} style="display: none;"{% endif %}>Cast ballot</button>
+	{% if is_cast %}
+		<a class="ui left floated button" href="{{ election_base_url }}booth">Reset</a>
+		<button class="ui right floated primary button" id="cast_button" onclick="castBallot();"{% if not username %} style="display: none;"{% endif %}>Cast ballot</button>
+	{% else %}
+		<button class="ui left floated button" onclick="prevTemplate(2);">Back</button>
+		<button class="ui right floated primary button" id="cast_button" onclick="stageBallot(castBallot);"{% if not username %} style="display: none;"{% endif %}>Cast ballot</button>
+	{% endif %}
 {% endblock %}
 
 {% block after %}
+	<div class="ui tiny message" style="margin-top: 3em;">
+		<div class="header">Information for advanced users</div>
+		<p>Your full ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
+	</div>
+	
 	<script>
 		$(".message .close").on("click", function() {
 			$(this).closest(".message").addClass("hidden");
 		});
 		
 		function login(el) {
-			window.open(el.getAttribute("href"), "eos_login_window", "width=400,height=600");
+			// Stage the vote for casting in case we change page
+			stageBallot(function(data) {
+				// Stage the next page in case we change page
+				stageNext("{{ election_base_url }}booth?cast", function(data) {
+					window.open(el.getAttribute("href"), "eos_login_window", "width=400,height=600");
+				});
+			});
 		}
+		
 		function callback_complete(username) {
 			$("#cast_button").show();
 			$("#booth_logged_in_as").text("You are currently logged in as " + username + ".");
+			// Ballot was staged when we clicked the login button
 			castBallot();
 			return true;
+		}
+		
+		function stageBallot(callback) {
+			// Prepare ballot
+			var deauditedBallot = booth.ballot.deaudit();
+			
+			$.ajax({
+				url: "{{ election_base_url }}stage_ballot",
+				type: "POST",
+				data: eosjs.eos.core.objects.__all__.EosObject.to_json({
+					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(deauditedBallot, null),
+					"fingerprint": booth.fingerprint || null
+				}),
+				contentType: "application/json",
+				dataType: "text",
+				async: false // so window.open happens in main thread
+			})
+				.done(function(data) {
+					callback(data);
+				})
+				.fail(function(xhr, status, err) {
+					if (xhr.responseText && xhr.responseText.length < 100) {
+						$("#error_unknown_tech").text("Technical details: " + err + " – " + xhr.responseText);
+					} else {
+						$("#error_unknown_tech").text("Technical details: " + err);
+					}
+					$("#error_unknown").removeClass("hidden");
+					
+					$("#error_invalid_id").addClass("hidden");
+					
+					console.error(xhr);
+					throw err;
+				});
+		}
+		
+		function stageNext(url, callback) {
+			$.ajax({
+				url: "/auth/stage_next",
+				type: "POST",
+				data: url,
+				contentType: "text/plain",
+				dataType: "text",
+				async: false // so window.open happens in main thread
+			})
+				.done(function(data) {
+					callback(data);
+				})
+				.fail(function(xhr, status, err) {
+					if (xhr.responseText && xhr.responseText.length < 100) {
+						$("#error_unknown_tech").text("Technical details: " + err + " – " + xhr.responseText);
+					} else {
+						$("#error_unknown_tech").text("Technical details: " + err);
+					}
+					$("#error_unknown").removeClass("hidden");
+					
+					$("#error_invalid_id").addClass("hidden");
+					
+					console.error(xhr);
+					throw err;
+				});
 		}
 		
 		function castBallot() {
 			$("#cast_prompt").hide();
 			$("#casting").show();
 			
-			// Prepare ballot
-			booth.ballot = booth.ballot.deaudit();
-			
 			$.ajax({
 				url: "{{ election_base_url }}cast_ballot",
 				type: "POST",
-				data: eosjs.eos.core.objects.__all__.EosObject.to_json({
-					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(booth.ballot, null),
-					"fingerprint": booth.fingerprint || null
-				}),
-				contentType: "application/json",
 				dataType: "text"
 			})
 				.done(function(data) {
@@ -129,5 +199,16 @@
 					throw err;
 				});
 		}
+		
+		{% if is_cast %}
+			castBallot();
+		{% endif %}
 	</script>
+{% endblock %}
+
+{% block help %}
+	<p>You are now ready to cast your ballot. If you disconnected your internet connection earlier, you must now reconnect it before proceeding.</p>
+	<p>Click the ‘OK’ button below to close this help screen, then click the blue ‘Cast ballot’ button. If there is no ‘Cast ballot’ button, select your login method from the list shown, and enter your voter details. These details may be found in the email or message instructing you to vote.</p>
+	<p>Once you have logged in, your vote will be automatically cast.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
 {% endblock %}

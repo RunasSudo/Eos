@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -23,7 +23,18 @@ from eos.redditauth.election import *
 import base64
 import uuid
 
-def main(app):
+blueprint = flask.Blueprint('eosweb.redditauth', __name__)
+
+app = None
+oauth = None
+reddit = None
+
+@blueprint.record
+def reddit_register(setup_state):
+	global app, oauth, reddit
+	
+	app = setup_state.app
+	
 	oauth = OAuth()
 	reddit = oauth.remote_app('Reddit',
 		request_token_url=None,
@@ -39,28 +50,28 @@ def main(app):
 		consumer_secret=app.config['REDDIT_OAUTH_CLIENT_SECRET']
 	)
 	
-	@app.route('/auth/reddit/login')
-	def reddit_login():
-		return reddit.authorize(callback=app.config['BASE_URI'] + flask.url_for('reddit_oauth_authorized'), state=uuid.uuid4())
-	
 	@reddit.tokengetter
 	def get_reddit_oauth_token():
 		return (flask.session.get('user').oauth_token, '')
+
+@blueprint.route('/auth/reddit/login')
+def reddit_login():
+	return reddit.authorize(callback=app.config['BASE_URI'] + flask.url_for('eosweb.redditauth.reddit_oauth_authorized'), state=uuid.uuid4())
+
+@blueprint.route('/auth/reddit/oauth_callback')
+def reddit_oauth_authorized():
+	resp = reddit.authorized_response()
+	if resp is None:
+		# Request denied
+		return flask.redirect(flask.url_for('login_cancelled'))
 	
-	@app.route('/auth/reddit/oauth_callback')
-	def reddit_oauth_authorized():
-		resp = reddit.authorized_response()
-		if resp is None:
-			# Request denied
-			return flask.redirect(flask.url_for('login_cancelled'))
-		
-		user = RedditUser()
-		user.oauth_token = resp['access_token']
-		flask.session['user'] = user
-		
-		me = reddit.get('https://oauth.reddit.com/api/v1/me', headers={
-			'User-Agent': app.config['REDDIT_USER_AGENT']
-		})
-		user.username = me.data['name']
-		
-		return flask.redirect(flask.url_for('login_complete'))
+	user = RedditUser()
+	user.oauth_token = resp['access_token']
+	flask.session['user'] = user
+	
+	me = reddit.get('https://oauth.reddit.com/api/v1/me', headers={
+		'User-Agent': app.config['REDDIT_USER_AGENT']
+	})
+	user.username = me.data['name']
+	
+	return flask.redirect(flask.url_for('login_complete'))

@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{#
+	Eos - Verifiable elections
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{# Big tables on this page #}
+{% block mainContainerOpts %}style="max-width: 100% !important;"{% endblock %}
+
+{% block title %}{{ voter.name }} – {{ election.name }}{% endblock %}
+
+{% block content %}
+	<h1>{{ election.name }}</h1>
+	
+	<p><small><b>{{ election.kind|title }} fingerprint:</b> <span class="hash">{{ SHA256().update_obj(election).hash_as_b64() }}</span></small></p>
+	
+	<h2>{{ voter.name }}</h2>
+	
+	<h3>Votes cast</h3>
+	
+	<table class="ui celled table">
+		<thead>
+			<tr>
+				<th class="two wide column">Cast at</th>
+				<th class="three wide column">Comment</th>
+				{% if session.user and session.user.is_admin() %}
+					<th class="three wide column">Client</th>
+					<th class="eight wide column">Ballot fingerprint (<i class="dropdown icon" style="margin: 0;"></i>Content/Actions )</th>
+				{% else %}
+					<th class="eleven wide column">Ballot fingerprint (<i class="dropdown icon" style="margin: 0;"></i>Content )</th>
+				{% endif %}
+			</tr>
+		</thead>
+		<tbody>
+			{% for vote in voter.votes.get_all() %}
+				<tr>
+					<td>{{ vote.cast_at|pretty_date }}</td>
+					<td>{% if vote.comment %}{{ vote.comment }}{% endif %}</td>
+					{% if session.user and session.user.is_admin() %}
+						<td>
+							{% if vote.cast_ip %}{{ vote.cast_ip }}{% if vote.cast_fingerprint %}<br>{% endif %}{% endif %}
+							{% if vote.cast_fingerprint %}<span class="hash">{{ eos.core.hashing.SHA256().update_text(eos.core.objects.EosObject.to_json(vote.cast_fingerprint)).hash_as_b64(True) }}</span>{% endif %}
+						</td>
+					{% endif %}
+					<td>
+						<div class="ui accordion">
+							<div class="title">
+								<i class="dropdown icon"></i>
+								<span class="hash">{{ eos.core.hashing.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span>
+							</div>
+							<div class="content">
+								<div class="monoout" style="max-height: 10em;">{% if session.user and session.user.is_admin() %}{{ eos.core.objects.EosObject.to_json(eos.core.objects.EosObject.serialise_and_wrap(vote)) }}{% else %}{{ eos.core.objects.EosObject.to_json(eos.core.objects.EosObject.serialise_and_wrap(vote, options=eos.core.objects.SerialiseOptions(should_protect=True))) }}{% endif %}</div>
+							</div>
+						</div>
+					</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}
+
+{% block basecontent %}
+	{{ super() }}
+	
+	<script>
+		$('.ui.accordion').accordion();
+	</script>
+{% endblock %}

@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -40,4 +40,12 @@
 {% block buttons %}
 	{# Dirty trick to go back to the encryption step #}
 	<button class="ui right floated primary button" onclick="nextTemplate(-2);">Continue</button>
+{% endblock %}
+
+{% block help %}
+	<p>Eos is now ready to audit your ballot. This is an optional step that you can take to ensure that your ballot was prepared correctly by the voting booth.</p>
+	<p>To complete the audit, provide the data shown to a trusted third-party, or <a href="/auditor?electionUrl={{ election_base_url }}" target="_blank">click here to open the Eos auditor</a> and copy-paste in the data shown.</p>
+	<p>If you are satisfied with the result of the audit, click the blue ‘Continue’ button to proceed to cast your ballot.</p>
+	<p>Click the ‘OK’ button below to close this help screen.</p>
+	<p>If you require further assistance, contact your election administrator.</p>
 {% endblock %}

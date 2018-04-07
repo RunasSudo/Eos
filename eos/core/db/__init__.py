@@ -27,10 +27,16 @@ class DBProvider:
 	def get_all(self, collection):
 		raise Exception('Not implemented')
 	
+	def get_all_by_fields(self, collection, fields):
+		raise Exception('Not implemented')
+	
 	def get_by_id(self, collection, _id):
 		raise Exception('Not implemented')
 	
 	def update_by_id(self, collection, _id, value):
+		raise Exception('Not implemented')
+	
+	def delete_by_id(self, collection, _id):
 		raise Exception('Not implemented')
 	
 	def reset_db(self):
@@ -43,10 +49,16 @@ class DummyProvider(DBProvider):
 	def get_all(self, collection):
 		pass
 	
+	def get_all_by_fields(self, collection, fields):
+		pass
+	
 	def get_by_id(self, collection, _id):
 		pass
 	
 	def update_by_id(self, collection, _id, value):
+		pass
+	
+	def delete_by_id(self, collection, _id):
 		pass
 	
 	def reset_db(self):

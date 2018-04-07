@@ -31,6 +31,12 @@
 			<li><a href="/auth/{{ auth_method[0] }}/login" target="_blank" onclick="login(this);return false;">{{ auth_method[1] }}</a></li>
 		{% endfor %}
 	</ul>
+	
+	<div class="ui hidden error message">
+		<div class="header">Error logging in</div>
+		<p>Your log in details appear to be correct, however there was an unknown error while logging you in.</p>
+		<p>Please try again. If the problem persists, contact your election administrator.</p>
+	</div>
 {% endblock %}
 
 {% block basecontent %}
@@ -40,8 +46,8 @@
 			window.open(el.getAttribute("href"), "eos_login_window", "width=400,height=600");
 		}
 		
-		function callback_complete(name) {
-			window.location = "/";
+		function callback_complete() {
+			window.location = "{{ url_for('login_callback') }}";
 			return true;
 		}
 	</script>

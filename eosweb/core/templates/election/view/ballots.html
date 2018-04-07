@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -19,7 +19,7 @@
 #}
 
 {% block electioncontent %}
-	<table class="ui celled table">
+	<table class="ui selectable celled table">
 		<thead>
 			<tr>
 				<th>Voter</th>
@@ -29,12 +29,15 @@
 		<tbody>
 			{% for voter in election.voters %}
 				<tr>
-					<td>{{ voter.name }}</td>
-					{% if voter.votes|length > 0 %}
-						<td class="hash">{{ SHA256().update_obj(voter.votes[-1].ballot).hash_as_b64() }}</td>
-					{% else %}
-						<td class="hash"></td>
-					{% endif %}
+					<td class="selectable"><a href="{{ url_for('election_voter_view', election_id=election._id, voter_id=voter._id) }}">{{ voter.name }}</a></td>
+					{% set votes = voter.votes.get_all() %}
+					<td class="selectable"><a href="{{ url_for('election_voter_view', election_id=election._id, voter_id=voter._id) }}">
+						{% if votes|length > 0 %}
+							<span class="hash">{{ SHA256().update_obj(votes[-1].ballot).hash_as_b64(True) }}</span>
+						{% else %}
+							&nbsp;
+						{% endif %}
+					</a></td>
 				</tr>
 			{% endfor %}
 		</tbody>

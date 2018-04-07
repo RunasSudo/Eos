@@ -32,9 +32,9 @@ DB_NAME = 'eos'
 
 # Email
 
-SMTP_HOST, SMTP_PORT = 'localhost', 25
-SMTP_USER, SMTP_PASS = None, None
-SMTP_FROM = 'eos@localhost'
+MAIL_SERVER, MAIL_PORT = 'localhost', 25
+MAIL_USERNAME, MAIL_PASSWORD = None, None
+MAIL_DEFAULT_SENDER = 'eos@localhost'
 
 # Reddit
 

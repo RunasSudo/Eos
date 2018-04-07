@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -16,6 +16,7 @@
 
 import click
 import flask
+import flask_session
 import timeago
 
 from eos.core.objects import *
@@ -27,6 +28,10 @@ from eos.psr.crypto import *
 from eos.psr.election import *
 from eos.psr.mixnet import *
 from eos.psr.workflow import *
+
+from eosweb.core.tasks import *
+
+from . import emails
 
 import eos.core.hashing
 import eosweb
@@ -40,6 +45,7 @@ import json
 import os
 import pytz
 import subprocess
+import uuid
 
 app = flask.Flask(__name__, static_folder=None)
 
@@ -56,6 +62,16 @@ if 'EOSWEB_SETTINGS' in os.environ:
 
 # Connect to database
 db_connect(app.config['DB_NAME'], app.config['DB_URI'], app.config['DB_TYPE'])
+
+# Configure sessions
+if app.config['DB_TYPE'] == 'mongodb':
+	app.config['SESSION_TYPE'] = 'mongodb'
+	app.config['SESSION_MONGODB'] = dbinfo.provider.client
+	app.config['SESSION_MONGODB_DB'] = dbinfo.provider.db_name
+elif app.config['DB_TYPE'] == 'postgresql':
+	app.config['SESSION_TYPE'] = 'sqlalchemy'
+	app.config['SQLALCHEMY_DATABASE_URI'] = app.config['DB_URI'] + app.config['DB_NAME']
+flask_session.Session(app)
 
 # Set configs
 User.admins = app.config['ADMINS']
@@ -99,6 +115,11 @@ def run_tests(prefix, lang):
 	import eos.tests
 	eos.tests.run_tests(prefix, lang)
 
+# Create the session databases (SQL only)
+@app.cli.command('sessdb')
+def sessdb():
+	app.session_interface.db.create_all()
+
 # TODO: Will remove this once we have a web UI
 @app.cli.command('drop_db_and_setup')
 def setup_test_election():
@@ -121,7 +142,7 @@ def setup_test_election():
 	for voter in election.voters:
 		if isinstance(voter, UserVoter):
 			if isinstance(voter.user, EmailUser):
-				voter.user.email_password(app.config['SMTP_HOST'], app.config['SMTP_PORT'], app.config['SMTP_USER'], app.config['SMTP_PASS'], app.config['SMTP_FROM'])
+				emails.voter_email_password(election, voter)
 	
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
 	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
@@ -168,7 +189,7 @@ def tally_stv_election(electionid, qnum, randfile):
 		q_num=qnum,
 		random=dat,
 		num_seats=7,
-		status=Task.Status.READY,
+		status=TaskStatus.READY,
 		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
 	)
 	task.save()
@@ -204,9 +225,9 @@ def using_election(func):
 
 def election_admin(func):
 	@functools.wraps(func)
-	def wrapped(election, **kwargs):
+	def wrapped(*args, **kwargs):
 		if 'user' in flask.session and flask.session['user'].is_admin():
-			return func(election, **kwargs)
+			return func(*args, **kwargs)
 		else:
 			return flask.Response('Administrator credentials required', 403)
 	return wrapped
@@ -214,7 +235,8 @@ def election_admin(func):
 @app.route('/election/<election_id>/')
 @using_election
 def election_api_json(election):
-	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, should_protect=True, for_hash=('full' not in flask.request.args))), mimetype='application/json')
+	is_full = 'full' in flask.request.args
+	return flask.Response(EosObject.to_json(EosObject.serialise_and_wrap(election, None, SerialiseOptions(should_protect=True, for_hash=(not is_full), combine_related=True))), mimetype='application/json')
 
 @app.route('/election/<election_id>/view')
 @using_election
@@ -239,6 +261,13 @@ def election_view_questions(election):
 def election_view_ballots(election):
 	return flask.render_template('election/view/ballots.html', election=election)
 
+@app.route('/election/<election_id>/voter/<voter_id>')
+@using_election
+def election_voter_view(election, voter_id):
+	voter_id = uuid.UUID(voter_id)
+	voter = next(voter for voter in election.voters if voter._id == voter_id)
+	return flask.render_template('election/voter/view.html', election=election, voter=voter)
+
 @app.route('/election/<election_id>/view/trustees')
 @using_election
 def election_view_trustees(election):
@@ -255,13 +284,13 @@ def election_admin_summary(election):
 @election_admin
 def election_admin_enter_task(election):
 	workflow_task = election.workflow.get_task(flask.request.args['task_name'])
-	if workflow_task.status != WorkflowTask.Status.READY:
+	if workflow_task.status != WorkflowTaskStatus.READY:
 		return flask.Response('Task is not yet ready or has already exited', 409)
 	
-	task = WorkflowTaskEntryTask(
+	task = WorkflowTaskEntryWebTask(
 		election_id=election._id,
 		workflow_task=workflow_task._name,
-		status=Task.Status.READY,
+		status=TaskStatus.READY,
 		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
 	)
 	task.run()
@@ -274,25 +303,31 @@ def election_admin_enter_task(election):
 def election_admin_schedule_task(election):
 	workflow_task = election.workflow.get_task(flask.request.form['task_name'])
 	
-	task = WorkflowTaskEntryTask(
+	task = WorkflowTaskEntryWebTask(
 		election_id=election._id,
 		workflow_task=workflow_task._name,
 		run_at=DateTimeField().deserialise(flask.request.form['datetime']),
-		status=Task.Status.READY,
+		status=TaskStatus.READY,
 		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
 	)
 	task.save()
 	
 	return flask.redirect(flask.url_for('election_admin_summary', election_id=election._id))
 
+@app.route('/election/<election_id>/stage_ballot', methods=['POST'])
+@using_election
+def election_api_stage_ballot(election):
+	flask.session['staged_ballot'] = json.loads(flask.request.data)
+	return 'OK'
+
 @app.route('/election/<election_id>/cast_ballot', methods=['POST'])
 @using_election
 def election_api_cast_vote(election):
-	if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status < WorkflowTask.Status.EXITED or election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status > WorkflowTask.Status.READY:
+	if election.workflow.get_task('eos.base.workflow.TaskOpenVoting').status < WorkflowTaskStatus.EXITED or election.workflow.get_task('eos.base.workflow.TaskCloseVoting').status > WorkflowTaskStatus.READY:
 		# Voting is not yet open or has closed
 		return flask.Response('Voting is not yet open or has closed', 409)
 	
-	data = json.loads(flask.request.data)
+	data = flask.session['staged_ballot']
 	
 	if 'user' not in flask.session:
 		# User is not authenticated
@@ -310,7 +345,7 @@ def election_api_cast_vote(election):
 	
 	# Cast the vote
 	ballot = EosObject.deserialise_and_unwrap(data['ballot'])
-	vote = Vote(ballot=ballot, cast_at=DateTimeField.now())
+	vote = Vote(voter_id=voter._id, ballot=ballot, cast_at=DateTimeField.now())
 	
 	# Store data
 	if app.config['CAST_FINGERPRINT']:
@@ -321,13 +356,13 @@ def election_api_cast_vote(election):
 		else:
 			vote.cast_ip = flask.request.remote_addr
 	
-	voter.votes.append(vote)
+	vote.save()
 	
-	election.save()
+	del flask.session['staged_ballot']
 	
 	return flask.Response(json.dumps({
-		'voter': EosObject.serialise_and_wrap(voter, should_protect=True),
-		'vote': EosObject.serialise_and_wrap(vote, should_protect=True)
+		'voter': EosObject.serialise_and_wrap(voter, None, SerialiseOptions(should_protect=True)),
+		'vote': EosObject.serialise_and_wrap(vote, None, SerialiseOptions(should_protect=True))
 	}), mimetype='application/json')
 
 @app.route('/election/<election_id>/export/question/<int:q_num>/<format>')
@@ -337,6 +372,12 @@ def election_api_export_question(election, q_num, format):
 	resp = flask.send_file(io.BytesIO('\n'.join(eos.base.util.blt.writeBLT(election, q_num, 2)).encode('utf-8')), mimetype='text/plain; charset=utf-8', attachment_filename='{}.blt'.format(q_num), as_attachment=True)
 	resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
 	return resp
+
+@app.route('/task/<task_id>')
+@election_admin
+def task_view(task_id):
+	task = Task.get_by_id(task_id)
+	return flask.render_template('task/view.html', task=task)
 
 @app.route('/auditor')
 def auditor():
@@ -348,14 +389,28 @@ def debug():
 
 @app.route('/auth/login')
 def login():
+	flask.session['login_next'] = flask.request.referrer
 	return flask.render_template('auth/login.html')
+
+@app.route('/auth/stage_next', methods=['POST'])
+def auth_stage_next():
+	flask.session['login_next'] = flask.request.data
+	return 'OK'
 
 @app.route('/auth/logout')
 def logout():
 	flask.session['user'] = None
-	#return flask.redirect(flask.request.args['next'] if 'next' in flask.request.args else '/')
-	# I feel like there's some kind of exploit here, so we'll leave this for now
-	return flask.redirect('/')
+	if flask.request.referrer:
+		return flask.redirect(flask.request.referrer)
+	else:
+		return flask.redirect('/')
+
+@app.route('/auth/login_callback')
+def login_callback():
+	if 'login_next' in flask.session and flask.session['login_next']:
+		return flask.redirect(flask.session['login_next'])
+	else:
+		return flask.redirect('/')
 
 @app.route('/auth/login_complete')
 def login_complete():
@@ -392,7 +447,7 @@ def email_authenticate():
 
 for app_name in app.config['APPS']:
 	app_main = importlib.import_module(app_name + '.main')
-	app_main.main(app)
+	app.register_blueprint(app_main.blueprint)
 
 # === Model-Views ===
 

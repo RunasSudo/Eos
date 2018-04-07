@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-18  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -23,6 +23,7 @@
 {% block head %}
 	{{ super() }}
 	<link rel="stylesheet" href="{{ url_for('static', filename='bower_components/dragula.js/dist/dragula.min.css') }}" type="text/css">
+	<link rel="stylesheet" href="{{ url_for('static', filename='bower_components/progress-tracker/app/styles/progress-tracker.css') }}" type="text/css">
 {% endblock %}
 
 {% block content %}
@@ -66,6 +67,14 @@
 		resetBooth();
 		
 		function loadElection() {
+			// Verify booth
+			if (should_do_fingerprint) {
+				if (typeof Fingerprint2 === 'undefined') {
+					boothError('Your browser did not load fingerprintj2 correctly. Please try again after disabling your ad blockers and similar software. If the issue persists, try using a different browser.');
+					return;
+				}
+			}
+			
 			$.ajax({ url: "{{ url_for('election_api_json', election_id=election._id) }}", dataType: "text" })
 				.done(function(data) {
 					try {
@@ -191,67 +200,88 @@
 		// === BOOTH TASKS ===
 		// TODO: Make modular
 		
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/welcome.html');
-			}
-		});
 		templates['booth/base.html'] = null;
-		templates['booth/welcome.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				showTemplate('booth/selections.html');
-			}
-		});
-		templates['booth/selections.html'] = null;
-		boothTasks.append({
-			activate: function(fromLeft) {
-				if (fromLeft) {
-					showTemplate('booth/encrypt.html');
-				} else {
-					prevTemplate();
-				}
-			}
-		});
-		templates['booth/encrypt.html'] = null;
 		
-		if (location.search.indexOf('?prepoll') >= 0) {
-			// Pre-poll
+		if (location.search.indexOf('?cast') < 0) {
+			// Normal booth
 			boothTasks.append({
 				activate: function(fromLeft) {
-					showTemplate('booth/review_prepoll.html', {ballot: booth.ballot});
+					showTemplate('booth/welcome.html');
 				}
 			});
-			templates['booth/review_prepoll.html'] = null;
+			templates['booth/welcome.html'] = null;
 			boothTasks.append({
 				activate: function(fromLeft) {
-					showTemplate('booth/audit.html', {ballot: booth.ballot});
+					showTemplate('booth/selections.html');
 				}
 			});
-			templates['booth/audit.html'] = null;
+			templates['booth/selections.html'] = null;
 			boothTasks.append({
 				activate: function(fromLeft) {
-					showTemplate('booth/cast_prepoll.html', {ballot: booth.ballot});
+					if (fromLeft) {
+						showTemplate('booth/encrypt.html');
+					} else {
+						prevTemplate();
+					}
 				}
 			});
-			templates['booth/cast_prepoll.html'] = null;
+			templates['booth/encrypt.html'] = null;
+			
+			if (location.search.indexOf('?prepoll') >= 0) {
+				// Pre-poll
+				boothTasks.append({
+					activate: function(fromLeft) {
+						showTemplate('booth/review_prepoll.html', {ballot: booth.ballot});
+					}
+				});
+				templates['booth/review_prepoll.html'] = null;
+				boothTasks.append({
+					activate: function(fromLeft) {
+						showTemplate('booth/audit.html', {ballot: booth.ballot});
+					}
+				});
+				templates['booth/audit.html'] = null;
+				boothTasks.append({
+					activate: function(fromLeft) {
+						showTemplate('booth/cast_prepoll.html', {ballot: booth.ballot});
+					}
+				});
+				templates['booth/cast_prepoll.html'] = null;
+			} else {
+				// Real voting booth
+				boothTasks.append({
+					activate: function(fromLeft) {
+						showTemplate('booth/review.html', {ballot: booth.ballot});
+					}
+				});
+				templates['booth/review.html'] = null;
+				boothTasks.append({
+					activate: function(fromLeft) {
+						showTemplate('booth/audit.html', {ballot: booth.ballot});
+					}
+				});
+				templates['booth/audit.html'] = null;
+				boothTasks.append({
+					activate: function(fromLeft) {
+						showTemplate('booth/cast.html', {ballot: booth.ballot, is_cast: false});
+					}
+				});
+				templates['booth/cast.html'] = null;
+				boothTasks.append({
+					activate: function(fromLeft) {
+						showTemplate('booth/complete.html', {voter: booth.voter, vote: booth.vote});
+					}
+				});
+				templates['booth/complete.html'] = null;
+			}
 		} else {
-			// Real voting booth
+			// Cast immediately
+			{% if session.staged_ballot %}
+				booth.ballot = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(eosjs.eos.core.objects.__all__.EosObject.from_json('{{ eos.core.objects.EosObject.to_json(session.staged_ballot.ballot)|safe }}'), null);
+			{% endif %}
 			boothTasks.append({
 				activate: function(fromLeft) {
-					showTemplate('booth/review.html', {ballot: booth.ballot});
-				}
-			});
-			templates['booth/review.html'] = null;
-			boothTasks.append({
-				activate: function(fromLeft) {
-					showTemplate('booth/audit.html', {ballot: booth.ballot});
-				}
-			});
-			templates['booth/audit.html'] = null;
-			boothTasks.append({
-				activate: function(fromLeft) {
-					showTemplate('booth/cast.html', {ballot: booth.ballot});
+					showTemplate('booth/cast.html', {ballot: booth.ballot, is_cast: true});
 				}
 			});
 			templates['booth/cast.html'] = null;

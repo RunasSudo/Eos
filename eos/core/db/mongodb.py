@@ -26,11 +26,24 @@ class MongoDBProvider(eos.core.db.DBProvider):
 	def get_all(self, collection):
 		return self.db[collection].find()
 	
+	def get_all_by_fields(self, collection, fields):
+		query = {}
+		if '_id' in fields:
+			query['_id'] = fields.pop('_id')
+		if 'type' in fields:
+			query['type'] = fields.pop('type')
+		for field in fields:
+			query['value.' + field] = fields[field]
+		return self.db[collection].find(query)
+	
 	def get_by_id(self, collection, _id):
 		return self.db[collection].find_one(_id)
 	
 	def update_by_id(self, collection, _id, value):
 		self.db[collection].replace_one({'_id': _id}, value, upsert=True)
+	
+	def delete_by_id(self, collection, _id):
+		self.db[collection].delete_one({'_id': _id})
 	
 	def reset_db(self):
 		self.client.drop_database(self.db_name)
