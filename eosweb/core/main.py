@@ -214,7 +214,26 @@ def tick_scheduler():
 
 @app.route('/')
 def index():
-	return flask.render_template('index.html')
+	elections = Election.get_all()
+	elections.sort(key=lambda e: e.name)
+	
+	elections_open = [e for e in elections if e.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == WorkflowTaskStatus.READY]
+	
+	elections_soon = [e for e in elections if e.workflow.get_task('eos.base.workflow.TaskCloseVoting').status != WorkflowTaskStatus.EXITED and e.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at]
+	elections_soon.sort(key=lambda e: e.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at)
+	
+	elections_closed = [e for e in elections if e.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == WorkflowTaskStatus.EXITED]
+	elections_closed.sort(key=lambda e: e.workflow.get_task('eos.base.workflow.TaskCloseVoting').exited_at, reverse=True)
+	elections_closed = elections_closed[:5]
+	
+	return flask.render_template('index.html', elections_open=elections_open, elections_soon=elections_soon, elections_closed=elections_closed)
+
+@app.route('/elections')
+def elections():
+	elections = Election.get_all()
+	elections.sort(key=lambda e: e.name)
+	
+	return flask.render_template('elections.html', elections=elections)
 
 def using_election(func):
 	@functools.wraps(func)
