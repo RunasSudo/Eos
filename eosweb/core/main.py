@@ -179,7 +179,8 @@ def verify_election(electionid):
 @click.option('--electionid', default=None)
 @click.option('--qnum', default=0)
 @click.option('--randfile', default=None)
-def tally_stv_election(electionid, qnum, randfile):
+@click.option('--seats', default=1)
+def tally_stv_election(electionid, qnum, randfile, numseats):
 	election = Election.get_by_id(electionid)
 	
 	with open(randfile, 'r') as f:
@@ -188,7 +189,7 @@ def tally_stv_election(electionid, qnum, randfile):
 		election_id=election._id,
 		q_num=qnum,
 		random=dat,
-		num_seats=7,
+		num_seats=numseats,
 		status=TaskStatus.READY,
 		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
 	)
