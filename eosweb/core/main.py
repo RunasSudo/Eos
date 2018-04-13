@@ -220,7 +220,7 @@ def index():
 	
 	elections_open = [e for e in elections if e.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == WorkflowTaskStatus.READY]
 	
-	elections_soon = [e for e in elections if e.workflow.get_task('eos.base.workflow.TaskCloseVoting').status != WorkflowTaskStatus.EXITED and e.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at]
+	elections_soon = [e for e in elections if e.workflow.get_task('eos.base.workflow.TaskOpenVoting').status != WorkflowTaskStatus.EXITED and e.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at]
 	elections_soon.sort(key=lambda e: e.workflow.get_task('eos.base.workflow.TaskOpenVoting').get_entry_task().run_at)
 	
 	elections_closed = [e for e in elections if e.workflow.get_task('eos.base.workflow.TaskCloseVoting').status == WorkflowTaskStatus.EXITED]
