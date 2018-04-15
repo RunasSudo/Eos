@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-18  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -35,17 +35,21 @@ class PostgreSQLDBProvider(eos.core.db.DBProvider):
 		return [x[0] for x in self.cur.fetchall()]
 	
 	def get_all_by_fields(self, table, fields):
+		def does_match(val):
+			if '_id' in fields and val['_id'] != fields.pop('_id'):
+				return False
+			if 'type' in fields and val['type'] != fields.pop('type'):
+				return False
+			for field in fields:
+				if val['value'][field] != fields[field]:
+					return False
+			return True
+		
 		# TODO: Make this much better
 		result = []
 		for val in self.get_all(table):
-			if '_id' in fields and val['_id'] != fields.pop('_id'):
-				continue
-			if 'type' in fields and val['type'] != fields.pop('type'):
-				continue
-			for field in fields:
-				if val['value'][field] != fields[field]:
-					continue
-			result.append(val)
+			if does_match(val):
+				result.append(val)
 		return result
 	
 	def get_by_id(self, table, _id):
