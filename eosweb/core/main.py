@@ -448,13 +448,21 @@ def email_login():
 def email_authenticate():
 	user = None
 	
-	for election in Election.get_all():
-		for voter in election.voters:
-			if isinstance(voter.user, EmailUser):
-				if voter.user.email.lower() == flask.request.form['email'].lower():
-					if voter.user.password == flask.request.form['password']:
-						user = voter.user
-						break
+	for u in app.config['ADMINS']:
+		if isinstance(u, EmailUser):
+			if u.email.lower() == flask.request.form['email'].lower():
+				if u.password == flask.request.form['password']:
+					user = u
+					break
+	
+	if user is None:
+		for election in Election.get_all():
+			for voter in election.voters:
+				if isinstance(voter.user, EmailUser):
+					if voter.user.email.lower() == flask.request.form['email'].lower():
+						if voter.user.password == flask.request.form['password']:
+							user = voter.user
+							break
 	
 	if user is None:
 		return flask.render_template('auth/email/login.html', error='The email or password you entered was invalid. Please check your details and try again. If the issue persists, contact the election administrator.')

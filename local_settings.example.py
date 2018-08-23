@@ -9,9 +9,11 @@ AUTH_METHODS = [
 	('reddit', 'Reddit')
 ]
 
+import eos.base.election
 import eos.redditauth.election
 ADMINS = [
-	#eos.redditauth.election.RedditUser(username='xxxxxxxx')
+	#eos.redditauth.election.RedditUser(username='xxxxxxxx'),
+	#eos.base.election.EmailUser(email='xxxxx@example.com', password='abc123'),
 ]
 
 TASK_RUN_STRATEGY = 'eos.core.tasks.direct.DirectRunStrategy'
