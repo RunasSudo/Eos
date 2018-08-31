@@ -76,6 +76,9 @@ class User(EmbeddedObject):
 			if admin.matched_by(self):
 				return True
 		return False
+	
+	def __getstate__(self):
+		return {k: v for k, v in self.__dict__.items() if k != '_instance'}
 
 def generate_password():
 	if is_python:
