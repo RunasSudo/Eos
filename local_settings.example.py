@@ -39,6 +39,8 @@ MAIL_USERNAME, MAIL_PASSWORD = None, None
 MAIL_DEFAULT_SENDER = 'eos@localhost'
 
 # Reddit
+# Register a web app at https://www.reddit.com/prefs/apps
+# The redirect URI will be https://localhost:5000/auth/reddit/oauth_callback (replace with real host:port)
 
 REDDIT_OAUTH_CLIENT_ID = 'xxxxxxxxxxxxxx'
 REDDIT_OAUTH_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxx'
