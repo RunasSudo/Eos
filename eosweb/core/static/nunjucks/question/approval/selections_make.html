@@ -19,7 +19,7 @@
 <h2>{{ questionNum + 1 }}. {{ election.questions.__getitem__(questionNum).prompt }}</h2>
 
 {% if election.questions.__getitem__(questionNum).description %}
-	<p>{{ election.questions.__getitem__(questionNum).description | urlize | safe }}</p>
+	<p>{{ election.questions.__getitem__(questionNum).description | urlize | replace('<a ', '<a target="_blank" ') | safe }}</p>
 {% endif %}
 
 <p><small>
