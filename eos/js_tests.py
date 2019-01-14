@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-2019  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -14,8 +14,23 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eos.js
-
+import eos.core.objects
+import eos.core.bigint
+import eos.core.hashing
 import eos.core.tests
+import eos.core.tasks
+import eos.core.tasks.direct
+
+import eos.base.election
+import eos.base.workflow
+
+import eos.psr.bitstream
+import eos.psr.crypto
+import eos.psr.election
+import eos.psr.mixnet
+import eos.psr.workflow
+
+import eos.redditauth.election
+
 import eos.base.tests
 import eos.psr.tests

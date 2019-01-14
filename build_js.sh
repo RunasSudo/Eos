@@ -1,6 +1,6 @@
 #!/bin/bash
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-2019  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -20,21 +20,14 @@ FLAGS="-k -mc -o"
 #for f in eos.js eos.js_tests; do
 for f in eos.js_tests; do
 	transcrypt -b -n $FLAGS $f.py || exit 1
-	
-	# Javascript identifiers cannot contain dots
-	perl -0777 -pi -e 's/eos.js/eosjs/g' eos/__javascript__/$f.js
-	
-	# __pragma__ sometimes stops working???
-	perl -0777 -pi -e "s/__pragma__ \('.*?'\)//gs" eos/__javascript__/$f.js
-	
-	# Transcrypt by default suppresses stack traces for some reason??
-	perl -0777 -pi -e 's/__except0__.__cause__ = null;//g' eos/__javascript__/$f.js
-	
-	# Fix handling of properties, Transcrypt bug #407
-	perl -0777 -pi -e 's/var __get__ = function \(self, func, quotedFuncName\) \{/var __get__ = function (self, func, quotedFuncName) { if(typeof(func) != "function"){return func;}/g' eos/__javascript__/$f.js
-	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__impl__(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
-	perl -0777 -pi -e 's/property.call \((.*?), \g1.\g1.__implpy_(.*?)\)/property.call ($1, $1.__impl__$2)/g' eos/__javascript__/$f.js
 done
 
-cp eos/__javascript__/eos.js_tests.js eosweb/core/static/js/eosjs.js
-perl -0777 -pi -e 's/eosjs_tests/eosjs/g' eosweb/core/static/js/eosjs.js
+# Transcrypt syntax errors
+perl -0777 -pi -e 's/import \{, /import \{/g' __target__/eos*.js
+
+# Add export
+echo >> __target__/eos.js_tests.js
+echo 'export {eos, __kwargtrans__};' >> __target__/eos.js_tests.js
+
+# Convert to ES5
+./node_modules/.bin/browserify -t babelify -r ./__target__/eos.js_tests.js:eosjs > eosweb/core/static/js/eosjs.js

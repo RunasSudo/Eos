@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017-18  RunasSudo (Yingtong Li)
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -25,7 +25,7 @@
 		<p>Your vote has <span class="superem">not</span> yet been cast. Please follow the instructions to continue.</p>
 	</div>
 	
-	<p>The following is your ballot with fingerprint <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>, decrypted and ready for auditing.</p>
+	<p>The following is your ballot with fingerprint <span class="hash">{{ eosjs.eos.core.hashing.SHA256().update_obj(ballot).hash_as_b64() }}</span>, decrypted and ready for auditing.</p>
 	
 	<div class="ui form">
 		{# For some reason nunjucks doesn't like calling this the normal way #}

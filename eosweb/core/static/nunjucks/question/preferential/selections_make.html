@@ -1,6 +1,6 @@
 {#
 	Eos - Verifiable elections
-	Copyright © 2017-18  RunasSudo (Yingtong Li)
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -249,8 +249,8 @@
 			}
 		}
 		
-		answer = eosjs.eos.base.election.__all__.PreferentialAnswer(eosjs.__kwargtrans__({choices: selections}));
-		booth.answers[booth.questionNum] = eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(answer);
+		answer = eosjs.eos.base.election.PreferentialAnswer(eosjs.__kwargtrans__({choices: selections}));
+		booth.answers[booth.questionNum] = eosjs.eos.core.objects.EosObject.serialise_and_wrap(answer);
 		
 		booth.q_state[booth.questionNum] = [$("#question-choices-selected .dragarea").html(), $("#question-choices-remaining .dragarea").html()]; // wew lad
 		

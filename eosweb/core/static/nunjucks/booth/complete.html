@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017-18  RunasSudo (Yingtong Li)
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -26,7 +26,7 @@
 		<div class="content">
 			<div class="header">Smart ballot tracker</div>
 			<p>This smart ballot tracker confirms that {{ voter.py_name }} cast a vote in the election {{ election.py_name }} at {{ vote.cast_at }}.</p>
-			<p>Ballot fingerprint: <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(vote.ballot).hash_as_b64(true) }}</span></p>
+			<p>Ballot fingerprint: <span class="hash">{{ eosjs.eos.core.hashing.SHA256().update_obj(vote.ballot).hash_as_b64(true) }}</span></p>
 		</div>
 	</div>
 	
@@ -42,7 +42,7 @@
 {% block after %}
 	<div class="ui tiny message" style="margin-top: 3em;">
 		<div class="header">Information for advanced users</div>
-		<p>Your full ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span>.</p>
+		<p>Your full ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.SHA256().update_obj(vote.ballot).hash_as_b64() }}</span>.</p>
 	</div>
 {% endblock %}
 

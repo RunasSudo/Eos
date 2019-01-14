@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017-18  RunasSudo (Yingtong Li)
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -44,6 +44,8 @@
 	{% endif %}
 	
 	<script>
+		var eosjs = require("eosjs");
+		
 		var templates = {};
 		var election = null;
 		var booth = null;
@@ -78,7 +80,7 @@
 			$.ajax({ url: "{{ url_for('election_api_json', election_id=election._id) }}", dataType: "text" })
 				.done(function(data) {
 					try {
-						election = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(eosjs.eos.core.objects.__all__.EosObject.from_json(data), null);
+						election = eosjs.eos.core.objects.EosObject.deserialise_and_unwrap(eosjs.eos.core.objects.EosObject.from_json(data), null);
 						
 						boothWorker = new Worker("{{ url_for('static', filename='js/booth_worker.js') }}");
 						
@@ -117,7 +119,7 @@
 					})
 						.done(function(data) {
 							try {
-								templates[templateUrl] = nunjucks.compile(data);
+								templates[templateUrl] = nunjucks.compile(data, null, templateUrl);
 								numTemplatesLoaded += 1;
 								if (numTemplatesLoaded == templateUrls.length) {
 									// All templates loaded. Show voting booth
@@ -277,7 +279,7 @@
 		} else {
 			// Cast immediately
 			{% if session.staged_ballot %}
-				booth.ballot = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(eosjs.eos.core.objects.__all__.EosObject.from_json('{{ eos.core.objects.EosObject.to_json(session.staged_ballot.ballot)|safe }}'), null);
+				booth.ballot = eosjs.eos.core.objects.EosObject.deserialise_and_unwrap(eosjs.eos.core.objects.EosObject.from_json('{{ eos.core.objects.EosObject.to_json(session.staged_ballot.ballot)|safe }}'), null);
 			{% endif %}
 			boothTasks.append({
 				activate: function(fromLeft) {

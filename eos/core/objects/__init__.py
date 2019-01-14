@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-2019  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -184,18 +184,21 @@ class RelatedObjectListField(Field):
 			return None
 		return EosList([EosObject.deserialise_and_unwrap(x, self.object_type) for x in value])
 
-if is_python:
-	class UUIDField(Field):
-		def __init__(self, *args, **kwargs):
+class UUIDField(Field):
+	def __init__(self, *args, **kwargs):
+		if is_python:
 			super().__init__(default=uuid.uuid4, *args, **kwargs)
-		
-		def serialise(self, value, options=SerialiseOptions.DEFAULT):
-			return str(value)
-		
-		def deserialise(self, value):
+		else:
+			super().__init__(*args, **kwargs)
+	
+	def serialise(self, value, options=SerialiseOptions.DEFAULT):
+		return str(value)
+	
+	def deserialise(self, value):
+		if is_python:
 			return uuid.UUID(value)
-else:
-	UUIDField = PrimitiveField
+		else:
+			return value
 
 class DateTimeField(Field):
 	def pad(self, number):
@@ -359,7 +362,16 @@ class DocumentObjectType(EosObjectType):
 		fields = {}
 		if hasattr(cls, '_fields'):
 			fields = cls._fields.copy() if is_python else Object.create(cls._fields)
-		for attr in list(dir(cls)):
+		
+		if is_python:
+			attrs = list(dir(cls))
+		else:
+			# We want the raw Javascript name for getOwnPropertyDescriptor
+			__pragma__('jsiter')
+			attrs = [x for x in cls]
+			__pragma__('nojsiter')
+		
+		for attr in attrs:
 			if not is_python:
 				# We must skip things with getters or else they will be called here (too soon)
 				if Object.getOwnPropertyDescriptor(cls, attr).js_get:

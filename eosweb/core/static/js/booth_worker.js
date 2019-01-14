@@ -1,6 +1,6 @@
 /*
 	Eos - Verifiable elections
-	Copyright © 2017  RunasSudo (Yingtong Li)
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -19,13 +19,15 @@
 window = self; // Workaround for libraries
 isLibrariesLoaded = false;
 
+eosjs = null;
+
 function generateEncryptedVote(election, answers, should_do_fingerprint) {
 	encrypted_answers = [];
 	for (var q_num = 0; q_num < answers.length; q_num++) {
 		answer_json = answers[q_num];
-		answer = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(answer_json, null);
-		encrypted_answer = eosjs.eos.psr.election.__all__.BlockEncryptedAnswer.encrypt(election.public_key, answer, election.questions.__getitem__(q_num).max_bits() + 32); // +32 bits for the length
-		encrypted_answers.push(eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(encrypted_answer, null));
+		answer = eosjs.eos.core.objects.EosObject.deserialise_and_unwrap(answer_json, null);
+		encrypted_answer = eosjs.eos.psr.election.BlockEncryptedAnswer.encrypt(election.public_key, answer, election.questions.__getitem__(q_num).max_bits() + 32); // +32 bits for the length
+		encrypted_answers.push(eosjs.eos.core.objects.EosObject.serialise_and_wrap(encrypted_answer, null));
 	}
 	
 	postMessage({
@@ -40,10 +42,11 @@ onmessage = function(msg) {
 				msg.data.static_base_url + "js/eosjs.js"
 			);
 			isLibrariesLoaded = true;
+			eosjs = require("eosjs");
 		}
 		
 		if (msg.data.action === "generateEncryptedVote") {
-			msg.data.election = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(msg.data.election, null);
+			msg.data.election = eosjs.eos.core.objects.EosObject.deserialise_and_unwrap(msg.data.election, null);
 			
 			generateEncryptedVote(msg.data.election, msg.data.answers);
 		} else {

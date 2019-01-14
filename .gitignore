@@ -2,9 +2,10 @@
 /.python-version
 /htmlcov
 /venv
-__javascript__
+__target__
 __pycache__
 refs
+node_modules
 
 \#*
 .#*

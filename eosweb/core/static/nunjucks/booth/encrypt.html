@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017-18  RunasSudo (Yingtong Li)
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -30,19 +30,19 @@
 			try {
 				rawAnswers = [];
 				for (var answer_json of booth.answers) {
-					rawAnswers.push(eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(answer_json, null));
+					rawAnswers.push(eosjs.eos.core.objects.EosObject.deserialise_and_unwrap(answer_json, null));
 				}
 				
 				encryptedAnswers = [];
 				for (var encrypted_answer_json of msg.data.encrypted_answers) {
-					encryptedAnswers.push(eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(encrypted_answer_json, null));
+					encryptedAnswers.push(eosjs.eos.core.objects.EosObject.deserialise_and_unwrap(encrypted_answer_json, null));
 				}
 				
-				booth.ballot = eosjs.eos.base.election.__all__.Ballot();
+				booth.ballot = eosjs.eos.base.election.Ballot();
 				booth.ballot.answers = rawAnswers;
 				booth.ballot.encrypted_answers = encryptedAnswers;
 				booth.ballot.election_id = election._id;
-				booth.ballot.election_hash = eosjs.eos.core.hashing.__all__.SHA256().update_obj(election).hash_as_b64();
+				booth.ballot.election_hash = eosjs.eos.core.hashing.SHA256().update_obj(election).hash_as_b64();
 				
 				if (should_do_fingerprint) {
 					// String.prototype.join confuses fingerprintjs2
@@ -69,7 +69,7 @@
 			boothWorker.postMessage({
 				"action": "generateEncryptedVote",
 				"static_base_url": "{{ static_base_url }}",
-				"election": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(election, null),
+				"election": eosjs.eos.core.objects.EosObject.serialise_and_wrap(election, null),
 				"answers": booth.answers
 			});
 		} catch (err) {

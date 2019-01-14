@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017-18  RunasSudo (Yingtong Li)
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -20,7 +20,7 @@
 
 {% block content %}
 	<div id="cast_prompt">
-		<p>Your vote has <span class="superem">not</span> yet been cast. Please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64(true) }}</span>.</p>
+		<p>Your vote has <span class="superem">not</span> yet been cast. Please make a note of your ballot fingerprint, <span class="hash">{{ eosjs.eos.core.hashing.SHA256().update_obj(ballot).hash_as_b64(true) }}</span>.</p>
 		
 		<div class="ui negative message">
 			<p>Your vote has <span class="superem">not</span> yet been cast. Please follow the instructions to continue.</p>
@@ -71,7 +71,7 @@
 {% block after %}
 	<div class="ui tiny message" style="margin-top: 3em;">
 		<div class="header">Information for advanced users</div>
-		<p>Your full ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.__all__.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
+		<p>Your full ballot fingerprint is <span class="hash">{{ eosjs.eos.core.hashing.SHA256().update_obj(ballot).hash_as_b64() }}</span>.</p>
 	</div>
 	
 	<script>
@@ -104,8 +104,8 @@
 			$.ajax({
 				url: "{{ election_base_url }}stage_ballot",
 				type: "POST",
-				data: eosjs.eos.core.objects.__all__.EosObject.to_json({
-					"ballot": eosjs.eos.core.objects.__all__.EosObject.serialise_and_wrap(deauditedBallot, null),
+				data: eosjs.eos.core.objects.EosObject.to_json({
+					"ballot": eosjs.eos.core.objects.EosObject.serialise_and_wrap(deauditedBallot, null),
 					"fingerprint": booth.fingerprint || null
 				}),
 				contentType: "application/json",
@@ -167,9 +167,9 @@
 				dataType: "text"
 			})
 				.done(function(data) {
-					response = eosjs.eos.core.objects.__all__.EosObject.from_json(data);
-					booth.voter = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(response.voter);
-					booth.vote = eosjs.eos.core.objects.__all__.EosObject.deserialise_and_unwrap(response.vote);
+					response = eosjs.eos.core.objects.EosObject.from_json(data);
+					booth.voter = eosjs.eos.core.objects.EosObject.deserialise_and_unwrap(response.voter);
+					booth.vote = eosjs.eos.core.objects.EosObject.deserialise_and_unwrap(response.vote);
 					
 					// Clear plaintexts
 					booth.answers = null;
