@@ -18,6 +18,10 @@
 
 <h2>{{ questionNum + 1 }}. {{ election.questions.__getitem__(questionNum).prompt }}</h2>
 
+{% if election.questions.__getitem__(questionNum).description %}
+	<p>{{ election.questions.__getitem__(questionNum).description | urlize | safe }}</p>
+{% endif %}
+
 <p><small>
 	Vote for
 	{% if election.questions.__getitem__(questionNum).min_choices == election.questions.__getitem__(questionNum).max_choices %}

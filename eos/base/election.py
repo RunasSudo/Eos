@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017  RunasSudo (Yingtong Li)
+#   Copyright © 2017-2019  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -107,14 +107,15 @@ class UserVoter(Voter):
 		return self.user.name
 
 class Question(EmbeddedObject):
+	_ver = StringField(default='0.7')
+	
 	prompt = StringField()
+	description = StringField()
 
 class Result(EmbeddedObject):
 	pass
 
 class ListChoiceQuestion(Question):
-	_ver = StringField(default='0.5')
-	
 	choices = EmbeddedObjectListField()
 	min_choices = IntField()
 	max_choices = IntField()
