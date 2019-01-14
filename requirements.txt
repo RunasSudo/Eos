@@ -6,6 +6,7 @@ Flask-Session==0.3.1
 Flask-SQLAlchemy==2.3.2
 gunicorn==19.7.1
 libsass==0.13.4
+oauthlib==2.1.0
 premailer==3.1.1
 psycopg2==2.7.3.2
 PyExecJS==1.4.1
