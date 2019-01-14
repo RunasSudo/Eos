@@ -419,6 +419,8 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 	def __init__(self, *args, **kwargs):
 		super().__init__()
 		
+		self._json = None
+		
 		self._field_values = {}
 		
 		# Different to Python
@@ -456,6 +458,10 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 				val.object_init(self, default)
 	
 	def serialise(self, options=SerialiseOptions.DEFAULT):
+		if self._ver != self._fields['_ver'].default:
+			# Different version, use stored JSON
+			return self._json
+		
 		return {val.real_name: val.serialise(getattr(self, val.real_name), options) for attr, val in self._fields.items() if ((val.is_hashed or not options.for_hash) and (not options.should_protect or not val.is_protected))}
 	
 	@classmethod
@@ -467,7 +473,11 @@ class DocumentObject(EosObject, metaclass=DocumentObjectType):
 		for attr, val in cls._fields.items():
 			if attr in value:
 				attrs[val.internal_name] = val.deserialise(value[val.real_name])
-		return cls(**attrs)
+		inst = cls(**attrs)
+		
+		inst._json = value
+		
+		return inst
 
 class TopLevelObjectType(DocumentObjectType):
 	def __new__(meta, name, bases, attrs):
@@ -489,8 +499,10 @@ class TopLevelObjectType(DocumentObjectType):
 
 class TopLevelObject(DocumentObject, metaclass=TopLevelObjectType):
 	def save(self):
-		#res = db[self._name].replace_one({'_id': self.serialise()['_id']}, self.serialise(), upsert=True)
-		#res = dbinfo.db[self._db_name].replace_one({'_id': self._fields['_id'].serialise(self._id)}, EosObject.serialise_and_wrap(self), upsert=True)
+		if self._ver != self._fields['_ver'].default:
+			# Different version, unable to save
+			raise Exception('Attempted to save older vesion object')
+		
 		dbinfo.provider.update_by_id(self._db_name, self._fields['_id'].serialise(self._id), EosObject.serialise_and_wrap(self))
 	
 	def delete(self):
