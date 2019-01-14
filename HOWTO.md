@@ -12,6 +12,10 @@ Install the Python dependencies. (If doing this in a virtualenv, add the virtual
     cd /path/to/Eos
     pip install -r requirements.txt
 
+Install the node dependencies to build the JavaScript code.
+
+    npm install @babel/core @babel/cli @babel/preset-env babelify browserify
+
 Build the JavaScript code.
 
     ./build_js.sh
