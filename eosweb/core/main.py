@@ -196,6 +196,20 @@ def tally_stv_election(electionid, qnum, randfile, numseats):
 	task.save()
 	task.run()
 
+@app.cli.command('run_task')
+@click.option('--electionid', default=None)
+@click.option('--task_name', default=None)
+def tally_stv_election(electionid, task_name):
+	election = Election.get_by_id(electionid)
+	task = WorkflowTaskEntryWebTask(
+		election_id=election._id,
+		workflow_task=task_name,
+		status=TaskStatus.READY,
+		run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
+	)
+	task.save()
+	task.run()
+
 @app.context_processor
 def inject_globals():
 	return {'eos': eos, 'eosweb': eosweb, 'SHA256': eos.core.hashing.SHA256}
