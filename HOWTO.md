@@ -28,7 +28,7 @@ Modify *local_settings.py* as required.
 Launch the server.
 
     cd /path/to/Eos
-    FLASK_APP=eosweb EOSWEB_SETTINGS=$PWD/local_settings.py python -m flask run
+    FLASK_APP=eosweb EOSWEB_SETTINGS=$PWD/local_settings.py python -m flask run --host=0.0.0.0
 
 Access Eos at http://localhost:5000/.
 
@@ -116,11 +116,14 @@ election.save()
 If you are using the email log in method (`EmailUser`), you can additionally email the log in details using, for example:
 
 ```python
+import eosweb.core.emails
 for voter in election.voters:
     if isinstance(voter, UserVoter):
         if isinstance(voter.user, EmailUser):
-            voter.user.email_password(app.config['SMTP_HOST'], app.config['SMTP_PORT'], app.config['SMTP_USER'], app.config['SMTP_PASS'], app.config['SMTP_FROM'])
+            eosweb.core.emails.voter_email_password(election, voter)
 ```
+
+Ensure the SMTP server information is setup in the Local Settings file.
 
 You should now be able to see the election in the web interface.
 
