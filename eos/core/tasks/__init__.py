@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017-18  RunasSudo (Yingtong Li)
+#   Copyright © 2017-2019  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -31,11 +31,14 @@ class TaskStatus(EosEnum):
 
 class Task(TopLevelObject):
 	label = 'Unknown task'
+	_ver = StringField(default='0.8')
 	
 	_id = UUIDField()
 	run_strategy = EmbeddedObjectField()
 	
 	run_at = DateTimeField()
+	
+	timeout = IntField(default=3600) # seconds
 	
 	started_at = DateTimeField()
 	completed_at = DateTimeField()
@@ -113,6 +116,16 @@ class TaskScheduler:
 	
 	@staticmethod
 	def tick():
+		now = DateTimeField.now()
+		
 		for task in TaskScheduler.pending_tasks():
-			if task.run_at and task.run_at < DateTimeField.now():
+			if task.run_at and task.run_at < now:
 				task.run()
+		
+		for task in TaskScheduler.active_tasks():
+			if task.timeout and (now - task.started_at).total_seconds() > task.timeout:
+				task.status = TaskStatus.TIMEOUT
+				task.completed_at = DateTimeField.now()
+				task.messages.append('Elapsed time exceeded timeout')
+				task.save()
+				task.error()
