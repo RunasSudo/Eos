@@ -1,5 +1,5 @@
 #   Eos - Verifiable elections
-#   Copyright © 2017-18  RunasSudo (Yingtong Li)
+#   Copyright © 2017-2019  RunasSudo (Yingtong Li)
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU Affero General Public License as published by
@@ -120,50 +120,6 @@ def run_tests(prefix, lang):
 def sessdb():
 	app.session_interface.db.create_all()
 
-# TODO: Will remove this once we have a web UI
-@app.cli.command('drop_db_and_setup')
-def setup_test_election():
-	# DANGER!
-	dbinfo.provider.reset_db()
-	
-	# Set up election
-	election = PSRElection()
-	election.workflow = PSRWorkflow()
-	
-	# Set election details
-	election.name = 'Test Election'
-	
-	from eos.redditauth.election import RedditUser
-	election.voters.append(UserVoter(user=EmailUser(name='Alice', email='alice@localhost')))
-	election.voters.append(UserVoter(user=EmailUser(name='Bob', email='bob@localhost')))
-	election.voters.append(UserVoter(user=EmailUser(name='Carol', email='carol@localhost')))
-	election.voters.append(UserVoter(user=RedditUser(username='RunasSudo')))
-	
-	for voter in election.voters:
-		if isinstance(voter, UserVoter):
-			if isinstance(voter.user, EmailUser):
-				emails.voter_email_password(election, voter)
-	
-	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
-	election.mixing_trustees.append(InternalMixingTrustee(name='Eos Voting'))
-	
-	election.sk = EGPrivateKey.generate()
-	election.public_key = election.sk.public_key
-	
-	question = PreferentialQuestion(prompt='President', choices=[
-		Ticket(name='ACME Party', choices=[
-			Choice(name='John Smith'),
-			Choice(name='Joe Bloggs', party='Independent ACME')
-		]),
-		Choice(name='John Q. Public')
-	], min_choices=0, max_choices=3, randomise_choices=True)
-	election.questions.append(question)
-	
-	question = ApprovalQuestion(prompt='Chairman', choices=[Choice(name='John Doe'), Choice(name='Andrew Citizen')], min_choices=0, max_choices=1)
-	election.questions.append(question)
-	
-	election.save()
-
 @app.cli.command('verify_election')
 @click.option('--electionid', default=None)
 def verify_election(electionid):
@@ -227,6 +183,22 @@ def tick_scheduler():
 
 # === Views ===
 
+def using_election(func):
+	@functools.wraps(func)
+	def wrapped(election_id, **kwargs):
+		election = Election.get_by_id(election_id)
+		return func(election, **kwargs)
+	return wrapped
+
+def election_admin(func):
+	@functools.wraps(func)
+	def wrapped(*args, **kwargs):
+		if 'user' in flask.session and flask.session['user'].is_admin():
+			return func(*args, **kwargs)
+		else:
+			return flask.Response('Administrator credentials required', 403)
+	return wrapped
+
 @app.route('/')
 def index():
 	elections = Election.get_all()
@@ -250,21 +222,34 @@ def elections():
 	
 	return flask.render_template('elections.html', elections=elections)
 
-def using_election(func):
-	@functools.wraps(func)
-	def wrapped(election_id, **kwargs):
-		election = Election.get_by_id(election_id)
-		return func(election, **kwargs)
-	return wrapped
-
-def election_admin(func):
-	@functools.wraps(func)
-	def wrapped(*args, **kwargs):
-		if 'user' in flask.session and flask.session['user'].is_admin():
-			return func(*args, **kwargs)
-		else:
-			return flask.Response('Administrator credentials required', 403)
-	return wrapped
+@app.route('/elections/batch', methods=['GET', 'POST'])
+@election_admin
+def elections_batch():
+	if flask.request.method == 'POST':
+		# Execute
+		for k, v in flask.request.form.items():
+			if k.startswith('election_') and v:
+				election_id = k[9:]
+				election = Election.get_by_id(election_id)
+				for workflow_task in election.workflow.tasks:
+					if workflow_task.status == eos.base.workflow.WorkflowTaskStatus.READY:
+						task = WorkflowTaskEntryWebTask(
+							election_id=election._id,
+							workflow_task=workflow_task._name,
+							status=TaskStatus.READY,
+							run_strategy=EosObject.lookup(app.config['TASK_RUN_STRATEGY'])()
+						)
+						task.run()
+						break
+	
+	elections = []
+	for election in Election.get_all():
+		if any(workflow_task.status == eos.base.workflow.WorkflowTaskStatus.READY for workflow_task in election.workflow.tasks):
+			elections.append(election)
+	
+	elections.sort(key=lambda e: e.name)
+	
+	return flask.render_template('elections_batch.html', elections=elections)
 
 @app.route('/election/<election_id>/')
 @using_election

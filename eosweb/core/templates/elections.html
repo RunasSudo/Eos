@@ -2,7 +2,7 @@
 
 {#
 	Eos - Verifiable elections
-	Copyright © 2017-18  RunasSudo (Yingtong Li)
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
 	
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Affero General Public License as published by
@@ -22,6 +22,10 @@
 
 {% block content %}
 	<h1>All elections: Eos Voting for {{ eosweb.app.config['ORG_NAME'] }}</h1>
+	
+	{% if session.user and session.user.is_admin() %}
+		<div style="text-align: right; font-size: small;"><a href="{{ url_for('elections_batch') }}">Batch operations</a></div>
+	{% endif %}
 	
 	<p>Please choose an election from the list below:</p>
 	

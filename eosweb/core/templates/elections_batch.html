@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{#
+	Eos - Verifiable elections
+	Copyright © 2017-2019  RunasSudo (Yingtong Li)
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#}
+
+{% block title %}Perform batch operations{% endblock %}
+
+{% block content %}
+	<h1>Perform batch operations</h1>
+	
+	<form method="POST">
+		<table class="ui selectable celled table">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Name</th>
+					<th>Next stage</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for election in elections %}
+					<tr>
+						<td><input type="checkbox" name="election_{{ election._id }}" id="election_{{ election._id }}"></td>
+						<td>{{ election.name }}</td>
+						<td>
+							<ul style="padding-left: 1em; margin: 0;">
+								{% for task in election.workflow.tasks %}
+									{% if task.status == eos.base.workflow.WorkflowTaskStatus.READY %}
+										<li>{{ task.label }}</li>
+									{% endif %}
+								{% endfor %}
+							</ul>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		
+		<input class="ui primary button" type="submit" value="Execute">
+	</form>
+{% endblock %}
